@@ -17,6 +17,7 @@ export type RequestFilters = {
   dateTo?: string;
   clubId?: string;
   promoterId?: string;
+  includeArchived?: boolean;
 };
 
 export type ClientFilters = {
@@ -44,6 +45,7 @@ export async function getRequestsForProfile(profile: Profile, options?: RequestF
     if (options?.dateTo) query = query.lte("requested_date", options.dateTo);
     if (options?.clubId) query = query.eq("club_id", options.clubId);
     if (options?.promoterId) query = query.eq("promoter_id", options.promoterId);
+    if (!options?.status && !options?.includeArchived) query = query.not("status", "in", "(ARRIVED,NO_SHOW,DECLINED,CANCELLED)");
 
     if (profile.role === "PROMOTER") query = query.eq("promoter_id", profile.id);
     if (profile.role === "PROMOTER_MANAGER") {
@@ -501,6 +503,7 @@ function applyRequestFilters(requests: ConciergeRequest[], filters?: RequestFilt
     if (filters.dateTo && request.requested_date > filters.dateTo) return false;
     if (filters.clubId && request.club_id !== filters.clubId) return false;
     if (filters.promoterId && request.promoter_id !== filters.promoterId) return false;
+    if (!filters.status && !filters.includeArchived && ["ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"].includes(request.status)) return false;
     if (!query) return true;
 
     return [

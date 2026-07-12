@@ -13,8 +13,7 @@ export default async function ManagerPage() {
   const requests = await getRequestsForProfile(profile, { limit: 8 });
   const newRequests = requests.filter((request) => request.status === "NEW").length;
   const confirmed = requests.filter((request) => ["CONFIRMED", "ARRIVED"].includes(request.status)).length;
-  const resolved = requests.filter((request) => ["ARRIVED", "NO_SHOW"].includes(request.status));
-  const arrivalRate = resolved.length ? Math.round((resolved.filter((request) => request.status === "ARRIVED").length / resolved.length) * 100) : 0;
+  const completed = requests.filter((request) => request.status === "ARRIVED").length;
   const needsAttention = requests.filter((request) => ["NEW", "CONTACTED", "PENDING"].includes(request.status));
   const visibleRequests = needsAttention.length ? needsAttention : requests.slice(0, 3);
 
@@ -39,7 +38,7 @@ export default async function ManagerPage() {
       <div className="advanced-only grid gap-4 md:grid-cols-3">
         <Metric label="New requests" value={String(newRequests)} />
         <Metric label="Team confirmed" value={String(confirmed)} />
-        <Metric label="Arrival rate" value={`${arrivalRate}%`} />
+        <Metric label="Completed" value={String(completed)} />
       </div>
       <div className="advanced-only mt-5 flex gap-2 overflow-x-auto pb-1">
         <Button asChild><Link href="/manager/requests">Open inbox</Link></Button>

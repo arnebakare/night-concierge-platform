@@ -13,5 +13,11 @@ const tone: Record<RequestStatus, string> = {
 };
 
 export function RequestStatusBadge({ status }: Readonly<{ status: RequestStatus }>) {
-  return <span className={cn("rounded-full border px-2.5 py-1 text-xs font-semibold", tone[status])}>{formatEnum(status)}</span>;
+  return <span className={cn("rounded-full border px-2.5 py-1 text-xs font-semibold", tone[status])}>{statusLabel(status)}</span>;
+}
+
+function statusLabel(status: RequestStatus) {
+  if (status === "ARRIVED") return "COMPLETED";
+  if (status === "CANCELLED") return "ARCHIVED";
+  return formatEnum(status);
 }

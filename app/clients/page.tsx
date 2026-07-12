@@ -15,8 +15,8 @@ export default async function ClientsPage({
   return (
     <AppShell profile={profile} title="Clients" eyebrow="CRM">
       <div className="space-y-4">
-        <ClientCreateForm role={profile.role} />
         <ClientSearchForm action="/clients" value={filters.q} />
+        <ClientCreateForm role={profile.role} />
         <div className="space-y-3">
           {clients.length ? clients.map((client) => <ClientCard key={client.id} client={client} href={`/clients/${client.id}`} />) : <EmptyState />}
         </div>

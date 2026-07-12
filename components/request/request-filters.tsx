@@ -27,7 +27,7 @@ export function RequestFilters({
           className="h-12 rounded-md border bg-input px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="">All statuses</option>
-          {statuses.map((status) => <option key={status} value={status}>{formatEnum(status)}</option>)}
+          {statuses.map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
         </select>
         <select
           name="type"
@@ -49,4 +49,10 @@ export function RequestFilters({
       </div>
     </form>
   );
+}
+
+function statusLabel(status: RequestStatus) {
+  if (status === "ARRIVED") return "Completed";
+  if (status === "CANCELLED") return "Archived";
+  return formatEnum(status);
 }

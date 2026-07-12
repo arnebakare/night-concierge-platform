@@ -13,7 +13,7 @@ export default async function PromoterProfilePage({ params }: Readonly<{ params:
   const { promoter, requests } = await getPromoterPerformance(id);
   if (!isDemoAuthEnabled() && profile.role === "PROMOTER_MANAGER" && promoter.manager_id !== profile.id) redirect("/manager/promoters");
   const confirmed = requests.filter((request) => ["CONFIRMED", "ARRIVED"].includes(request.status)).length;
-  const arrived = requests.filter((request) => request.status === "ARRIVED").length;
+  const completed = requests.filter((request) => request.status === "ARRIVED").length;
   const guests = requests.reduce((total, request) => total + request.guest_count, 0);
 
   return (
@@ -24,7 +24,7 @@ export default async function PromoterProfilePage({ params }: Readonly<{ params:
         <LuxuryCard><p className="text-sm text-muted-foreground">Guests</p><p className="mt-2 font-serif text-4xl">{guests}</p></LuxuryCard>
       </div>
       <LuxuryCard className="mt-4">
-        <div className="flex items-start justify-between gap-3"><div><p className="font-semibold">Access</p><p className="text-sm text-muted-foreground">{promoter.email} · {arrived} arrivals</p></div><span className={promoter.active ? "text-xs font-semibold text-emerald-400" : "text-xs font-semibold text-muted-foreground"}>{promoter.active ? "ACTIVE" : "SUSPENDED"}</span></div>
+        <div className="flex items-start justify-between gap-3"><div><p className="font-semibold">Access</p><p className="text-sm text-muted-foreground">{promoter.email} · {completed} completed</p></div><span className={promoter.active ? "text-xs font-semibold text-emerald-400" : "text-xs font-semibold text-muted-foreground"}>{promoter.active ? "ACTIVE" : "SUSPENDED"}</span></div>
         <form action={setTeamPromoterActive} className="mt-4"><input type="hidden" name="promoterId" value={promoter.id} /><input type="hidden" name="active" value={String(!promoter.active)} /><Button type="submit" variant={promoter.active ? "outline" : "secondary"} className="w-full">{promoter.active ? "Suspend promoter access" : "Restore promoter access"}</Button></form>
       </LuxuryCard>
     </AppShell>

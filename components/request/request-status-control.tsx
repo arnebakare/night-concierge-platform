@@ -12,10 +12,7 @@ const easyActions: Partial<Record<RequestStatus, { status: RequestStatus; label:
   ],
   CONTACTED: [{ status: "CONFIRMED", label: "Confirm" }],
   PENDING: [{ status: "CONFIRMED", label: "Confirm" }],
-  CONFIRMED: [
-    { status: "ARRIVED", label: "Arrived" },
-    { status: "NO_SHOW", label: "No show", variant: "secondary" }
-  ]
+  CONFIRMED: [{ status: "ARRIVED", label: "Complete & archive" }]
 };
 
 export function RequestStatusControl({ requestId, status }: Readonly<{ requestId: string; status: RequestStatus }>) {
@@ -44,7 +41,7 @@ export function RequestStatusControl({ requestId, status }: Readonly<{ requestId
         >
           {statuses.map((item) => (
             <option key={item} value={item}>
-              {formatEnum(item)}
+              {statusLabel(item)}
             </option>
           ))}
         </select>
@@ -54,4 +51,10 @@ export function RequestStatusControl({ requestId, status }: Readonly<{ requestId
       </form>
     </>
   );
+}
+
+function statusLabel(status: RequestStatus) {
+  if (status === "ARRIVED") return "Completed";
+  if (status === "CANCELLED") return "Archived";
+  return formatEnum(status);
 }

@@ -1,4 +1,4 @@
-import { UserPlus } from "lucide-react";
+import { ChevronDown, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,12 +14,16 @@ export function ClientCreateForm({ role }: Readonly<{ role: Role }>) {
   const canSetRiskStatus = role === "PROMOTER_MANAGER" || role === "SUPER_ADMIN";
 
   return (
-    <LuxuryCard>
-      <form action={createClientRecord} className="space-y-4">
-        <div className="flex items-center gap-2">
-          <UserPlus className="size-5 text-champagne-300" />
-          <h2 className="font-serif text-2xl">Add client</h2>
-        </div>
+    <details className="group rounded-lg border border-champagne-700/40 bg-card/80 p-3 shadow-panel">
+      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3">
+        <span className="flex items-center gap-2 font-semibold">
+          <span className="flex size-9 items-center justify-center rounded-md bg-champagne-500/10 text-champagne-300"><UserPlus className="size-5" /></span>
+          Add client
+        </span>
+        <ChevronDown className="size-5 text-champagne-300 transition group-open:rotate-180" />
+      </summary>
+      <LuxuryCard className="mt-3 border-champagne-700/20 bg-background/35 shadow-none">
+        <form action={createClientRecord} className="space-y-4">
         <div className="grid gap-3 md:grid-cols-2">
           <Field label="Name">
             <Input name="name" placeholder="Daniel" required />
@@ -53,7 +57,8 @@ export function ClientCreateForm({ role }: Readonly<{ role: Role }>) {
           Create client
         </Button>
       </form>
-    </LuxuryCard>
+      </LuxuryCard>
+    </details>
   );
 }
 

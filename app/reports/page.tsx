@@ -13,18 +13,18 @@ export default async function ReportsPage({ searchParams }: Readonly<{ searchPar
   const filters = await searchParams;
   const [requests, clubs] = await Promise.all([getRequestsForProfile(profile, { dateFrom: filters.from, dateTo: filters.to, clubId: filters.club }), getActiveClubsForApp()]);
   const confirmed = requests.filter((request) => ["CONFIRMED", "ARRIVED"].includes(request.status)).length;
-  const arrived = requests.filter((request) => request.status === "ARRIVED").length;
-  const noShows = requests.filter((request) => request.status === "NO_SHOW").length;
+  const completed = requests.filter((request) => request.status === "ARRIVED").length;
+  const archived = requests.filter((request) => ["NO_SHOW", "DECLINED", "CANCELLED"].includes(request.status)).length;
   const guests = requests.reduce((sum, request) => sum + request.guest_count, 0);
   const conversion = requests.length ? Math.round((confirmed / requests.length) * 100) : 0;
-  const arrivalRate = arrived + noShows ? Math.round((arrived / (arrived + noShows)) * 100) : 0;
+  const completionRate = requests.length ? Math.round((completed / requests.length) * 100) : 0;
   const exportQuery = new URLSearchParams(Object.entries(filters).filter((entry): entry is [string, string] => Boolean(entry[1]))).toString();
 
   return <AppShell profile={profile} title="Performance" eyebrow="Live reporting">
     <form action="/reports" className="mb-4 grid gap-2 rounded-lg border border-champagne-700/40 bg-card p-3 md:grid-cols-[1fr_1fr_1.4fr_auto]"><Input name="from" type="date" defaultValue={filters.from ?? ""} aria-label="From date" /><Input name="to" type="date" defaultValue={filters.to ?? ""} aria-label="To date" /><select name="club" defaultValue={filters.club ?? ""} className="h-12 rounded-md border bg-input px-3 text-sm"><option value="">All clubs</option>{clubs.map((club) => <option key={club.id} value={club.id}>{club.name}</option>)}</select><Button type="submit">Apply</Button></form>
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><Metric label="Requests" value={String(requests.length)} /><Metric label="Guests" value={String(guests)} /><Metric label="Conversion" value={`${conversion}%`} /><Metric label="Arrival rate" value={`${arrivalRate}%`} /></div>
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><Metric label="Requests" value={String(requests.length)} /><Metric label="Guests" value={String(guests)} /><Metric label="Conversion" value={`${conversion}%`} /><Metric label="Completion" value={`${completionRate}%`} /></div>
     <div className="mt-4 grid gap-4 md:grid-cols-2"><LuxuryCard><h2 className="font-serif text-2xl">Sources</h2><div className="mt-4 space-y-3 text-sm">{breakdown(requests, "source").map((row) => <Row key={row.label} {...row} />)}</div></LuxuryCard><LuxuryCard><h2 className="font-serif text-2xl">Request types</h2><div className="mt-4 space-y-3 text-sm">{breakdown(requests, "request_type").map((row) => <Row key={row.label} {...row} />)}</div></LuxuryCard></div>
-    <LuxuryCard className="mt-4"><h2 className="font-serif text-2xl">Status health</h2><div className="mt-4 space-y-3 text-sm"><Row label="Confirmed" value={String(confirmed)} /><Row label="Arrived" value={String(arrived)} /><Row label="No show" value={String(noShows)} /><Row label="Pending attention" value={String(requests.filter((request) => ["NEW", "PENDING"].includes(request.status)).length)} /></div></LuxuryCard>
+    <LuxuryCard className="mt-4"><h2 className="font-serif text-2xl">Status health</h2><div className="mt-4 space-y-3 text-sm"><Row label="Confirmed" value={String(confirmed)} /><Row label="Completed" value={String(completed)} /><Row label="Archived" value={String(archived)} /><Row label="Pending attention" value={String(requests.filter((request) => ["NEW", "PENDING"].includes(request.status)).length)} /></div></LuxuryCard>
     <Button asChild variant="secondary" className="mt-4 w-full md:w-auto"><Link href={`/api/reports/export${exportQuery ? `?${exportQuery}` : ""}`}><Download className="size-4" /> Export CSV</Link></Button>
   </AppShell>;
 }

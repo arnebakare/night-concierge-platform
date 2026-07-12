@@ -6,12 +6,13 @@ import type { ConciergeRequest } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
 export function RequestCard({ request, href }: Readonly<{ request: ConciergeRequest; href?: string }>) {
+  const service = request.message?.match(/^Selected service:\s*(.+)$/m)?.[1];
   const card = (
     <LuxuryCard className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-lg font-semibold">{request.clients?.name ?? "Guest"}</p>
-          <p className="text-sm text-muted-foreground">{request.clubs?.name ?? "Club"} · {formatEnum(request.request_type)}</p>
+          <p className="text-sm text-muted-foreground">{request.clubs?.name ?? "Club"} · {service ?? formatEnum(request.request_type)}</p>
         </div>
         <RequestStatusBadge status={request.status} />
       </div>
@@ -20,7 +21,7 @@ export function RequestCard({ request, href }: Readonly<{ request: ConciergeRequ
         <span className="flex items-center gap-1"><Users className="size-4 text-champagne-300" />{request.guest_count}</span>
         <span className="flex items-center gap-1"><Clock className="size-4 text-champagne-300" />{request.arrival_time ?? "TBC"}</span>
       </div>
-      {request.message && <p className="rounded-md bg-secondary p-3 text-sm text-muted-foreground">{request.message}</p>}
+      {request.message && !service && <p className="rounded-md bg-secondary p-3 text-sm text-muted-foreground">{request.message}</p>}
       <div className="flex items-center justify-between border-t border-champagne-700/30 pt-3 text-xs text-muted-foreground">
         <span>{formatEnum(request.source)}</span>
         <span className="flex items-center gap-1"><MessageCircle className="size-3" /> Client contact</span>
