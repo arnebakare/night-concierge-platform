@@ -20,6 +20,7 @@ export default async function AdminClubsPage() {
           <div className="space-y-2"><Label>Slug</Label><Input name="slug" placeholder="la-plage-casanis" /></div>
           <div className="space-y-2"><Label>City</Label><Input name="city" placeholder="Marbella" /></div>
           <div className="space-y-2"><Label>Address</Label><Input name="address" placeholder="Optional" /></div>
+          <div className="space-y-2 md:col-span-4"><Label>Logo URL</Label><Input name="imageUrl" placeholder="/venues/la-plage-casanis-logo.png" /></div>
           <Button className="md:col-span-4" type="submit">Create club</Button>
         </form>
       </LuxuryCard>
@@ -32,9 +33,7 @@ export default async function AdminClubsPage() {
                 <>
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-champagne-500/50 bg-champagne-500/10 font-serif text-champagne-100">
-                  {experience.monogram}
-                </div>
+                <ClubLogoPreview logoUrl={club.image_url} name={club.name} monogram={experience.monogram} />
                 <div>
                 <p className="font-semibold">{club.name}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{club.city} · /{club.slug}</p>
@@ -51,6 +50,7 @@ export default async function AdminClubsPage() {
               <Input name="slug" defaultValue={club.slug} aria-label="Club slug" required />
               <Input name="city" defaultValue={club.city} aria-label="Club city" required />
               <Input name="address" defaultValue={club.address ?? ""} aria-label="Club address" placeholder="Address optional" />
+              <Input name="imageUrl" defaultValue={club.image_url ?? ""} aria-label="Club logo URL" placeholder="/venues/venue-logo.png" className="sm:col-span-2" />
               <Button type="submit" variant="secondary" className="sm:col-span-2">Save details</Button>
             </form>
             <details className="mt-4 rounded-md border border-champagne-700/30 bg-background/35 p-3">
@@ -77,5 +77,17 @@ export default async function AdminClubsPage() {
         ))}
       </div>
     </AppShell>
+  );
+}
+
+function ClubLogoPreview({ logoUrl, name, monogram }: Readonly<{ logoUrl: string | null; name: string; monogram: string }>) {
+  return (
+    <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-champagne-500/50 bg-ink-950/80 font-serif text-champagne-100">
+      {logoUrl ? (
+        <img src={logoUrl} alt={`${name} logo`} className="h-full w-full object-contain p-1" />
+      ) : (
+        monogram
+      )}
+    </div>
   );
 }

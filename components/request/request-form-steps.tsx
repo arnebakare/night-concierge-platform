@@ -137,9 +137,7 @@ export function RequestFormSteps({
                   values.clubId === club.id ? "border-champagne-300 shadow-glow" : "border-champagne-700/40"
                 )}
               >
-                <span className="flex size-14 shrink-0 items-center justify-center rounded-full border border-champagne-500/50 bg-champagne-500/10 font-serif text-lg text-champagne-100">
-                  {experience.monogram}
-                </span>
+                <VenueLogo club={club} monogram={experience.monogram} size="lg" />
                 <span className="min-w-0">
                   <span className="block font-serif text-xl leading-tight">{experience.wordmark}</span>
                   <span className="mt-1 block text-sm text-muted-foreground">{experience.tagline}</span>
@@ -161,7 +159,7 @@ export function RequestFormSteps({
         <div className="space-y-3">
           <div className="rounded-lg border border-champagne-700/40 bg-ink-800/90 p-4">
             <div className="flex items-center gap-3">
-              <div className="flex size-16 items-center justify-center rounded-full border border-champagne-500/50 bg-champagne-500/10 font-serif text-xl text-champagne-100">{selectedExperience.monogram}</div>
+              <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="xl" />
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">{selectedExperience.mood}</p>
                 <h2 className="font-serif text-2xl">{selectedExperience.wordmark}</h2>
@@ -245,7 +243,7 @@ export function RequestFormSteps({
           <h2 className="font-serif text-2xl">Confirm request</h2>
           <div className="rounded-lg border border-champagne-700/40 bg-ink-800 p-4 text-sm">
             <div className="mb-3 flex items-center gap-3">
-              <span className="flex size-12 items-center justify-center rounded-full border border-champagne-500/50 bg-champagne-500/10 font-serif text-champagne-100">{selectedExperience.monogram}</span>
+              <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="md" />
               <div>
                 <p className="text-lg font-semibold">{selectedExperience.wordmark}</p>
                 <p className="text-muted-foreground">{values.serviceLabel || formatEnum(values.requestType)}</p>
@@ -278,6 +276,20 @@ export function RequestFormSteps({
         )}
       </div>
     </LuxuryCard>
+  );
+}
+
+function VenueLogo({ club, monogram, size = "md" }: Readonly<{ club?: Club | null; monogram: string; size?: "md" | "lg" | "xl" }>) {
+  const sizeClass = size === "xl" ? "size-16" : size === "lg" ? "size-14" : "size-12";
+
+  return (
+    <span className={cn("flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-champagne-500/50 bg-ink-950/80 font-serif text-champagne-100", sizeClass)}>
+      {club?.image_url ? (
+        <img src={club.image_url} alt={`${club.name} logo`} className="h-full w-full object-contain p-1" />
+      ) : (
+        <span className={cn(size === "xl" ? "text-xl" : "text-lg")}>{monogram}</span>
+      )}
+    </span>
   );
 }
 

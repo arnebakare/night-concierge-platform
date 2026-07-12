@@ -119,7 +119,8 @@ const clubSchema = z.object({
   name: z.string().min(2),
   slug: z.string().min(2).regex(/^[a-z0-9-]+$/),
   city: z.string().min(2),
-  address: z.string().optional()
+  address: z.preprocess((value) => typeof value === "string" && value.trim() ? value.trim() : null, z.string().max(500).nullable()),
+  imageUrl: z.preprocess((value) => typeof value === "string" && value.trim() ? value.trim() : null, z.string().max(500).nullable())
 });
 
 export async function createClub(formData: FormData) {
@@ -128,18 +129,22 @@ export async function createClub(formData: FormData) {
     name: formData.get("name"),
     slug: formData.get("slug"),
     city: formData.get("city"),
-    address: formData.get("address") || null
+    address: formData.get("address"),
+    imageUrl: formData.get("imageUrl")
   });
   if (!parsed.success) return;
 
   if (isDemoAuthEnabled()) {
     revalidatePath("/admin/clubs");
     revalidatePath("/request");
+    revalidatePath("/p/[promoterSlug]", "page");
+    revalidatePath("/m/[token]", "page");
     return;
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.from("clubs").insert(parsed.data).select("id").single();
+  const { imageUrl, ...values } = parsed.data;
+  const { data, error } = await supabase.from("clubs").insert({ ...values, image_url: imageUrl }).select("id").single();
   if (error) throw new Error(error.message);
 
   await writeAuditLog(supabase, {
@@ -834,15 +839,24 @@ export async function setPromoterLinkActive(formData: FormData) {
 const clubUpdateSchema = clubSchema.extend({ clubId: z.string().uuid() });
 export async function updateClub(formData: FormData) {
   const profile = await requireProfile(["SUPER_ADMIN"]);
-  const parsed = clubUpdateSchema.safeParse({ clubId: formData.get("clubId"), name: formData.get("name"), slug: formData.get("slug"), city: formData.get("city"), address: formData.get("address") || undefined });
+  const parsed = clubUpdateSchema.safeParse({ clubId: formData.get("clubId"), name: formData.get("name"), slug: formData.get("slug"), city: formData.get("city"), address: formData.get("address"), imageUrl: formData.get("imageUrl") });
   if (!parsed.success) return;
-  if (isDemoAuthEnabled()) { revalidatePath("/admin/clubs"); return; }
-  const { clubId, ...values } = parsed.data;
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/admin/clubs");
+    revalidatePath("/request");
+    revalidatePath("/p/[promoterSlug]", "page");
+    revalidatePath("/m/[token]", "page");
+    return;
+  }
+  const { clubId, imageUrl, ...values } = parsed.data;
   const supabase = await createClient();
-  const { error } = await supabase.from("clubs").update(values).eq("id", clubId);
+  const { error } = await supabase.from("clubs").update({ ...values, image_url: imageUrl }).eq("id", clubId);
   if (error) throw new Error(error.message);
   await writeAuditLog(supabase, { userId: profile.id, action: "CLUB_UPDATED", entityType: "clubs", entityId: clubId, metadata: { slug: values.slug } });
-  revalidatePath("/admin/clubs"); revalidatePath("/request");
+  revalidatePath("/admin/clubs");
+  revalidatePath("/request");
+  revalidatePath("/p/[promoterSlug]", "page");
+  revalidatePath("/m/[token]", "page");
 }
 
 const managerAssignmentSchema = z.object({ userId: z.string().uuid(), managerId: z.string().uuid().optional().or(z.literal("")) });
