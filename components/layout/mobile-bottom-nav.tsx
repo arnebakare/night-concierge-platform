@@ -20,7 +20,7 @@ const navByRole: Record<Role, { href: string; label: string; icon: typeof Home }
     { href: "/manager/requests", label: "Inbox", icon: Inbox },
     { href: "/manager/clients", label: "Clients", icon: Search },
     { href: "/manager/retention", label: "Care", icon: HeartHandshake },
-    { href: "/settings", label: "More", icon: Settings }
+    { href: "/links", label: "Links", icon: Link2 }
   ],
   SUPER_ADMIN: [
     { href: "/admin", label: "Home", icon: Crown },

@@ -23,6 +23,7 @@ const items = {
     ["/manager/clients", "CRM", Users],
     ["/manager/promoters", "Team", Crown],
     ["/manager/retention", "Retention", HeartHandshake],
+    ["/links", "Links", Link2],
     ["/schedule", "Schedule", CalendarDays],
     ["/manager/clubs", "Clubs", Briefcase, true],
     ["/manager/events", "Events", Link2, true],

@@ -3,6 +3,7 @@ import { RequestFormSteps } from "@/components/request/request-form-steps";
 import { PublicRequestShell } from "@/components/request/public-request-shell";
 import { getActiveClubs, getMagicLink, getPublicUpcomingEvents } from "@/lib/data/public";
 import { LuxuryCard } from "@/components/ui/luxury-card";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +16,10 @@ export default async function MagicLinkPage({ params }: Readonly<{ params: Promi
   if (link.max_uses !== null && link.max_uses !== undefined && link.use_count >= link.max_uses) notFound();
 
   const client = link.clients as { name?: string; phone?: string; email?: string; instagram?: string } | null;
-  const promoter = link.profiles as { name?: string } | null;
+  const promoter = link.profiles as { name?: string; phone?: string } | null;
   const clientFirstName = client?.name?.split(" ").filter(Boolean)[0];
   const hostName = promoter?.name ?? "your concierge host";
+  const promoterWhatsAppHref = whatsAppHref(promoter?.phone, `Hi ${hostName}, I opened my private VIP link and have a special request.`);
   const availableClubs = link.club_id ? clubs.filter((club) => club.id === link.club_id) : clubs;
 
   return (
@@ -36,6 +38,13 @@ export default async function MagicLinkPage({ params }: Readonly<{ params: Promi
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               If you have a special request, celebration, preferred table, privacy need, or timing question, you can always reach out directly to {hostName}. We will handle the details discreetly.
             </p>
+            {promoterWhatsAppHref && (
+              <Button asChild className="mt-4 w-full sm:w-auto">
+                <a href={promoterWhatsAppHref} target="_blank" rel="noreferrer">
+                  Message {promoter?.name ?? "promoter"} on WhatsApp
+                </a>
+              </Button>
+            )}
           </div>
           <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-champagne-400/50 bg-champagne-500/10 font-serif text-sm text-champagne-100">
             VIP
@@ -55,4 +64,11 @@ export default async function MagicLinkPage({ params }: Readonly<{ params: Promi
       />
     </PublicRequestShell>
   );
+}
+
+function whatsAppHref(phone?: string | null, message?: string) {
+  const digits = phone?.replace(/\D/g, "") || "";
+  if (!digits) return null;
+  const text = message ? `?text=${encodeURIComponent(message)}` : "";
+  return `https://wa.me/${digits}${text}`;
 }

@@ -27,7 +27,22 @@ export default async function LinksPage() {
       </div>
       <h2 className="mb-3 mt-8 font-serif text-2xl">Recent magic links</h2>
       <div className="grid gap-3 md:grid-cols-2">
-        {magicLinks.map((link) => <MagicLinkCard key={link.id} id={link.id} url={`${appUrl}/m/${link.token}`} clubName={`${(link.clubs as { name?: string } | null)?.name ?? "Any club"} · ${(link.profiles as { name?: string } | null)?.name ?? "Promoter"}`} active={link.active} useCount={link.use_count} maxUses={link.max_uses} expiresAt={link.expires_at} />)}
+        {magicLinks.map((link) => {
+          const promoter = link.profiles as { name?: string; phone?: string } | null;
+          return (
+            <MagicLinkCard
+              key={link.id}
+              id={link.id}
+              url={`${appUrl}/m/${link.token}`}
+              clubName={`${(link.clubs as { name?: string } | null)?.name ?? "Any club"} · ${promoter?.name ?? "Promoter"}`}
+              active={link.active}
+              useCount={link.use_count}
+              maxUses={link.max_uses}
+              expiresAt={link.expires_at}
+              promoterPhone={promoter?.phone}
+            />
+          );
+        })}
         {!magicLinks.length && <LuxuryCard className="text-center text-sm text-muted-foreground md:col-span-2">No magic links created yet.</LuxuryCard>}
       </div>
     </AppShell>

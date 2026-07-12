@@ -77,7 +77,7 @@ export async function getMagicLink(token: string) {
     const supabase = createAdminClient();
     const { data } = await supabase
       .from("magic_links")
-      .select("token, active, club_id, expires_at, max_uses, use_count, clients(name, phone, email, instagram), profiles!magic_links_promoter_id_fkey(name)")
+      .select("token, active, club_id, expires_at, max_uses, use_count, clients(name, phone, email, instagram), profiles!magic_links_promoter_id_fkey(name, phone)")
       .eq("token", token)
       .maybeSingle();
     return data;

@@ -16,7 +16,13 @@ export function MagicLinkForm({ clubs, promoters, clients }: Readonly<{ clubs: C
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <Field label="Promoter">
-            <select name="promoterId" className="h-12 w-full rounded-md border bg-input px-3 text-sm text-foreground" required>{promoters.map((promoter) => <option key={promoter.id} value={promoter.id}>{promoter.name ?? promoter.email}</option>)}</select>
+            <select name="promoterId" className="h-12 w-full rounded-md border bg-input px-3 text-sm text-foreground" required>
+              {promoters.map((promoter) => (
+                <option key={promoter.id} value={promoter.id}>
+                  {promoter.name ?? promoter.email}{promoter.phone ? ` · WhatsApp ${promoter.phone}` : " · no WhatsApp"}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="Client optional">
             <select name="clientId" className="h-12 w-full rounded-md border bg-input px-3 text-sm text-foreground"><option value="">No prefilled client</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name} · {client.phone}</option>)}</select>

@@ -309,7 +309,7 @@ export async function getMagicLinksForProfile(profile: Profile) {
     const supabase = await createClient();
     let query = supabase
       .from("magic_links")
-      .select("id, token, promoter_id, expires_at, max_uses, use_count, active, created_at, clubs(name), profiles!magic_links_promoter_id_fkey(name)")
+      .select("id, token, promoter_id, expires_at, max_uses, use_count, active, created_at, clubs(name), profiles!magic_links_promoter_id_fkey(name, phone)")
       .order("created_at", { ascending: false })
       .limit(30);
     if (profile.role === "PROMOTER") query = query.eq("promoter_id", profile.id);
@@ -318,7 +318,7 @@ export async function getMagicLinksForProfile(profile: Profile) {
     return data ?? [];
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
-    return [{ id: "magic-demo-1", token: "vipjulia2026", promoter_id: profile.id, expires_at: null, max_uses: 10, use_count: 2, active: true, created_at: new Date().toISOString(), clubs: { name: "La Plage Casanis" }, profiles: { name: "Julia" } }];
+    return [{ id: "magic-demo-1", token: "vipjulia2026", promoter_id: profile.id, expires_at: null, max_uses: 10, use_count: 2, active: true, created_at: new Date().toISOString(), clubs: { name: "La Plage Casanis" }, profiles: { name: "Julia", phone: "+34 600 111 222" } }];
   }
 }
 

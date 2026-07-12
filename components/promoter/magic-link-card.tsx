@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Link2, ShieldOff } from "lucide-react";
+import { Copy, Link2, MessageCircle, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { setMagicLinkActive } from "@/lib/actions/management-actions";
@@ -13,10 +13,12 @@ type MagicLinkCardProps = {
   useCount: number;
   maxUses: number | null;
   expiresAt: string | null;
+  promoterPhone?: string | null;
 };
 
-export function MagicLinkCard({ id, url, clubName, active, useCount, maxUses, expiresAt }: Readonly<MagicLinkCardProps>) {
+export function MagicLinkCard({ id, url, clubName, active, useCount, maxUses, expiresAt, promoterPhone }: Readonly<MagicLinkCardProps>) {
   const expired = Boolean(expiresAt && new Date(expiresAt).getTime() < Date.now());
+  const promoterWhatsApp = whatsAppHref(promoterPhone);
   return (
     <LuxuryCard className={!active || expired ? "opacity-70" : undefined}>
       <div className="flex items-start justify-between gap-3">
@@ -32,6 +34,21 @@ export function MagicLinkCard({ id, url, clubName, active, useCount, maxUses, ex
           <Button type="submit" variant="outline" className="w-full">{active ? <ShieldOff className="size-4" /> : <Link2 className="size-4" />}{active ? "Revoke" : "Restore"}</Button>
         </form>
       </div>
+      {promoterWhatsApp ? (
+        <Button asChild variant="ghost" className="mt-2 w-full">
+          <a href={promoterWhatsApp} target="_blank" rel="noreferrer">
+            <MessageCircle className="size-4" />
+            Test promoter WhatsApp
+          </a>
+        </Button>
+      ) : (
+        <p className="mt-2 rounded-md border border-champagne-700/30 bg-ink-950/50 p-2 text-xs text-muted-foreground">Add a phone number to the promoter profile to show WhatsApp on this magic link.</p>
+      )}
     </LuxuryCard>
   );
+}
+
+function whatsAppHref(phone?: string | null) {
+  const digits = phone?.replace(/\D/g, "") || "";
+  return digits ? `https://wa.me/${digits}` : null;
 }
