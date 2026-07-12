@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { RequestFormSteps } from "@/components/request/request-form-steps";
 import { getActiveClubs, getPromoterLink } from "@/lib/data/public";
 
+export const dynamic = "force-dynamic";
+
 export default async function PromoterLinkPage({ params }: Readonly<{ params: Promise<{ promoterSlug: string }> }>) {
   const { promoterSlug } = await params;
   const [clubs, link] = await Promise.all([getActiveClubs(), getPromoterLink(promoterSlug)]);

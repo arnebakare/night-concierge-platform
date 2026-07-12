@@ -340,7 +340,7 @@ export async function getEventsForProfile() {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("events")
-      .select("id, club_id, name, slug, event_date, description, active, clubs(name)")
+      .select("id, club_id, name, slug, event_date, description, active, source_url, source_key, imported_at, clubs(name)")
       .order("event_date", { ascending: true })
       .limit(50);
     if (error) throw error;
@@ -350,6 +350,35 @@ export async function getEventsForProfile() {
     return [
       { id: "event-1", name: "La Plage Weekend", slug: "la-plage-weekend", event_date: new Date().toISOString().slice(0, 10), description: "VIP-focused La Plage weekend requests.", active: true, clubs: { name: "La Plage Casanis" } },
       { id: "event-2", name: "Le Jade Night", slug: "le-jade-night", event_date: new Date(Date.now() + 86400000).toISOString().slice(0, 10), description: "Le Jade guestlist and table requests.", active: true, clubs: { name: "Le Jade" } }
+    ];
+  }
+}
+
+export async function getEventImportRuns() {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("event_import_runs")
+      .select("id, source_slug, source_name, source_url, status, http_status, message, events_found, events_created, created_at")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (error) throw error;
+    return data ?? [];
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return [
+      {
+        id: "run-1",
+        source_slug: "la-plage-casanis",
+        source_name: "La Plage Casanis",
+        source_url: "https://laplagecasanis.com/whats-on/",
+        status: "OK",
+        http_status: 200,
+        message: "Found 2 event candidates.",
+        events_found: 2,
+        events_created: 2,
+        created_at: new Date().toISOString()
+      }
     ];
   }
 }

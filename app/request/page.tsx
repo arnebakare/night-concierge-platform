@@ -1,6 +1,8 @@
 import { RequestFormSteps } from "@/components/request/request-form-steps";
 import { getActiveClubs } from "@/lib/data/public";
 
+export const dynamic = "force-dynamic";
+
 export default async function PublicRequestPage() {
   const clubs = await getActiveClubs();
 
