@@ -173,7 +173,12 @@ export async function getActiveClubsForApp() {
     return [
       { id: "10000000-0000-0000-0000-000000000001", name: "La Plage Casanis", slug: "la-plage-casanis", city: "Marbella", address: null, image_url: "/venues/la-plage-casanis-logo.png", active: true },
       { id: "10000000-0000-0000-0000-000000000002", name: "Le Jade", slug: "le-jade", city: "Marbella", address: null, image_url: "/venues/le-jade-logo.png", active: true },
-      { id: "10000000-0000-0000-0000-000000000003", name: "Mamzel", slug: "mamzel", city: "Marbella", address: null, image_url: "/venues/mamzel-logo.png", active: true }
+      { id: "10000000-0000-0000-0000-000000000003", name: "Mamzel", slug: "mamzel", city: "Marbella", address: null, image_url: "/venues/mamzel-logo.png", active: true },
+      { id: "10000000-0000-0000-0000-000000000004", name: "Playa Padre", slug: "playa-padre", city: "Marbella", address: null, image_url: "/venues/playa-padre-logo.png", active: true },
+      { id: "10000000-0000-0000-0000-000000000005", name: "Momento", slug: "momento", city: "Marbella", address: null, image_url: "/venues/momento-logo.png", active: true },
+      { id: "10000000-0000-0000-0000-000000000006", name: "Motel Particulier", slug: "motel-particulier", city: "Marbella", address: null, image_url: "/venues/motel-particulier-logo.png", active: true },
+      { id: "10000000-0000-0000-0000-000000000007", name: "La Cabane", slug: "la-cabane", city: "Marbella", address: null, image_url: "/venues/la-cabane-logo.png", active: true },
+      { id: "10000000-0000-0000-0000-000000000008", name: "Bon Bonniere", slug: "bon-bonniere", city: "Marbella", address: null, image_url: "/venues/bon-bonniere-logo.png", active: true }
     ];
   }
 }
@@ -193,7 +198,12 @@ export async function getClubsForAdmin() {
     return [
       { id: "10000000-0000-0000-0000-000000000001", name: "La Plage Casanis", slug: "la-plage-casanis", city: "Marbella", address: null, image_url: "/venues/la-plage-casanis-logo.png", active: true },
       { id: "10000000-0000-0000-0000-000000000002", name: "Le Jade", slug: "le-jade", city: "Marbella", address: null, image_url: "/venues/le-jade-logo.png", active: true },
-      { id: "10000000-0000-0000-0000-000000000003", name: "Mamzel", slug: "mamzel", city: "Marbella", address: null, image_url: "/venues/mamzel-logo.png", active: true }
+      { id: "10000000-0000-0000-0000-000000000003", name: "Mamzel", slug: "mamzel", city: "Marbella", address: null, image_url: "/venues/mamzel-logo.png", active: true },
+      { id: "10000000-0000-0000-0000-000000000004", name: "Playa Padre", slug: "playa-padre", city: "Marbella", address: null, image_url: "/venues/playa-padre-logo.png", active: true },
+      { id: "10000000-0000-0000-0000-000000000005", name: "Momento", slug: "momento", city: "Marbella", address: null, image_url: "/venues/momento-logo.png", active: true },
+      { id: "10000000-0000-0000-0000-000000000006", name: "Motel Particulier", slug: "motel-particulier", city: "Marbella", address: null, image_url: "/venues/motel-particulier-logo.png", active: true },
+      { id: "10000000-0000-0000-0000-000000000007", name: "La Cabane", slug: "la-cabane", city: "Marbella", address: null, image_url: "/venues/la-cabane-logo.png", active: true },
+      { id: "10000000-0000-0000-0000-000000000008", name: "Bon Bonniere", slug: "bon-bonniere", city: "Marbella", address: null, image_url: "/venues/bon-bonniere-logo.png", active: true }
     ];
   }
 }

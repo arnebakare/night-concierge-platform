@@ -4,6 +4,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LuxuryCard } from "@/components/ui/luxury-card";
+import { SalaryReport } from "@/components/reports/salary-report";
 import { requireProfile } from "@/lib/auth";
 import { getActiveClubsForApp, getRequestsForProfile } from "@/lib/data/app";
 import { formatEnum } from "@/lib/utils";
@@ -11,7 +12,7 @@ import { formatEnum } from "@/lib/utils";
 export default async function ReportsPage({ searchParams }: Readonly<{ searchParams: Promise<{ from?: string; to?: string; club?: string }> }>) {
   const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const filters = await searchParams;
-  const [requests, clubs] = await Promise.all([getRequestsForProfile(profile, { dateFrom: filters.from, dateTo: filters.to, clubId: filters.club }), getActiveClubsForApp()]);
+  const [requests, clubs] = await Promise.all([getRequestsForProfile(profile, { dateFrom: filters.from, dateTo: filters.to, clubId: filters.club, includeArchived: true }), getActiveClubsForApp()]);
   const confirmed = requests.filter((request) => ["CONFIRMED", "ARRIVED"].includes(request.status)).length;
   const completed = requests.filter((request) => request.status === "ARRIVED").length;
   const archived = requests.filter((request) => ["NO_SHOW", "DECLINED", "CANCELLED"].includes(request.status)).length;
@@ -25,6 +26,7 @@ export default async function ReportsPage({ searchParams }: Readonly<{ searchPar
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><Metric label="Requests" value={String(requests.length)} /><Metric label="Guests" value={String(guests)} /><Metric label="Conversion" value={`${conversion}%`} /><Metric label="Completion" value={`${completionRate}%`} /></div>
     <div className="mt-4 grid gap-4 md:grid-cols-2"><LuxuryCard><h2 className="font-serif text-2xl">Sources</h2><div className="mt-4 space-y-3 text-sm">{breakdown(requests, "source").map((row) => <Row key={row.label} {...row} />)}</div></LuxuryCard><LuxuryCard><h2 className="font-serif text-2xl">Request types</h2><div className="mt-4 space-y-3 text-sm">{breakdown(requests, "request_type").map((row) => <Row key={row.label} {...row} />)}</div></LuxuryCard></div>
     <LuxuryCard className="mt-4"><h2 className="font-serif text-2xl">Status health</h2><div className="mt-4 space-y-3 text-sm"><Row label="Confirmed" value={String(confirmed)} /><Row label="Completed" value={String(completed)} /><Row label="Archived" value={String(archived)} /><Row label="Pending attention" value={String(requests.filter((request) => ["NEW", "PENDING"].includes(request.status)).length)} /></div></LuxuryCard>
+    <SalaryReport requests={requests} from={filters.from} to={filters.to} />
     <Button asChild variant="secondary" className="mt-4 w-full md:w-auto"><Link href={`/api/reports/export${exportQuery ? `?${exportQuery}` : ""}`}><Download className="size-4" /> Export CSV</Link></Button>
   </AppShell>;
 }

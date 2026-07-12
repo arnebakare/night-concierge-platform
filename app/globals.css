@@ -68,3 +68,35 @@ body {
     grid-template-columns: minmax(16rem, 1fr) minmax(10rem, 0.45fr) minmax(10rem, 0.45fr) auto;
   }
 }
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .salary-report,
+  .salary-report * {
+    visibility: visible;
+  }
+
+  .salary-report {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    border: 0 !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+    box-shadow: none !important;
+  }
+
+  .salary-report table,
+  .salary-report th,
+  .salary-report td {
+    color: #111111 !important;
+  }
+}
