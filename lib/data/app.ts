@@ -161,7 +161,7 @@ export async function getActiveClubsForApp() {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("clubs")
-      .select("id, name, slug, city, address, image_url, active")
+      .select("id, name, slug, city, address, image_url, active, brand_config, service_config")
       .eq("active", true)
       .order("name");
     if (error) throw error;
@@ -181,7 +181,7 @@ export async function getClubsForAdmin() {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("clubs")
-      .select("id, name, slug, city, address, image_url, active")
+      .select("id, name, slug, city, address, image_url, active, brand_config, service_config")
       .order("active", { ascending: false })
       .order("name");
     if (error) throw error;

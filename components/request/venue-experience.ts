@@ -1,5 +1,5 @@
 import { Calendar, Crown, GlassWater, Music2, Sparkles, Sun, Utensils, Users, Waves } from "lucide-react";
-import type { RequestType } from "@/lib/types";
+import type { Club, RequestType } from "@/lib/types";
 
 export type VenueService = {
   id: string;
@@ -7,6 +7,7 @@ export type VenueService = {
   description: string;
   requestType: RequestType;
   icon: typeof Crown;
+  iconName?: string;
 };
 
 export type VenueExperience = {
@@ -101,4 +102,69 @@ export function getVenueExperience(slug?: string | null, fallbackName = "Venue")
     mood: "Concierge",
     services: defaultServices
   };
+}
+
+const iconByName = { Calendar, Crown, GlassWater, Music2, Sparkles, Sun, Utensils, Users, Waves };
+const requestTypes: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"];
+
+export function getClubVenueExperience(club?: Club | null): VenueExperience {
+  const fallback = getVenueExperience(club?.slug, club?.name);
+  if (!club) return fallback;
+  const brand = parseBrandConfig(club.brand_config);
+  const services = parseServiceConfig(club.service_config);
+
+  return {
+    ...fallback,
+    wordmark: club.name || fallback.wordmark,
+    monogram: brand.monogram || fallback.monogram,
+    tagline: brand.tagline || fallback.tagline,
+    mood: brand.mood || fallback.mood,
+    services: services.length ? services : fallback.services
+  };
+}
+
+export function serializeServicesForAdmin(club?: Club | null) {
+  return getClubVenueExperience(club).services.map(({ id, label, description, requestType, iconName }) => ({
+    id,
+    label,
+    description,
+    requestType,
+    icon: iconName ?? "Sparkles",
+    active: true
+  }));
+}
+
+function parseBrandConfig(value: Club["brand_config"]) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const config = value as Record<string, unknown>;
+  return {
+    monogram: stringValue(config.monogram),
+    tagline: stringValue(config.tagline),
+    mood: stringValue(config.mood)
+  };
+}
+
+function parseServiceConfig(value: Club["service_config"]) {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    const service = item as Record<string, unknown>;
+    const requestType = stringValue(service.requestType);
+    if (!requestTypes.includes(requestType as RequestType)) return [];
+    const label = stringValue(service.label);
+    if (!label) return [];
+    const iconName = stringValue(service.icon) || "Sparkles";
+    return [{
+      id: stringValue(service.id) || `${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${index}`,
+      label,
+      description: stringValue(service.description) || "Concierge service request.",
+      requestType: requestType as RequestType,
+      icon: iconByName[iconName as keyof typeof iconByName] ?? Sparkles,
+      iconName
+    }];
+  });
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
 }

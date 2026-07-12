@@ -159,6 +159,74 @@ const clubStatusSchema = z.object({
   active: z.enum(["true", "false"]).transform((value) => value === "true")
 });
 
+const requestTypesForServices = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"] as const;
+const serviceIconNames = ["Calendar", "Crown", "GlassWater", "Music2", "Sparkles", "Sun", "Utensils", "Users", "Waves"] as const;
+const clubExperienceSchema = z.object({
+  clubId: z.string().min(1),
+  monogram: z.string().trim().max(8).optional(),
+  tagline: z.string().trim().max(140).optional(),
+  mood: z.string().trim().max(80).optional(),
+  services: z.string().transform((value, context) => {
+    try {
+      return JSON.parse(value);
+    } catch {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Services must be valid JSON." });
+      return z.NEVER;
+    }
+  }).pipe(z.array(z.object({
+    id: z.string().trim().min(1).max(80),
+    label: z.string().trim().min(2).max(80),
+    description: z.string().trim().max(180).optional().default(""),
+    requestType: z.enum(requestTypesForServices),
+    icon: z.enum(serviceIconNames).optional().default("Sparkles"),
+    active: z.boolean().optional().default(true)
+  })).min(1).max(12))
+});
+
+export async function updateClubExperience(formData: FormData) {
+  const profile = await requireProfile(["SUPER_ADMIN"]);
+  const parsed = clubExperienceSchema.safeParse({
+    clubId: formData.get("clubId"),
+    monogram: formData.get("monogram") || "",
+    tagline: formData.get("tagline") || "",
+    mood: formData.get("mood") || "",
+    services: formData.get("services") || "[]"
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/admin/clubs");
+    revalidatePath("/request");
+    return;
+  }
+
+  const supabase = await createClient();
+  const brandConfig = {
+    monogram: parsed.data.monogram || null,
+    tagline: parsed.data.tagline || null,
+    mood: parsed.data.mood || null
+  };
+  const serviceConfig = parsed.data.services.map(({ active, ...service }) => service);
+  const { error } = await supabase
+    .from("clubs")
+    .update({ brand_config: brandConfig, service_config: serviceConfig })
+    .eq("id", parsed.data.clubId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "CLUB_EXPERIENCE_UPDATED",
+    entityType: "clubs",
+    entityId: parsed.data.clubId,
+    metadata: { serviceCount: serviceConfig.length }
+  });
+
+  revalidatePath("/admin/clubs");
+  revalidatePath("/request");
+  revalidatePath("/p/[promoterSlug]", "page");
+  revalidatePath("/m/[token]", "page");
+}
+
 export async function setClubActive(formData: FormData) {
   const profile = await requireProfile(["SUPER_ADMIN"]);
   const parsed = clubStatusSchema.safeParse({

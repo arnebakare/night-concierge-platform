@@ -7,7 +7,7 @@ export async function getActiveClubs(): Promise<Club[]> {
     const supabase = createAdminClient();
     const { data } = await supabase
       .from("clubs")
-      .select("id, name, slug, city, address, image_url, active")
+      .select("id, name, slug, city, address, image_url, active, brand_config, service_config")
       .eq("active", true)
       .order("name");
     return (data ?? []) as Club[];

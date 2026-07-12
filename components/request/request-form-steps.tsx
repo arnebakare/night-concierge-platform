@@ -13,7 +13,7 @@ import { createPublicRequest } from "@/lib/actions/request-actions";
 import { publicRequestSchema, type PublicRequestInput } from "@/lib/validation/request";
 import type { Club } from "@/lib/types";
 import { cn, formatEnum } from "@/lib/utils";
-import { getVenueExperience } from "@/components/request/venue-experience";
+import { getClubVenueExperience } from "@/components/request/venue-experience";
 
 const featuredVenueSlugs = ["le-jade", "la-plage-casanis", "mamzel"];
 
@@ -42,7 +42,7 @@ export function RequestFormSteps({
   const visibleClubs = showAllVenues ? orderedClubs : orderedClubs.slice(0, 3);
   const hasMoreVenues = orderedClubs.length > visibleClubs.length;
   const initialClub = orderedClubs[0];
-  const initialService = initialClub ? getVenueExperience(initialClub.slug, initialClub.name).services[0] : undefined;
+  const initialService = initialClub ? getClubVenueExperience(initialClub).services[0] : undefined;
   const form = useForm<PublicRequestInput>({
     resolver: zodResolver(publicRequestSchema),
     defaultValues: {
@@ -65,7 +65,7 @@ export function RequestFormSteps({
 
   const values = form.watch();
   const selectedClub = useMemo(() => clubs.find((club) => club.id === values.clubId), [clubs, values.clubId]);
-  const selectedExperience = useMemo(() => getVenueExperience(selectedClub?.slug, selectedClub?.name), [selectedClub]);
+  const selectedExperience = useMemo(() => getClubVenueExperience(selectedClub), [selectedClub]);
 
   useEffect(() => {
     const serviceExists = selectedExperience.services.some((service) => service.label === values.serviceLabel && service.requestType === values.requestType);
@@ -75,7 +75,7 @@ export function RequestFormSteps({
   }, [form, selectedExperience, values.requestType, values.serviceLabel]);
 
   function selectClub(club: Club) {
-    const experience = getVenueExperience(club.slug, club.name);
+    const experience = getClubVenueExperience(club);
     const service = experience.services[0];
     form.setValue("clubId", club.id, { shouldValidate: true });
     if (service) {
@@ -126,7 +126,7 @@ export function RequestFormSteps({
           </div>
           <div className="grid gap-3">
             {visibleClubs.map((club) => {
-              const experience = getVenueExperience(club.slug, club.name);
+              const experience = getClubVenueExperience(club);
               return (
               <button
                 key={club.id}

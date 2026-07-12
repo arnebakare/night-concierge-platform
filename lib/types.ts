@@ -29,6 +29,8 @@ export type Club = {
   address: string | null;
   image_url: string | null;
   active: boolean;
+  brand_config?: Record<string, unknown> | null;
+  service_config?: unknown[] | null;
 };
 
 export type ConciergeEvent = {
