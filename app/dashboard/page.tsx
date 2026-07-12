@@ -1,4 +1,4 @@
-import { CalendarDays, Link2, ListPlus, UserPlus, Users } from "lucide-react";
+import { CalendarDays, Link2, ListPlus, MessageCircle, UserPlus, Users } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { ActionTile } from "@/components/ui/action-tile";
 import { ClientSearch } from "@/components/client/client-search";
@@ -22,6 +22,7 @@ export default async function DashboardPage() {
           pending={tonight.filter((item) => ["NEW", "PENDING"].includes(item.status)).length}
         />
         <div className="grid grid-cols-2 gap-3">
+          <ActionTile href="/requests/lead" label="Paste WhatsApp Lead" icon={MessageCircle} className="col-span-2" />
           <ActionTile href="/requests/new" label="New Request" icon={ListPlus} />
           <ActionTile href="/clients" label="Add Client" icon={UserPlus} />
           <ActionTile href="/requests" label="My Guestlist" icon={Users} />

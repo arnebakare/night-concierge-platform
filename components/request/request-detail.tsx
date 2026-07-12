@@ -2,9 +2,11 @@ import Link from "next/link";
 import { ArrowLeft, CalendarDays, Clock, MessageCircle, Phone, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LuxuryCard } from "@/components/ui/luxury-card";
+import { SalesAssistantPanel } from "@/components/request/sales-assistant-panel";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
 import { RequestStatusControl } from "@/components/request/request-status-control";
 import type { ConciergeRequest } from "@/lib/types";
+import { whatsAppHref } from "@/lib/sales/funnel";
 import { formatEnum } from "@/lib/utils";
 
 export function RequestDetail({
@@ -39,6 +41,8 @@ export function RequestDetail({
 
         <RequestStatusControl requestId={request.id} status={request.status} />
       </LuxuryCard>
+
+      <SalesAssistantPanel request={request} />
 
       <LuxuryCard className="space-y-3">
         <div className="flex items-start justify-between gap-3">
@@ -82,11 +86,6 @@ export function RequestDetail({
       </LuxuryCard>
     </div>
   );
-}
-
-function whatsAppHref(phone?: string) {
-  const digits = phone?.replace(/\D/g, "") || "";
-  return digits ? `https://wa.me/${digits}` : "#";
 }
 
 function phoneHref(phone?: string) {

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
 import type { ConciergeRequest } from "@/lib/types";
+import { nextSalesAction } from "@/lib/sales/funnel";
 import { formatEnum } from "@/lib/utils";
 
 export function RequestCard({ request, href }: Readonly<{ request: ConciergeRequest; href?: string }>) {
@@ -23,7 +24,7 @@ export function RequestCard({ request, href }: Readonly<{ request: ConciergeRequ
       </div>
       {request.message && !service && <p className="rounded-md bg-secondary p-3 text-sm text-muted-foreground">{request.message}</p>}
       <div className="flex items-center justify-between border-t border-champagne-700/30 pt-3 text-xs text-muted-foreground">
-        <span>{formatEnum(request.source)}</span>
+        <span>{nextSalesAction(request.status)}</span>
         <span className="flex items-center gap-1"><MessageCircle className="size-3" /> Client contact</span>
       </div>
     </LuxuryCard>
