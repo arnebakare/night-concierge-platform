@@ -147,27 +147,25 @@ export async function importEventsFromConfiguredSources() {
         const { data: existing, error: existingError } = await supabase.from("events").select("id").eq("source_key", event.sourceKey).maybeSingle();
         if (existingError) throw existingError;
         if (existing) continue;
-        const { error } = await supabase.from("events").upsert(
-          {
-            club_id: targetClub.id,
-            name: event.name,
-            slug: event.slug,
-            event_date: event.eventDate,
-            description: event.description,
-            source_url: event.sourceUrl,
-            source_key: event.sourceKey,
-            imported_at: new Date().toISOString(),
-            active: true
-          },
-          { onConflict: "source_key", ignoreDuplicates: true }
-        );
+        const { error } = await supabase.from("events").insert({
+          club_id: targetClub.id,
+          name: event.name,
+          slug: event.slug,
+          event_date: event.eventDate,
+          description: event.description,
+          source_url: event.sourceUrl,
+          source_key: event.sourceKey,
+          imported_at: new Date().toISOString(),
+          active: true
+        });
+        if (error?.code === "23505") continue;
         if (error) throw error;
         created += 1;
       }
 
       runs.push(runForSource(source, result.status, candidates.length, created, result.message, result.httpStatus));
     } catch (error) {
-      runs.push(runForSource(source, "FAILED", 0, 0, error instanceof Error ? error.message : "Unknown import error.", null));
+      runs.push(runForSource(source, "FAILED", 0, 0, getErrorMessage(error), null));
     }
   }
 
@@ -403,6 +401,18 @@ function runForSource(source: EventSource, status: ImportRun["status"], found: n
     events_found: found,
     events_created: created
   };
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error) {
+    const maybeError = error as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    const parts = [maybeError.message, maybeError.details, maybeError.hint, maybeError.code].filter(
+      (part): part is string => typeof part === "string" && part.length > 0
+    );
+    if (parts.length) return parts.join(" ");
+  }
+  return "Unknown import error.";
 }
 
 function findIsoDates(text: string) {
