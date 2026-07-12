@@ -8,7 +8,7 @@ if (!existsSync(file)) {
 
 const values = Object.fromEntries(readFileSync(file, "utf8").split(/\r?\n/).filter((line) => line && !line.startsWith("#") && line.includes("=")).map((line) => {
   const index = line.indexOf("=");
-  return [line.slice(0, index).trim(), line.slice(index + 1).trim()];
+  return [line.slice(0, index).trim(), line.slice(index + 1).trim().replace(/^["']|["']$/g, "")];
 }));
 const required = ["NEXT_PUBLIC_APP_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_WHATSAPP_FROM"];
 const missing = required.filter((key) => !values[key]);
@@ -22,6 +22,10 @@ if (!values.NEXT_PUBLIC_SUPABASE_URL.startsWith("https://") || !values.NEXT_PUBL
 }
 if (!values.TWILIO_WHATSAPP_FROM.startsWith("whatsapp:+")) {
   console.error("TWILIO_WHATSAPP_FROM must start with whatsapp:+");
+  process.exit(1);
+}
+if (!values.TWILIO_ACCOUNT_SID.startsWith("AC")) {
+  console.error("TWILIO_ACCOUNT_SID must be the Account SID that starts with AC, not an API key SID.");
   process.exit(1);
 }
 console.log("Environment configuration looks complete. No secret values were printed.");
