@@ -20,6 +20,19 @@ type EventSource =
       daysAhead: number;
     }
   | {
+      kind: "recurring-program";
+      slug: string;
+      clubSlug: string;
+      name: string;
+      url: string;
+      programs: Array<{
+        weekdays: number[];
+        title: string;
+        description: string;
+      }>;
+      daysAhead: number;
+    }
+  | {
       kind: "monitor";
       slug: string;
       clubSlug: string;
@@ -61,7 +74,18 @@ const EVENT_SOURCES: EventSource[] = [
     description: "Recurring after party pattern for La Plage Casanis Wednesdays and Sundays. Confirm manually when programming changes.",
     daysAhead: 45
   },
-  { kind: "web", slug: "playa-padre", clubSlug: "playa-padre", name: "Playa Padre", url: "https://playapadre.com/our-program/" },
+  {
+    kind: "recurring-program",
+    slug: "playa-padre-program",
+    clubSlug: "playa-padre",
+    name: "Playa Padre",
+    url: "https://playapadre.com/our-program/",
+    programs: [
+      { weekdays: [0], title: "Boho Sunday", description: "Recurring Playa Padre Sunday programme. Review the source page for final artist and reservation details." },
+      { weekdays: [4], title: "Mezcla with Benchek & Drush", description: "Recurring Thursday techno session with resident DJs Benchek & Drush, imported from Playa Padre programme." }
+    ],
+    daysAhead: 45
+  },
   { kind: "web", slug: "momento", clubSlug: "momento", name: "Momento", url: "https://momentomarbella.com/proximos-eventos/" },
   { kind: "web", slug: "motel-particulier", clubSlug: "motel-particulier", name: "Motel Particulier", url: "https://motelparticulier.com/" },
   { kind: "monitor", slug: "motel-particulier-instagram", clubSlug: "motel-particulier", name: "Motel Particulier Instagram", url: "https://www.instagram.com/motelparticulier/" },
@@ -180,6 +204,10 @@ async function readSource(source: EventSource): Promise<{ events: ImportedEvent[
   if (source.kind === "monitor") {
     return { events: [], status: "OK", message: "Source reachable. Instagram sources are monitor-only unless a stable feed/API is connected.", httpStatus: response.status };
   }
+  if (source.kind === "recurring-program") {
+    const events = buildProgramEvents(source);
+    return { events, status: "OK", message: `Created ${events.length} recurring programme candidates.`, httpStatus: response.status };
+  }
 
   const events = extractEventsFromHtml(source, html);
   return {
@@ -193,6 +221,9 @@ async function readSource(source: EventSource): Promise<{ events: ImportedEvent[
 function extractEventsFromHtml(source: Extract<EventSource, { kind: "web" }>, html: string) {
   const jsonLdEvents = extractJsonLdEvents(source, html);
   if (jsonLdEvents.length) return jsonLdEvents;
+
+  const structuredEvents = extractStructuredEvents(source, html);
+  if (structuredEvents.length) return structuredEvents;
 
   const text = stripHtml(html);
   const events = new Map<string, ImportedEvent>();
@@ -214,6 +245,57 @@ function extractEventsFromHtml(source: Extract<EventSource, { kind: "web" }>, ht
   }
 
   return [...events.values()].slice(0, 20);
+}
+
+function extractStructuredEvents(source: Extract<EventSource, { kind: "web" }>, html: string) {
+  if (source.slug === "la-plage-casanis") return extractLaPlageEvents(source, html);
+  if (source.slug === "momento") return extractMomentoEvents(source, html);
+  return [];
+}
+
+function extractLaPlageEvents(source: Extract<EventSource, { kind: "web" }>, html: string) {
+  const lines = htmlToLines(html);
+  const events: ImportedEvent[] = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const dayMatch = lines[index].match(/^(0?[1-9]|[12]\d|3[01])$/);
+    if (!dayMatch) continue;
+    const monthLine = lines.slice(index + 1, index + 5).find((line) => /^(january|february|march|april|may|june|july|august|september|october|november|december)\b/i.test(line));
+    if (!monthLine) continue;
+    const month = monthLine.split(/\s+/)[0].toLowerCase();
+    const eventDate = normalizeDate(`${new Date().getFullYear()}-${MONTHS[month]}-${dayMatch[1]}`);
+    if (!eventDate || isPastDate(eventDate)) continue;
+    const artist = lines
+      .slice(index + 2, index + 10)
+      .find((line) => isLikelyArtistName(line) && !/^(book|buy|image|sunday|wednesday)$/i.test(line));
+    if (!artist) continue;
+    events.push(buildImportedEvent(source, artist, eventDate, `Imported from La Plage Casanis What's On programme.`));
+  }
+
+  return dedupeBySourceKey(events).slice(0, 40);
+}
+
+function extractMomentoEvents(source: Extract<EventSource, { kind: "web" }>, html: string) {
+  const lines = htmlToLines(html);
+  const events: ImportedEvent[] = [];
+  const monthNames = Object.keys(MONTHS).join("|");
+  const eventLine = new RegExp(`^(.+?)\\s+-\\s+((?:\\d{1,2}\\s+(?:${monthNames})(?:\\s*\\/\\s*)?)+)$`, "i");
+
+  for (const line of lines) {
+    const match = line.match(eventLine);
+    if (!match) continue;
+    const artist = cleanArtistName(match[1]);
+    if (!isLikelyArtistName(artist)) continue;
+    const dates = [...match[2].matchAll(new RegExp(`(\\d{1,2})\\s+(${monthNames})`, "gi"))]
+      .map((dateMatch) => normalizeDate(`${new Date().getFullYear()}-${MONTHS[dateMatch[2].toLowerCase()]}-${dateMatch[1]}`))
+      .filter(Boolean)
+      .filter((date) => !isPastDate(date));
+    for (const eventDate of dates) {
+      events.push(buildImportedEvent(source, artist, eventDate, `Imported from Momento proximos eventos programme.`));
+    }
+  }
+
+  return dedupeBySourceKey(events).slice(0, 50);
 }
 
 function extractJsonLdEvents(source: Extract<EventSource, { kind: "web" }>, html: string) {
@@ -282,6 +364,34 @@ function buildRecurringEvents(source: Extract<EventSource, { kind: "recurring" }
   return events;
 }
 
+function buildProgramEvents(source: Extract<EventSource, { kind: "recurring-program" }>) {
+  return source.programs.flatMap((program, programIndex) => buildRecurringEvents({
+    kind: "recurring",
+    slug: `${source.slug}-${programIndex}-${slugify(program.title)}`,
+    clubSlug: source.clubSlug,
+    name: source.name,
+    sourceUrl: source.url,
+    weekdays: program.weekdays,
+    title: program.title,
+    description: program.description,
+    daysAhead: source.daysAhead
+  }));
+}
+
+function buildImportedEvent(source: Extract<EventSource, { kind: "web" }>, artist: string, eventDate: string, description: string): ImportedEvent {
+  const name = cleanArtistName(artist);
+  const sourceKey = `${source.slug}:${eventDate}:${slugify(name)}`;
+  return {
+    clubSlug: source.clubSlug,
+    name,
+    slug: `${slugify(name)}-${eventDate}`,
+    eventDate,
+    description,
+    sourceUrl: source.url,
+    sourceKey
+  };
+}
+
 function runForSource(source: EventSource, status: ImportRun["status"], found: number, created: number, message: string | null, httpStatus: number | null): ImportRun {
   return {
     source_slug: source.slug,
@@ -343,6 +453,45 @@ function stripHtml(html: string) {
       .replace(/<style[\s\S]*?<\/style>/gi, " ")
       .replace(/<[^>]+>/g, " ")
   );
+}
+
+function htmlToLines(html: string) {
+  const readableText = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(h[1-6]|p|div|li|a|span|section|article)>/gi, "\n")
+    .replace(/<img[^>]+alt=["']([^"']+)["'][^>]*>/gi, "\n$1\n")
+    .replace(/<[^>]+>/g, " ");
+
+  return readableText
+    .split(/\n/)
+    .flatMap((line) => line.split(/ {2,}/))
+    .map((line) => cleanText(decodeHtml(line)))
+    .filter(Boolean)
+    .filter((line, index, all) => all.indexOf(line) === index);
+}
+
+function isLikelyArtistName(value: string) {
+  const normalized = cleanArtistName(value);
+  if (normalized.length < 3 || normalized.length > 70) return false;
+  if (/\b(book|booking|reservas|privacy|cookie|copyright|menu|image|program|season|temporada)\b/i.test(normalized)) return false;
+  return /[a-zA-ZÀ-ÿ]/.test(normalized);
+}
+
+function cleanArtistName(value: string) {
+  return decodeHtml(value)
+    .replace(/\s*-\s*\d{1,2}\s+[a-záéíóúñ]+(?:\s*\/\s*\d{1,2}\s+[a-záéíóúñ]+)*\s*$/i, "")
+    .replace(/^\+?\s*/, "")
+    .trim();
+}
+
+function decodeHtml(value: string) {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#8217;/g, "'")
+    .replace(/&#038;/g, "&");
 }
 
 function cleanText(value: string) {

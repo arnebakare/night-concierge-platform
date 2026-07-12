@@ -3,7 +3,7 @@ import { EventCreateForm } from "@/components/events/event-create-form";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { requireProfile } from "@/lib/auth";
 import { getActiveClubsForApp, getEventImportRuns, getEventsForProfile } from "@/lib/data/app";
-import { setEventActive, updateEvent } from "@/lib/actions/management-actions";
+import { runEventImportNow, setEventActive, updateEvent } from "@/lib/actions/management-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,8 +21,13 @@ export default async function ManagerEventsPage() {
             <h2 className="font-serif text-2xl">Event import health</h2>
             <p className="mt-1 text-sm text-muted-foreground">Daily source checks create upcoming events and flag unavailable pages.</p>
           </div>
-          <div className={warningRuns.length ? "text-sm font-semibold text-amber-300" : "text-sm font-semibold text-emerald-400"}>
-            {warningRuns.length ? `${warningRuns.length} source warning${warningRuns.length === 1 ? "" : "s"}` : "All latest checks OK"}
+          <div className="flex flex-col gap-2 md:items-end">
+            <div className={warningRuns.length ? "text-sm font-semibold text-amber-300" : "text-sm font-semibold text-emerald-400"}>
+              {warningRuns.length ? `${warningRuns.length} source warning${warningRuns.length === 1 ? "" : "s"}` : "All latest checks OK"}
+            </div>
+            <form action={runEventImportNow}>
+              <Button type="submit" variant="secondary" size="sm">Run import now</Button>
+            </form>
           </div>
         </div>
         <div className="mt-4 grid gap-2 md:grid-cols-2">

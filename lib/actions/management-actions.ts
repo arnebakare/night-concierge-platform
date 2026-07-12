@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/services/audit";
 import { sendStoredWhatsApp } from "@/lib/services/whatsapp";
+import { importEventsFromConfiguredSources } from "@/lib/services/event-import";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const statusSchema = z.object({
@@ -54,6 +55,25 @@ export async function updateRequestStatus(formData: FormData) {
   revalidatePath(`/manager/requests/${parsed.data.requestId}`);
   revalidatePath("/dashboard");
   revalidatePath("/manager");
+}
+
+export async function runEventImportNow() {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/manager/events");
+    return;
+  }
+
+  const result = await importEventsFromConfiguredSources();
+  const supabase = createAdminClient();
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "EVENT_IMPORT_RUN",
+    entityType: "events",
+    entityId: profile.id,
+    metadata: result
+  });
+  revalidatePath("/manager/events");
 }
 
 const settingSchema = z.object({

@@ -47,7 +47,12 @@ export async function getRequestsForProfile(profile: Profile, options?: RequestF
 
     if (profile.role === "PROMOTER") query = query.eq("promoter_id", profile.id);
     if (profile.role === "PROMOTER_MANAGER") {
-      query = query.or(`assigned_manager_id.eq.${profile.id},promoter_id.in.(${await teamIdsCsv(profile.id)})`);
+      const scopedRules = [`assigned_manager_id.eq.${profile.id}`];
+      const teamIds = await teamIdsCsv(profile.id);
+      const clubIds = await managerClubIdsCsv(profile.id);
+      if (teamIds) scopedRules.push(`promoter_id.in.(${teamIds})`);
+      if (clubIds) scopedRules.push(`club_id.in.(${clubIds})`);
+      query = query.or(scopedRules.join(","));
     }
     if (profile.role === "CLIENT" || options?.clientOnly) {
       const { data: ownedClients } = await supabase.from("clients").select("id").eq("profile_id", profile.id);
@@ -422,6 +427,17 @@ async function teamIdsCsv(managerId: string) {
     const supabase = await createClient();
     const { data } = await supabase.from("profiles").select("id").eq("manager_id", managerId);
     return (data ?? []).map((item) => item.id).join(",");
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return "";
+  }
+}
+
+async function managerClubIdsCsv(managerId: string) {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from("club_users").select("club_id").eq("user_id", managerId);
+    return (data ?? []).map((item) => item.club_id).join(",");
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
     return "";

@@ -43,6 +43,7 @@ export async function submitPublicRequest(input: PublicRequestInput): Promise<Re
   if (attribution.clubId && attribution.clubId !== data.clubId) {
     return { ok: false, message: "This private link is reserved for a different club." };
   }
+  const assignedManagerId = attribution.managerId ?? await resolveDefaultManagerForClub(supabase, data.clubId);
   const { clientId, status: clientStatus } = await upsertClient(supabase, {
     name: data.name,
     phone: normalizedPhone,
@@ -63,7 +64,7 @@ export async function submitPublicRequest(input: PublicRequestInput): Promise<Re
       client_id: clientId,
       club_id: data.clubId,
       promoter_id: attribution.promoterId,
-      assigned_manager_id: attribution.managerId,
+      assigned_manager_id: assignedManagerId,
       source: attribution.source,
       request_type: data.requestType,
       status: "NEW",
@@ -269,4 +270,19 @@ async function resolveAttribution(
   }
 
   return { ok: true as const, source: "PUBLIC_FORM" as const, promoterId: null, managerId: null, clubId: null };
+}
+
+async function resolveDefaultManagerForClub(supabase: ReturnType<typeof createAdminClient>, clubId: string) {
+  const { data } = await supabase
+    .from("club_users")
+    .select("profiles!club_users_user_id_fkey(id, role, active)")
+    .eq("club_id", clubId)
+    .ilike("role_at_club", "manager")
+    .limit(5);
+
+  const manager = (data ?? [])
+    .map((item) => item.profiles as { id?: string; role?: string; active?: boolean } | null)
+    .find((profile) => profile?.role === "PROMOTER_MANAGER" && profile.active !== false);
+
+  return manager?.id ?? null;
 }
