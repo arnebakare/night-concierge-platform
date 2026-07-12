@@ -168,11 +168,13 @@ export async function getClientProfile(clientId: string, filters?: NoteFilters) 
 export async function getPromoterLinks(profile: Profile) {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from("promoter_links")
       .select("id, promoter_id, title, slug, active, clubs(name), profiles!promoter_links_promoter_id_fkey(name)")
-      .eq(profile.role === "PROMOTER" ? "promoter_id" : "active", profile.role === "PROMOTER" ? profile.id : true)
+      .eq("active", true)
       .order("created_at", { ascending: false });
+    if (profile.role === "PROMOTER") query = query.eq("promoter_id", profile.id);
+    const { data, error } = await query;
     if (error) throw error;
     return data ?? [];
   } catch (error) {
