@@ -14,6 +14,7 @@ export const publicRequestSchema = z.object({
   guestCount: z.coerce.number().int().min(1).max(200),
   budget: z.string().max(100).optional().or(z.literal("")),
   message: z.string().max(1200).optional().or(z.literal("")),
+  serviceLabel: z.string().trim().max(120).optional().or(z.literal("")),
   promoterSlug: z.string().optional(),
   magicToken: z.string().optional()
 });

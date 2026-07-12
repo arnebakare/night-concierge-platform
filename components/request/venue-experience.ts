@@ -1,0 +1,104 @@
+import { Calendar, Crown, GlassWater, Music2, Sparkles, Sun, Utensils, Users, Waves } from "lucide-react";
+import type { RequestType } from "@/lib/types";
+
+export type VenueService = {
+  id: string;
+  label: string;
+  description: string;
+  requestType: RequestType;
+  icon: typeof Crown;
+};
+
+export type VenueExperience = {
+  slug: string;
+  wordmark: string;
+  monogram: string;
+  tagline: string;
+  mood: string;
+  services: VenueService[];
+};
+
+const defaultServices: VenueService[] = [
+  { id: "guestlist", label: "Guestlist", description: "Names on the list with quick confirmation.", requestType: "GUESTLIST", icon: Users },
+  { id: "vip-table", label: "VIP table", description: "Table request with spend and group details.", requestType: "TABLE", icon: Crown },
+  { id: "concierge", label: "Concierge request", description: "Ask for help planning the night.", requestType: "GENERAL", icon: Sparkles }
+];
+
+export const venueExperiences: Record<string, VenueExperience> = {
+  "la-plage-casanis": {
+    slug: "la-plage-casanis",
+    wordmark: "La Plage Casanis",
+    monogram: "LP",
+    tagline: "Beachfront lunch, sunset, VIP hosting",
+    mood: "Golden hour beach club",
+    services: [
+      { id: "beach-bed", label: "Beach bed", description: "Daytime sunbed or beach setup.", requestType: "VIP_SERVICE", icon: Sun },
+      { id: "lunch-table", label: "Lunch table", description: "Restaurant table for lunch or sunset.", requestType: "TABLE", icon: Utensils },
+      { id: "vip-table", label: "VIP table", description: "Premium table for a hosted group.", requestType: "TABLE", icon: Crown },
+      { id: "guestlist", label: "Guestlist", description: "Names for evening access.", requestType: "GUESTLIST", icon: Users },
+      { id: "celebration", label: "Celebration setup", description: "Birthday, hen group, or special moment.", requestType: "VIP_SERVICE", icon: Sparkles }
+    ]
+  },
+  "le-jade": {
+    slug: "le-jade",
+    wordmark: "Le Jade",
+    monogram: "LJ",
+    tagline: "Late-night after-party energy",
+    mood: "After dark",
+    services: [
+      { id: "after-party", label: "After-party guestlist", description: "Guestlist for the late move.", requestType: "GUESTLIST", icon: Music2 },
+      { id: "vip-table", label: "VIP table", description: "Late table with bottle service.", requestType: "TABLE", icon: Crown },
+      { id: "bottle-service", label: "Bottle service", description: "Bottle request for a group.", requestType: "VIP_SERVICE", icon: GlassWater },
+      { id: "group-entry", label: "Group entry", description: "Fast access for larger groups.", requestType: "GUESTLIST", icon: Users }
+    ]
+  },
+  mamzel: {
+    slug: "mamzel",
+    wordmark: "Mamzel",
+    monogram: "MZ",
+    tagline: "Dinner show, tables, celebration groups",
+    mood: "Show dinner",
+    services: [
+      { id: "dinner-show", label: "Dinner show", description: "Dinner reservation with show atmosphere.", requestType: "TABLE", icon: Utensils },
+      { id: "vip-dinner", label: "VIP dinner table", description: "Premium dinner table for a group.", requestType: "TABLE", icon: Crown },
+      { id: "late-table", label: "Late table", description: "Late-night table request.", requestType: "TABLE", icon: Music2 },
+      { id: "celebration", label: "Celebration package", description: "Birthday, hen group, or special occasion.", requestType: "VIP_SERVICE", icon: Sparkles }
+    ]
+  },
+  "playa-padre": {
+    slug: "playa-padre",
+    wordmark: "Playa Padre",
+    monogram: "PP",
+    tagline: "Beach club, lunch, music programming",
+    mood: "Boho beach",
+    services: [
+      { id: "beach-club", label: "Beach club", description: "Beach club day booking.", requestType: "VIP_SERVICE", icon: Waves },
+      { id: "lunch-table", label: "Lunch table", description: "Lunch reservation for a group.", requestType: "TABLE", icon: Utensils },
+      { id: "event-table", label: "Event table", description: "Table for music programming.", requestType: "TABLE", icon: Music2 }
+    ]
+  },
+  momento: {
+    slug: "momento",
+    wordmark: "Momento",
+    monogram: "MO",
+    tagline: "Club nights, DJs, tables",
+    mood: "Prime club",
+    services: [
+      { id: "guestlist", label: "Guestlist", description: "Club guestlist request.", requestType: "GUESTLIST", icon: Users },
+      { id: "vip-table", label: "VIP table", description: "Table with spend and group details.", requestType: "TABLE", icon: Crown },
+      { id: "dj-night", label: "DJ night", description: "Request for a specific event or DJ.", requestType: "VIP_SERVICE", icon: Music2 }
+    ]
+  }
+};
+
+export function getVenueExperience(slug?: string | null, fallbackName = "Venue"): VenueExperience {
+  if (slug && venueExperiences[slug]) return venueExperiences[slug];
+  return {
+    slug: slug ?? "venue",
+    wordmark: fallbackName,
+    monogram: fallbackName.split(/\s+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase() || "VIP",
+    tagline: "VIP hosting and concierge requests",
+    mood: "Concierge",
+    services: defaultServices
+  };
+}

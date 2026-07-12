@@ -33,6 +33,7 @@ export async function submitPublicRequest(input: PublicRequestInput): Promise<Re
   const supabase = createAdminClient();
   const data = parsed.data;
   const normalizedPhone = normalizePhone(data.phone);
+  const requestMessage = withServiceLabel(data.message || "", data.serviceLabel);
   const fingerprint = createHash("sha256").update(normalizedPhone).digest("hex");
   const { data: allowed, error: rateError } = await supabase.rpc("consume_public_request_slot", { p_fingerprint: fingerprint, p_limit: 5, p_window_minutes: 10 });
   if (rateError) return { ok: false, message: "Request protection is not configured. Apply the latest database migrations." };
@@ -72,7 +73,7 @@ export async function submitPublicRequest(input: PublicRequestInput): Promise<Re
       arrival_time: data.arrivalTime || null,
       guest_count: data.guestCount,
       budget: data.budget || null,
-      message: data.message || null
+      message: requestMessage || null
     })
     .select("id, requested_date, request_type, guest_count, source, clubs(name), clients(name, phone), promoter:profiles!requests_promoter_id_fkey(name)")
     .single();
@@ -85,7 +86,7 @@ export async function submitPublicRequest(input: PublicRequestInput): Promise<Re
     requestId: request.id,
     clubName: (request.clubs as { name?: string } | null)?.name ?? "Unknown club",
     requestedDate: request.requested_date,
-    requestType: request.request_type,
+    requestType: data.serviceLabel ? `${request.request_type} - ${data.serviceLabel}` : request.request_type,
     clientName: (request.clients as { name?: string } | null)?.name ?? data.name,
     phone: (request.clients as { phone?: string } | null)?.phone ?? normalizedPhone,
     guestCount: request.guest_count,
@@ -119,6 +120,7 @@ export async function createManualRequest(input: unknown): Promise<RequestAction
   const supabase = await createServerSupabase();
   const data = parsed.data;
   const normalizedPhone = normalizePhone(data.phone);
+  const requestMessage = withServiceLabel(data.message || "", data.serviceLabel);
   let clientId = data.clientId;
 
   if (!clientId) {
@@ -151,7 +153,7 @@ export async function createManualRequest(input: unknown): Promise<RequestAction
       arrival_time: data.arrivalTime || null,
       guest_count: data.guestCount,
       budget: data.budget || null,
-      message: data.message || null,
+      message: requestMessage || null,
       internal_summary: data.internalNote || null
     })
     .select("id")
@@ -221,6 +223,13 @@ async function upsertClient(
 function normalizePhone(phone: string) {
   const digits = phone.replace(/\D/g, "");
   return phone.trim().startsWith("+") ? `+${digits}` : digits;
+}
+
+function withServiceLabel(message: string, serviceLabel?: string) {
+  const cleanService = serviceLabel?.trim();
+  if (!cleanService) return message.trim();
+  const cleanMessage = message.trim();
+  return cleanMessage ? `Selected service: ${cleanService}\n\n${cleanMessage}` : `Selected service: ${cleanService}`;
 }
 
 async function resolveAttribution(

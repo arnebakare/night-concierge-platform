@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Calendar, Check, ChevronLeft, Crown, MessageCircle, Users } from "lucide-react";
+import { Check, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,13 +13,7 @@ import { createPublicRequest } from "@/lib/actions/request-actions";
 import { publicRequestSchema, type PublicRequestInput } from "@/lib/validation/request";
 import type { Club } from "@/lib/types";
 import { cn, formatEnum } from "@/lib/utils";
-
-const types = [
-  ["GUESTLIST", "Guestlist", Users],
-  ["TABLE", "Table", Crown],
-  ["VIP_SERVICE", "VIP Service", MessageCircle],
-  ["GENERAL", "General", Calendar]
-] as const;
+import { getVenueExperience } from "@/components/request/venue-experience";
 
 const featuredVenueSlugs = ["le-jade", "la-plage-casanis", "mamzel"];
 
@@ -47,11 +41,14 @@ export function RequestFormSteps({
   }, [clubs]);
   const visibleClubs = showAllVenues ? orderedClubs : orderedClubs.slice(0, 3);
   const hasMoreVenues = orderedClubs.length > visibleClubs.length;
+  const initialClub = orderedClubs[0];
+  const initialService = initialClub ? getVenueExperience(initialClub.slug, initialClub.name).services[0] : undefined;
   const form = useForm<PublicRequestInput>({
     resolver: zodResolver(publicRequestSchema),
     defaultValues: {
       clubId: defaults?.clubId ?? orderedClubs[0]?.id ?? "",
-      requestType: defaults?.requestType ?? "GUESTLIST",
+      requestType: defaults?.requestType ?? initialService?.requestType ?? "GUESTLIST",
+      serviceLabel: defaults?.serviceLabel ?? initialService?.label ?? "",
       name: defaults?.name ?? "",
       phone: defaults?.phone ?? "",
       email: defaults?.email ?? "",
@@ -68,6 +65,24 @@ export function RequestFormSteps({
 
   const values = form.watch();
   const selectedClub = useMemo(() => clubs.find((club) => club.id === values.clubId), [clubs, values.clubId]);
+  const selectedExperience = useMemo(() => getVenueExperience(selectedClub?.slug, selectedClub?.name), [selectedClub]);
+
+  useEffect(() => {
+    const serviceExists = selectedExperience.services.some((service) => service.label === values.serviceLabel && service.requestType === values.requestType);
+    if (serviceExists || !selectedExperience.services[0]) return;
+    form.setValue("serviceLabel", selectedExperience.services[0].label);
+    form.setValue("requestType", selectedExperience.services[0].requestType);
+  }, [form, selectedExperience, values.requestType, values.serviceLabel]);
+
+  function selectClub(club: Club) {
+    const experience = getVenueExperience(club.slug, club.name);
+    const service = experience.services[0];
+    form.setValue("clubId", club.id, { shouldValidate: true });
+    if (service) {
+      form.setValue("serviceLabel", service.label, { shouldValidate: true });
+      form.setValue("requestType", service.requestType, { shouldValidate: true });
+    }
+  }
 
   async function next() {
     const fieldsByStep: Record<number, (keyof PublicRequestInput)[]> = {
@@ -105,22 +120,34 @@ export function RequestFormSteps({
 
       {step === 1 && (
         <div className="space-y-3">
-          <h2 className="font-serif text-2xl">Choose your club</h2>
+          <div>
+            <h2 className="font-serif text-2xl">Choose your venue</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Start with the place. Each venue unlocks its own concierge services.</p>
+          </div>
           <div className="grid gap-3">
-            {visibleClubs.map((club) => (
+            {visibleClubs.map((club) => {
+              const experience = getVenueExperience(club.slug, club.name);
+              return (
               <button
                 key={club.id}
                 type="button"
-                onClick={() => form.setValue("clubId", club.id)}
+                onClick={() => selectClub(club)}
                 className={cn(
-                  "min-h-20 rounded-lg border bg-ink-700 p-4 text-left transition",
+                  "group flex min-h-24 items-center gap-4 rounded-lg border bg-ink-700/90 p-4 text-left transition",
                   values.clubId === club.id ? "border-champagne-300 shadow-glow" : "border-champagne-700/40"
                 )}
               >
-                <span className="block text-lg font-semibold">{club.name}</span>
-                <span className="text-sm text-muted-foreground">{club.city}</span>
+                <span className="flex size-14 shrink-0 items-center justify-center rounded-full border border-champagne-500/50 bg-champagne-500/10 font-serif text-lg text-champagne-100">
+                  {experience.monogram}
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-serif text-xl leading-tight">{experience.wordmark}</span>
+                  <span className="mt-1 block text-sm text-muted-foreground">{experience.tagline}</span>
+                  <span className="mt-2 inline-flex rounded-full border border-champagne-700/40 px-2 py-0.5 text-[11px] uppercase tracking-[0.16em] text-champagne-300">{club.city}</span>
+                </span>
               </button>
-            ))}
+              );
+            })}
           </div>
           {hasMoreVenues && (
             <Button type="button" variant="secondary" className="w-full" onClick={() => setShowAllVenues(true)}>
@@ -132,22 +159,42 @@ export function RequestFormSteps({
 
       {step === 2 && (
         <div className="space-y-3">
-          <h2 className="font-serif text-2xl">What do you need?</h2>
+          <div className="rounded-lg border border-champagne-700/40 bg-ink-800/90 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-16 items-center justify-center rounded-full border border-champagne-500/50 bg-champagne-500/10 font-serif text-xl text-champagne-100">{selectedExperience.monogram}</div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">{selectedExperience.mood}</p>
+                <h2 className="font-serif text-2xl">{selectedExperience.wordmark}</h2>
+                <p className="text-sm text-muted-foreground">{selectedExperience.tagline}</p>
+              </div>
+            </div>
+          </div>
+          <h3 className="font-serif text-2xl">Choose service</h3>
           <div className="grid grid-cols-2 gap-3">
-            {types.map(([value, label, Icon]) => (
+            {selectedExperience.services.map((service) => {
+              const Icon = service.icon;
+              const active = values.serviceLabel === service.label && values.requestType === service.requestType;
+              return (
               <button
-                key={value}
+                key={service.id}
                 type="button"
-                onClick={() => form.setValue("requestType", value)}
+                onClick={() => {
+                  form.setValue("requestType", service.requestType, { shouldValidate: true });
+                  form.setValue("serviceLabel", service.label, { shouldValidate: true });
+                }}
                 className={cn(
                   "flex min-h-28 flex-col justify-between rounded-lg border bg-ink-700 p-4 text-left transition",
-                  values.requestType === value ? "border-champagne-300 shadow-glow" : "border-champagne-700/40"
+                  active ? "border-champagne-300 shadow-glow" : "border-champagne-700/40"
                 )}
               >
                 <Icon className="size-6 text-champagne-300" />
-                <span className="font-semibold">{label}</span>
+                <span>
+                  <span className="block font-semibold">{service.label}</span>
+                  <span className="mt-1 block text-xs leading-snug text-muted-foreground">{service.description}</span>
+                </span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -197,7 +244,13 @@ export function RequestFormSteps({
         <div className="space-y-4">
           <h2 className="font-serif text-2xl">Confirm request</h2>
           <div className="rounded-lg border border-champagne-700/40 bg-ink-800 p-4 text-sm">
-            <p className="text-lg font-semibold">{selectedClub?.name}</p>
+            <div className="mb-3 flex items-center gap-3">
+              <span className="flex size-12 items-center justify-center rounded-full border border-champagne-500/50 bg-champagne-500/10 font-serif text-champagne-100">{selectedExperience.monogram}</span>
+              <div>
+                <p className="text-lg font-semibold">{selectedExperience.wordmark}</p>
+                <p className="text-muted-foreground">{values.serviceLabel || formatEnum(values.requestType)}</p>
+              </div>
+            </div>
             <p className="text-muted-foreground">{formatEnum(values.requestType)} · {values.requestedDate} · {values.guestCount} guests</p>
             <p className="mt-3">{values.name}</p>
             <p className="text-muted-foreground">{values.phone}</p>
