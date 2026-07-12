@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Calculator, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LuxuryCard } from "@/components/ui/luxury-card";
+import { updateRequestTableCost } from "@/lib/actions/management-actions";
 import type { ConciergeRequest } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
@@ -79,6 +80,7 @@ export function SalaryReport({
               <th className="p-3">Guests</th>
               <th className="p-3">Promoter</th>
               <th className="p-3">Table cost</th>
+              <th className="p-3 print:hidden">Save</th>
             </tr>
           </thead>
           <tbody>
@@ -101,19 +103,28 @@ export function SalaryReport({
                 <td className="p-3">{request.guest_count}</td>
                 <td className="p-3">{request.promoter?.name ?? request.promoter?.email ?? "Unassigned"}</td>
                 <td className="p-3">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={rows[request.id]?.tableCost ?? ""}
-                    onChange={(event) => updateRow(request.id, { tableCost: event.target.value })}
-                    placeholder="0"
-                    className="h-10 w-28 rounded-md border bg-input px-2 text-sm print:border-0 print:bg-transparent print:p-0"
-                  />
+                  <form id={`table-cost-${request.id}`} action={updateRequestTableCost}>
+                    <input type="hidden" name="requestId" value={request.id} />
+                    <input
+                      name="tableCost"
+                      type="text"
+                      inputMode="decimal"
+                      value={rows[request.id]?.tableCost ?? ""}
+                      onChange={(event) => updateRow(request.id, { tableCost: event.target.value })}
+                      placeholder="0"
+                      className="h-10 w-28 rounded-md border bg-input px-2 text-sm print:border-0 print:bg-transparent print:p-0"
+                    />
+                  </form>
+                </td>
+                <td className="p-3 print:hidden">
+                  <Button type="submit" form={`table-cost-${request.id}`} size="sm" variant="secondary">
+                    Save
+                  </Button>
                 </td>
               </tr>
             )) : (
               <tr>
-                <td className="p-6 text-center text-muted-foreground" colSpan={7}>No confirmed bookings in this period.</td>
+                <td className="p-6 text-center text-muted-foreground" colSpan={8}>No confirmed bookings in this period.</td>
               </tr>
             )}
           </tbody>

@@ -191,7 +191,7 @@ async function readSource(source: EventSource): Promise<{ events: ImportedEvent[
       "user-agent": "NightConciergePlatform/1.0 (+https://night-concierge-platform.vercel.app)",
       accept: "text/html,application/xhtml+xml"
     },
-    next: { revalidate: 0 }
+    cache: "no-store"
   });
 
   if (!response.ok) {

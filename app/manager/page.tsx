@@ -4,7 +4,7 @@ import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Button } from "@/components/ui/button";
 import { RequestCard } from "@/components/request/request-card";
 import { ActionTile } from "@/components/ui/action-tile";
-import { CalendarDays, Inbox, ListPlus, UserRoundSearch, Users } from "lucide-react";
+import { CalendarDays, HeartHandshake, Inbox, ListPlus, UserRoundSearch, Users } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
 import { getRequestsForProfile } from "@/lib/data/app";
 
@@ -32,6 +32,7 @@ export default async function ManagerPage() {
             <ActionTile href="/manager/promoters" label="View team" icon={Users} />
             <ActionTile href="/requests/new" label="New request" icon={ListPlus} />
             <ActionTile href="/schedule" label="Suggest schedule" icon={CalendarDays} />
+            <ActionTile href="/manager/retention" label="Client care" icon={HeartHandshake} />
           </div>
         </section>
       </div>
@@ -44,6 +45,7 @@ export default async function ManagerPage() {
         <Button asChild><Link href="/manager/requests">Open inbox</Link></Button>
         <Button asChild variant="secondary"><Link href="/manager/promoters">Manage team</Link></Button>
         <Button asChild variant="secondary"><Link href="/schedule">Suggest schedule</Link></Button>
+        <Button asChild variant="secondary"><Link href="/manager/retention">Retention</Link></Button>
         <Button asChild variant="secondary"><Link href="/manager/events">Events</Link></Button>
         <Button asChild variant="secondary"><Link href="/reports">Reports</Link></Button>
         <Button asChild variant="secondary"><Link href="/notifications">WhatsApp delivery</Link></Button>

@@ -28,6 +28,12 @@ export type PromoterFilters = {
   q?: string;
 };
 
+export type RetentionClient = Client & {
+  last_request_date: string | null;
+  last_outreach_at: string | null;
+  days_since_booking: number | null;
+};
+
 export async function getRequestsForProfile(profile: Profile, options?: RequestFilters) {
   try {
     const supabase = await createClient();
@@ -99,6 +105,27 @@ export async function getClientsForProfile(profile: Profile, filters?: ClientFil
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
     return applyClientFilters(demoClients, filters);
+  }
+}
+
+export async function getRetentionClientsForProfile(profile: Profile, days = 45): Promise<RetentionClient[]> {
+  const today = new Date();
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("clients")
+      .select("id, name, phone, email, instagram, vip_level, status, requests(requested_date, created_at), retention_outreach(created_at)")
+      .neq("status", "BLOCKED")
+      .limit(120);
+    if (error) throw error;
+    return buildRetentionClients(data, days, today);
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return buildRetentionClients(demoClients.map((client, index) => ({
+      ...client,
+      requests: index === 0 ? [{ requested_date: new Date(Date.now() - 62 * 86400000).toISOString().slice(0, 10), created_at: new Date(Date.now() - 62 * 86400000).toISOString() }] : [],
+      retention_outreach: index === 1 ? [{ created_at: new Date(Date.now() - 12 * 86400000).toISOString() }] : []
+    })), days, today);
   }
 }
 
@@ -527,6 +554,42 @@ function applyRequestFilters(requests: ConciergeRequest[], filters?: RequestFilt
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(query));
   });
+}
+
+function buildRetentionClients(data: unknown, days: number, today: Date): RetentionClient[] {
+  const cutoffMs = days * 86400000;
+  return ((data as Array<Client & {
+    requests?: Array<{ requested_date?: string | null; created_at?: string | null }> | null;
+    retention_outreach?: Array<{ created_at?: string | null }> | null;
+  }> | null) ?? [])
+    .map((client) => {
+      const requestDates = (client.requests ?? [])
+        .map((request) => request.requested_date ?? request.created_at?.slice(0, 10) ?? null)
+        .filter((value): value is string => Boolean(value))
+        .sort()
+        .reverse();
+      const lastRequestDate = requestDates[0] ?? null;
+      const lastOutreach = (client.retention_outreach ?? [])
+        .map((item) => item.created_at ?? null)
+        .filter((value): value is string => Boolean(value))
+        .sort()
+        .reverse()[0] ?? null;
+      const daysSince = lastRequestDate ? Math.floor((today.getTime() - new Date(`${lastRequestDate}T12:00:00`).getTime()) / 86400000) : null;
+      return {
+        id: client.id,
+        name: client.name,
+        phone: client.phone,
+        email: client.email,
+        instagram: client.instagram,
+        vip_level: client.vip_level,
+        status: client.status,
+        last_request_date: lastRequestDate,
+        last_outreach_at: lastOutreach,
+        days_since_booking: daysSince
+      };
+    })
+    .filter((client) => client.days_since_booking === null || client.days_since_booking * 86400000 >= cutoffMs)
+    .sort((a, b) => (b.days_since_booking ?? 9999) - (a.days_since_booking ?? 9999));
 }
 
 function applyUserFilters(users: Profile[], filters?: { q?: string; role?: string; active?: string }) {

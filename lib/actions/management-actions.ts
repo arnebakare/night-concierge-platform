@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/services/audit";
 import { sendStoredWhatsApp } from "@/lib/services/whatsapp";
+import { sendStoredEmail } from "@/lib/services/email";
 import { importEventsFromConfiguredSources } from "@/lib/services/event-import";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -55,6 +56,97 @@ export async function updateRequestStatus(formData: FormData) {
   revalidatePath(`/manager/requests/${parsed.data.requestId}`);
   revalidatePath("/dashboard");
   revalidatePath("/manager");
+}
+
+const tableCostSchema = z.object({
+  requestId: z.string().min(1),
+  tableCost: z.string().trim().max(100).optional().or(z.literal(""))
+});
+
+export async function updateRequestTableCost(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = tableCostSchema.safeParse({
+    requestId: formData.get("requestId"),
+    tableCost: formData.get("tableCost") || ""
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/reports");
+    return;
+  }
+
+  const supabase = await createClient();
+  const { data: previous } = await supabase.from("requests").select("budget").eq("id", parsed.data.requestId).maybeSingle();
+  const { error } = await supabase
+    .from("requests")
+    .update({ budget: parsed.data.tableCost || null })
+    .eq("id", parsed.data.requestId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "REQUEST_TABLE_COST_UPDATED",
+    entityType: "requests",
+    entityId: parsed.data.requestId,
+    metadata: { from: previous?.budget ?? null, to: parsed.data.tableCost || null }
+  });
+
+  revalidatePath("/reports");
+  revalidatePath("/requests");
+  revalidatePath("/manager/requests");
+}
+
+const retentionSchema = z.object({
+  clientId: z.string().min(1),
+  channel: z.enum(["WHATSAPP", "EMAIL"]),
+  destination: z.string().trim().min(3).max(180),
+  message: z.string().trim().min(10).max(1200)
+});
+
+export async function sendClientRetentionMessage(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = retentionSchema.safeParse({
+    clientId: formData.get("clientId"),
+    channel: formData.get("channel"),
+    destination: formData.get("destination"),
+    message: formData.get("message")
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/manager/retention");
+    return;
+  }
+
+  const supabase = createAdminClient();
+  const result = parsed.data.channel === "WHATSAPP"
+    ? await sendStoredWhatsApp({ to: parsed.data.destination, body: parsed.data.message })
+    : await sendStoredEmail({ to: parsed.data.destination, subject: "A note from your Marbella concierge", body: parsed.data.message });
+
+  const { data: record, error } = await supabase.from("retention_outreach").insert({
+    client_id: parsed.data.clientId,
+    user_id: profile.id,
+    channel: parsed.data.channel,
+    destination: parsed.data.destination,
+    message: parsed.data.message,
+    status: result.ok ? "SENT" : "FAILED",
+    provider: parsed.data.channel === "WHATSAPP" ? "twilio" : "resend",
+    provider_message_id: result.ok ? ("sid" in result ? result.sid : result.id) ?? null : null,
+    error_message: result.ok ? null : result.error,
+    automatic: false
+  }).select("id").single();
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "RETENTION_MESSAGE_SENT",
+    entityType: "retention_outreach",
+    entityId: record.id,
+    metadata: { clientId: parsed.data.clientId, channel: parsed.data.channel, success: result.ok }
+  });
+
+  revalidatePath("/manager/retention");
 }
 
 export async function runEventImportNow() {

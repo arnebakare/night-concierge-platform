@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, Home, Link2, Search, Settings, Users, User, Inbox, Crown } from "lucide-react";
+import { Briefcase, HeartHandshake, Home, Link2, Search, Settings, Users, User, Inbox, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useExperienceMode } from "@/components/layout/experience-mode";
 import type { Role } from "@/lib/types";
@@ -19,7 +19,7 @@ const navByRole: Record<Role, { href: string; label: string; icon: typeof Home }
     { href: "/manager", label: "Home", icon: Home },
     { href: "/manager/requests", label: "Inbox", icon: Inbox },
     { href: "/manager/clients", label: "Clients", icon: Search },
-    { href: "/manager/promoters", label: "Team", icon: Users },
+    { href: "/manager/retention", label: "Care", icon: HeartHandshake },
     { href: "/settings", label: "More", icon: Settings }
   ],
   SUPER_ADMIN: [
