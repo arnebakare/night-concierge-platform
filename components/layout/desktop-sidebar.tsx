@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, Bell, Briefcase, Crown, Home, Inbox, Link2, Settings, User, Users } from "lucide-react";
+import { Activity, Bell, Briefcase, CalendarDays, Crown, Home, Inbox, Link2, Settings, User, Users } from "lucide-react";
 import { useExperienceMode } from "@/components/layout/experience-mode";
 import type { Role } from "@/lib/types";
 
@@ -13,6 +13,7 @@ const items = {
     ["/requests", "Requests", Inbox],
     ["/clients", "Clients", Users],
     ["/links", "Links", Link2],
+    ["/schedule", "Schedule", CalendarDays],
     ["/reports", "Reports", Crown, true],
     ["/profile", "Profile", User]
   ],
@@ -21,6 +22,7 @@ const items = {
     ["/manager/requests", "Inbox", Inbox],
     ["/manager/clients", "CRM", Users],
     ["/manager/promoters", "Team", Crown],
+    ["/schedule", "Schedule", CalendarDays],
     ["/manager/clubs", "Clubs", Briefcase, true],
     ["/manager/events", "Events", Link2, true],
     ["/settings", "Settings", Settings],

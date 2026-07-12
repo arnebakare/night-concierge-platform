@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Client, Club, ConciergeRequest, Profile, RequestStatus, RequestType } from "@/lib/types";
+import type { Client, Club, ConciergeEvent, ConciergeRequest, Profile, RequestStatus, RequestType } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -356,6 +356,35 @@ export async function getEventsForProfile() {
       { id: "event-1", name: "La Plage Weekend", slug: "la-plage-weekend", event_date: new Date().toISOString().slice(0, 10), description: "VIP-focused La Plage weekend requests.", active: true, clubs: { name: "La Plage Casanis" } },
       { id: "event-2", name: "Le Jade Night", slug: "le-jade-night", event_date: new Date(Date.now() + 86400000).toISOString().slice(0, 10), description: "Le Jade guestlist and table requests.", active: true, clubs: { name: "Le Jade" } }
     ];
+  }
+}
+
+export async function getEventsForSchedule(from: string, to: string) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("events")
+      .select("id, club_id, name, slug, event_date, description, active, source_url, source_key, imported_at, clubs(name, city, slug)")
+      .eq("active", true)
+      .gte("event_date", from)
+      .lte("event_date", to)
+      .order("event_date", { ascending: true })
+      .order("name", { ascending: true })
+      .limit(120);
+    if (error) throw error;
+    return ((data ?? []) as Array<Omit<ConciergeEvent, "clubs"> & { clubs?: ConciergeEvent["clubs"] | ConciergeEvent["clubs"][] }>).map((event) => ({
+      ...event,
+      clubs: Array.isArray(event.clubs) ? event.clubs[0] ?? null : event.clubs ?? null
+    }));
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    const today = new Date().toISOString().slice(0, 10);
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    return [
+      { id: "schedule-1", club_id: "club-1", name: "La Plage Sunset Session", slug: "la-plage-sunset-session", event_date: today, description: "Start clients with a polished beach-club dinner and sunset booking.", active: true, clubs: { name: "La Plage Casanis", city: "Marbella", slug: "la-plage-casanis" } },
+      { id: "schedule-2", club_id: "club-2", name: "Le Jade After Party", slug: "le-jade-after-party", event_date: today, description: "Late-night after-party option for clients who want to continue.", active: true, clubs: { name: "Le Jade", city: "Marbella", slug: "le-jade" } },
+      { id: "schedule-3", club_id: "club-3", name: "Momento Guestlist", slug: "momento-guestlist", event_date: tomorrow, description: "Club-night option for table or guestlist clients.", active: true, clubs: { name: "Momento", city: "Marbella", slug: "momento" } }
+    ].filter((event) => event.event_date >= from && event.event_date <= to) as ConciergeEvent[];
   }
 }
 

@@ -1,4 +1,4 @@
-import { Link2, ListPlus, UserPlus, Users } from "lucide-react";
+import { CalendarDays, Link2, ListPlus, UserPlus, Users } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { ActionTile } from "@/components/ui/action-tile";
 import { ClientSearch } from "@/components/client/client-search";
@@ -26,6 +26,7 @@ export default async function DashboardPage() {
           <ActionTile href="/clients" label="Add Client" icon={UserPlus} />
           <ActionTile href="/requests" label="My Guestlist" icon={Users} />
           <ActionTile href="/links" label="My Links" icon={Link2} />
+          <ActionTile href="/schedule" label="Suggest Plan" icon={CalendarDays} className="col-span-2" />
         </div>
         <ClientSearch placeholder="Search client quickly" />
         <section className="space-y-3">

@@ -31,6 +31,20 @@ export type Club = {
   active: boolean;
 };
 
+export type ConciergeEvent = {
+  id: string;
+  club_id: string;
+  name: string;
+  slug: string;
+  event_date: string;
+  description: string | null;
+  active: boolean;
+  source_url?: string | null;
+  source_key?: string | null;
+  imported_at?: string | null;
+  clubs?: Pick<Club, "name" | "city" | "slug"> | null;
+};
+
 export type Client = {
   id: string;
   name: string;
