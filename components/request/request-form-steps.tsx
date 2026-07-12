@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, ChevronLeft } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { createPublicRequest } from "@/lib/actions/request-actions";
 import { publicRequestSchema, type PublicRequestInput } from "@/lib/validation/request";
-import type { Club } from "@/lib/types";
+import type { Club, ConciergeEvent } from "@/lib/types";
 import { cn, formatEnum } from "@/lib/utils";
 import { getClubVenueExperience } from "@/components/request/venue-experience";
 
@@ -19,11 +19,13 @@ const featuredVenueSlugs = ["le-jade", "la-plage-casanis", "mamzel"];
 
 export function RequestFormSteps({
   clubs,
+  events = [],
   promoterSlug,
   magicToken,
   defaults
 }: Readonly<{
   clubs: Club[];
+  events?: ConciergeEvent[];
   promoterSlug?: string;
   magicToken?: string;
   defaults?: Partial<PublicRequestInput>;
@@ -58,6 +60,9 @@ export function RequestFormSteps({
       guestCount: defaults?.guestCount ?? 2,
       budget: defaults?.budget ?? "",
       message: defaults?.message ?? "",
+      occasionId: defaults?.occasionId ?? "",
+      occasionName: defaults?.occasionName ?? "",
+      occasionDate: defaults?.occasionDate ?? "",
       promoterSlug,
       magicToken
     }
@@ -66,6 +71,14 @@ export function RequestFormSteps({
   const values = form.watch();
   const selectedClub = useMemo(() => clubs.find((club) => club.id === values.clubId), [clubs, values.clubId]);
   const selectedExperience = useMemo(() => getClubVenueExperience(selectedClub), [selectedClub]);
+  const selectedClubEvents = useMemo(
+    () => events.filter((event) => event.club_id === values.clubId).slice(0, 5),
+    [events, values.clubId]
+  );
+  const selectedOccasion = useMemo(
+    () => selectedClubEvents.find((event) => event.id === values.occasionId),
+    [selectedClubEvents, values.occasionId]
+  );
 
   useEffect(() => {
     const serviceExists = selectedExperience.services.some((service) => service.label === values.serviceLabel && service.requestType === values.requestType);
@@ -73,6 +86,13 @@ export function RequestFormSteps({
     form.setValue("serviceLabel", selectedExperience.services[0].label);
     form.setValue("requestType", selectedExperience.services[0].requestType);
   }, [form, selectedExperience, values.requestType, values.serviceLabel]);
+
+  useEffect(() => {
+    if (!values.occasionId) return;
+    if (selectedClubEvents.some((event) => event.id === values.occasionId)) return;
+    selectOccasion(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClubEvents, values.occasionId]);
 
   function selectClub(club: Club) {
     const experience = getClubVenueExperience(club);
@@ -82,6 +102,13 @@ export function RequestFormSteps({
       form.setValue("serviceLabel", service.label, { shouldValidate: true });
       form.setValue("requestType", service.requestType, { shouldValidate: true });
     }
+  }
+
+  function selectOccasion(event: ConciergeEvent | null) {
+    form.setValue("occasionId", event?.id ?? "", { shouldValidate: true });
+    form.setValue("occasionName", event?.name ?? "", { shouldValidate: true });
+    form.setValue("occasionDate", event?.event_date ?? "", { shouldValidate: true });
+    if (event) form.setValue("requestedDate", event.event_date, { shouldValidate: true });
   }
 
   async function next() {
@@ -194,6 +221,43 @@ export function RequestFormSteps({
               );
             })}
           </div>
+          {selectedClubEvents.length > 0 && (
+            <div className="rounded-lg border border-champagne-700/40 bg-ink-950/50 p-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Occasions</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Optional. Pick one to request that date.</p>
+                </div>
+                {values.occasionId && (
+                  <button type="button" className="text-xs font-semibold text-champagne-200" onClick={() => selectOccasion(null)}>
+                    Clear
+                  </button>
+                )}
+              </div>
+              <div className="space-y-2">
+                {selectedClubEvents.map((event) => {
+                  const active = values.occasionId === event.id;
+                  return (
+                    <button
+                      key={event.id}
+                      type="button"
+                      onClick={() => selectOccasion(event)}
+                      className={cn(
+                        "flex w-full items-start gap-3 rounded-md border p-3 text-left transition",
+                        active ? "border-champagne-300 bg-champagne-500/10" : "border-champagne-700/30 bg-ink-800/70"
+                      )}
+                    >
+                      <CalendarDays className="mt-0.5 size-5 shrink-0 text-champagne-300" />
+                      <span className="min-w-0">
+                        <span className="block font-semibold leading-tight">{event.name}</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">{formatEventDate(event.event_date)}{event.description ? ` · ${event.description}` : ""}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -247,6 +311,7 @@ export function RequestFormSteps({
               <div>
                 <p className="text-lg font-semibold">{selectedExperience.wordmark}</p>
                 <p className="text-muted-foreground">{values.serviceLabel || formatEnum(values.requestType)}</p>
+                {selectedOccasion && <p className="text-champagne-300">{selectedOccasion.name} · {formatEventDate(selectedOccasion.event_date)}</p>}
               </div>
             </div>
             <p className="text-muted-foreground">{formatEnum(values.requestType)} · {values.requestedDate} · {values.guestCount} guests</p>
@@ -291,6 +356,10 @@ function VenueLogo({ club, monogram, size = "md" }: Readonly<{ club?: Club | nul
       )}
     </span>
   );
+}
+
+function formatEventDate(value: string) {
+  return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" }).format(new Date(`${value}T12:00:00`));
 }
 
 function Field({ label, error, children }: Readonly<{ label: string; error?: string; children: React.ReactNode }>) {

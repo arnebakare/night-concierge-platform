@@ -1,13 +1,13 @@
 import { notFound } from "next/navigation";
 import { RequestFormSteps } from "@/components/request/request-form-steps";
 import { PublicRequestShell } from "@/components/request/public-request-shell";
-import { getActiveClubs, getMagicLink } from "@/lib/data/public";
+import { getActiveClubs, getMagicLink, getPublicUpcomingEvents } from "@/lib/data/public";
 
 export const dynamic = "force-dynamic";
 
 export default async function MagicLinkPage({ params }: Readonly<{ params: Promise<{ token: string }> }>) {
   const { token } = await params;
-  const [clubs, link] = await Promise.all([getActiveClubs(), getMagicLink(token)]);
+  const [clubs, link, events] = await Promise.all([getActiveClubs(), getMagicLink(token), getPublicUpcomingEvents()]);
 
   if (!link?.active) notFound();
   if (link.expires_at && new Date(link.expires_at) < new Date()) notFound();
@@ -24,6 +24,7 @@ export default async function MagicLinkPage({ params }: Readonly<{ params: Promi
     >
       <RequestFormSteps
         clubs={availableClubs}
+        events={events}
         magicToken={token}
         defaults={{
           name: client?.name ?? "",

@@ -15,6 +15,9 @@ export const publicRequestSchema = z.object({
   budget: z.string().max(100).optional().or(z.literal("")),
   message: z.string().max(1200).optional().or(z.literal("")),
   serviceLabel: z.string().trim().max(120).optional().or(z.literal("")),
+  occasionId: z.string().trim().max(120).optional().or(z.literal("")),
+  occasionName: z.string().trim().max(160).optional().or(z.literal("")),
+  occasionDate: z.string().trim().max(20).optional().or(z.literal("")),
   promoterSlug: z.string().optional(),
   magicToken: z.string().optional()
 });

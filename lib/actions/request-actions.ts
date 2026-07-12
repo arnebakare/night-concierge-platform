@@ -33,7 +33,11 @@ export async function submitPublicRequest(input: PublicRequestInput): Promise<Re
   const supabase = createAdminClient();
   const data = parsed.data;
   const normalizedPhone = normalizePhone(data.phone);
-  const requestMessage = withServiceLabel(data.message || "", data.serviceLabel);
+  const requestMessage = withRequestContext(data.message || "", {
+    serviceLabel: data.serviceLabel,
+    occasionName: data.occasionName,
+    occasionDate: data.occasionDate
+  });
   const fingerprint = createHash("sha256").update(normalizedPhone).digest("hex");
   const { data: allowed, error: rateError } = await supabase.rpc("consume_public_request_slot", { p_fingerprint: fingerprint, p_limit: 5, p_window_minutes: 10 });
   if (rateError) return { ok: false, message: "Request protection is not configured. Apply the latest database migrations." };
@@ -120,7 +124,11 @@ export async function createManualRequest(input: unknown): Promise<RequestAction
   const supabase = await createServerSupabase();
   const data = parsed.data;
   const normalizedPhone = normalizePhone(data.phone);
-  const requestMessage = withServiceLabel(data.message || "", data.serviceLabel);
+  const requestMessage = withRequestContext(data.message || "", {
+    serviceLabel: data.serviceLabel,
+    occasionName: data.occasionName,
+    occasionDate: data.occasionDate
+  });
   let clientId = data.clientId;
 
   if (!clientId) {
@@ -225,11 +233,17 @@ function normalizePhone(phone: string) {
   return phone.trim().startsWith("+") ? `+${digits}` : digits;
 }
 
-function withServiceLabel(message: string, serviceLabel?: string) {
-  const cleanService = serviceLabel?.trim();
-  if (!cleanService) return message.trim();
+function withRequestContext(
+  message: string,
+  context: { serviceLabel?: string; occasionName?: string; occasionDate?: string }
+) {
+  const contextLines = [
+    context.serviceLabel?.trim() ? `Selected service: ${context.serviceLabel.trim()}` : null,
+    context.occasionName?.trim() ? `Selected occasion: ${context.occasionName.trim()}${context.occasionDate?.trim() ? ` (${context.occasionDate.trim()})` : ""}` : null
+  ].filter(Boolean);
   const cleanMessage = message.trim();
-  return cleanMessage ? `Selected service: ${cleanService}\n\n${cleanMessage}` : `Selected service: ${cleanService}`;
+  if (!contextLines.length) return cleanMessage;
+  return cleanMessage ? `${contextLines.join("\n")}\n\n${cleanMessage}` : contextLines.join("\n");
 }
 
 async function resolveAttribution(

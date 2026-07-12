@@ -1,11 +1,11 @@
 import { RequestFormSteps } from "@/components/request/request-form-steps";
 import { PublicRequestShell } from "@/components/request/public-request-shell";
-import { getActiveClubs } from "@/lib/data/public";
+import { getActiveClubs, getPublicUpcomingEvents } from "@/lib/data/public";
 
 export const dynamic = "force-dynamic";
 
 export default async function PublicRequestPage() {
-  const clubs = await getActiveClubs();
+  const [clubs, events] = await Promise.all([getActiveClubs(), getPublicUpcomingEvents()]);
 
   return (
     <PublicRequestShell
@@ -13,7 +13,7 @@ export default async function PublicRequestPage() {
       title="Your night, handled."
       description="Choose the venue, service, and date. The concierge team receives the details instantly."
     >
-      <RequestFormSteps clubs={clubs} />
+      <RequestFormSteps clubs={clubs} events={events} />
     </PublicRequestShell>
   );
 }
