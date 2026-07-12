@@ -61,43 +61,42 @@ export function buildAvailabilityMessage(request: SalesRequest) {
   const message = request.message ? `\nNotes: ${cleanContext(request.message)}` : "";
 
   return [
-    `Availability check`,
+    `Can we do this?`,
     `${clubName} · ${formatEnum(request.request_type)}`,
     `Date: ${request.requested_date}${time}`,
     `Client: ${clientName}`,
     `Guests: ${request.guest_count}`,
     `${budget}${message}`,
     "",
-    "Can we confirm this, or should I offer an alternative?"
+    "If not, what is the closest option?"
   ].join("\n").replace(/\n{3,}/g, "\n\n");
 }
 
 export function buildClientReply(request: SalesRequest, language: LeadDraft["language"] = "en") {
   const clientName = request.clients?.name?.split(" ")[0] ?? "";
   const clubName = request.clubs?.name ?? "the venue";
-  const service = formatEnum(request.request_type).toLowerCase();
   const intro = clientName ? `Hi ${clientName}` : "Hi";
 
   if (language === "es") {
-    return `${intro}, gracias por escribirnos. Estoy revisando disponibilidad para ${clubName} el ${request.requested_date} para ${request.guest_count} personas. Si tienes alguna petición especial, dímela por aquí y lo miro contigo.`;
+    return `${intro}, perfecto. Lo miro con ${clubName} para el ${request.requested_date} para ${request.guest_count} personas y te digo enseguida. Si quieres alguna hora o zona específica, mándamelo por aquí.`;
   }
 
   if (language === "sv") {
-    return `${intro}, tack för ditt meddelande. Jag kollar tillgänglighet på ${clubName} den ${request.requested_date} för ${request.guest_count} personer. Om du har några särskilda önskemål kan du skriva dem här så hjälper jag dig.`;
+    return `${intro}, absolut. Jag kollar med ${clubName} den ${request.requested_date} för ${request.guest_count} personer och återkommer snart. Om du vill ha en särskild tid eller plats, skriv det här.`;
   }
 
-  return `${intro}, thanks for reaching out. I am checking availability for ${service} at ${clubName} on ${request.requested_date} for ${request.guest_count} guests. If you have any special requests, message me here and I will take care of it.`;
+  return `${intro}, perfect. I’ll check with ${clubName} for ${request.requested_date} for ${request.guest_count} guests and get back to you shortly. If you prefer a specific time or area, just send it here.`;
 }
 
 export function buildUpsellIdeas(request: SalesRequest) {
   const text = `${request.message ?? ""} ${request.request_type}`.toLowerCase();
-  const ideas = ["Offer priority arrival and host greeting"];
+  const ideas = ["Ask if they prefer earlier or later arrival"];
 
-  if (request.request_type === "GUESTLIST") ideas.push("Offer an upgrade to a small table if they want a smoother night");
-  if (request.request_type === "TABLE" || request.request_type === "VIP_SERVICE") ideas.push("Ask if they want bottles ready on arrival");
-  if (text.includes("birthday") || text.includes("cumple") || text.includes("födelsedag")) ideas.push("Suggest birthday presentation or dessert moment");
-  if ((request.clubs?.name ?? "").toLowerCase().includes("plage")) ideas.push("Suggest Le Jade after-party option");
-  ideas.push("Ask if they need restaurant, driver, or after-party help");
+  if (request.request_type === "GUESTLIST") ideas.push("Mention a small table if they want it easier");
+  if (request.request_type === "TABLE" || request.request_type === "VIP_SERVICE") ideas.push("Ask if they want any drinks ready");
+  if (text.includes("birthday") || text.includes("cumple") || text.includes("födelsedag")) ideas.push("Ask if they want anything simple arranged for the birthday");
+  if ((request.clubs?.name ?? "").toLowerCase().includes("plage")) ideas.push("Mention Le Jade later if they want to continue");
+  ideas.push("Ask if they need help before or after the booking");
 
   return Array.from(new Set(ideas)).slice(0, 4);
 }
