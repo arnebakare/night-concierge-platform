@@ -21,6 +21,8 @@ const types = [
   ["GENERAL", "General", Calendar]
 ] as const;
 
+const featuredVenueSlugs = ["le-jade", "la-plage-casanis", "mamzel"];
+
 export function RequestFormSteps({
   clubs,
   promoterSlug,
@@ -34,11 +36,21 @@ export function RequestFormSteps({
 }>) {
   const [step, setStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [showAllVenues, setShowAllVenues] = useState(false);
   const [pending, startTransition] = useTransition();
+  const orderedClubs = useMemo(() => {
+    const featured = featuredVenueSlugs
+      .map((slug) => clubs.find((club) => club.slug === slug))
+      .filter((club): club is Club => Boolean(club));
+    const remaining = clubs.filter((club) => !featuredVenueSlugs.includes(club.slug));
+    return [...featured, ...remaining];
+  }, [clubs]);
+  const visibleClubs = showAllVenues ? orderedClubs : orderedClubs.slice(0, 3);
+  const hasMoreVenues = orderedClubs.length > visibleClubs.length;
   const form = useForm<PublicRequestInput>({
     resolver: zodResolver(publicRequestSchema),
     defaultValues: {
-      clubId: defaults?.clubId ?? clubs[0]?.id ?? "",
+      clubId: defaults?.clubId ?? orderedClubs[0]?.id ?? "",
       requestType: defaults?.requestType ?? "GUESTLIST",
       name: defaults?.name ?? "",
       phone: defaults?.phone ?? "",
@@ -95,7 +107,7 @@ export function RequestFormSteps({
         <div className="space-y-3">
           <h2 className="font-serif text-2xl">Choose your club</h2>
           <div className="grid gap-3">
-            {clubs.map((club) => (
+            {visibleClubs.map((club) => (
               <button
                 key={club.id}
                 type="button"
@@ -110,6 +122,11 @@ export function RequestFormSteps({
               </button>
             ))}
           </div>
+          {hasMoreVenues && (
+            <Button type="button" variant="secondary" className="w-full" onClick={() => setShowAllVenues(true)}>
+              Show more venues
+            </Button>
+          )}
         </div>
       )}
 
