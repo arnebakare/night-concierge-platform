@@ -48,6 +48,13 @@ body {
   padding-bottom: calc(env(safe-area-inset-bottom) + 5.5rem);
 }
 
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .request-marina-bg {
   background-color: #050506;
   background-image:

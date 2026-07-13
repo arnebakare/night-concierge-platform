@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, Check, ChevronLeft } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, Clock, MapPin, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,6 +79,7 @@ export function RequestFormSteps({
     () => selectedClubEvents.find((event) => event.id === values.occasionId),
     [selectedClubEvents, values.occasionId]
   );
+  const stepTitles = ["Venue", "Experience", "Guest", "Details", "Review"];
 
   useEffect(() => {
     const serviceExists = selectedExperience.services.some((service) => service.label === values.serviceLabel && service.requestType === values.requestType);
@@ -134,22 +135,25 @@ export function RequestFormSteps({
   }
 
   return (
-    <LuxuryCard className="space-y-5">
+    <LuxuryCard className="space-y-5 border-champagne-300/35 bg-ink-900/82 shadow-[0_24px_90px_rgba(0,0,0,0.48)]">
       {!clubs.length && <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-red-100">Requests are temporarily unavailable because no active clubs are configured.</div>}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Step {step} of 5</p>
-        <div className="flex gap-1">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs uppercase tracking-[0.22em] text-champagne-300">{stepTitles[step - 1]}</p>
+          <p className="text-sm text-muted-foreground">{step}/5</p>
+        </div>
+        <div className="grid grid-cols-5 gap-1">
           {[1, 2, 3, 4, 5].map((item) => (
-            <span key={item} className={cn("h-1.5 w-7 rounded-full bg-secondary", item <= step && "bg-champagne-300")} />
+            <span key={item} className={cn("h-1.5 rounded-full bg-secondary transition", item <= step && "bg-champagne-300 shadow-glow")} />
           ))}
         </div>
       </div>
 
       {step === 1 && (
         <div className="space-y-3">
-          <div>
+          <div className="rounded-lg border border-champagne-700/30 bg-gradient-to-br from-champagne-300/10 to-transparent p-4">
             <h2 className="font-serif text-2xl">Choose your venue</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Start with the place. Each venue unlocks its own concierge services.</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Start with the place. We’ll shape the request around that venue’s rhythm.</p>
           </div>
           <div className="grid gap-3">
             {visibleClubs.map((club) => {
@@ -160,15 +164,21 @@ export function RequestFormSteps({
                 type="button"
                 onClick={() => selectClub(club)}
                 className={cn(
-                  "group flex min-h-24 items-center gap-4 rounded-lg border bg-ink-700/90 p-4 text-left transition",
-                  values.clubId === club.id ? "border-champagne-300 shadow-glow" : "border-champagne-700/40"
+                  "group relative flex min-h-28 items-center gap-4 overflow-hidden rounded-lg border bg-ink-700/90 p-4 text-left transition active:scale-[0.99]",
+                  values.clubId === club.id ? "border-champagne-300 bg-champagne-300/10 shadow-glow" : "border-champagne-700/40 hover:border-champagne-300/60"
                 )}
               >
+                <span className="absolute inset-y-3 left-0 w-1 rounded-r-full bg-champagne-300/70 opacity-0 transition group-hover:opacity-70" />
                 <VenueLogo club={club} monogram={experience.monogram} size="lg" />
                 <span className="min-w-0">
                   <span className="block font-serif text-xl leading-tight">{experience.wordmark}</span>
                   <span className="mt-1 block text-sm text-muted-foreground">{experience.tagline}</span>
-                  <span className="mt-2 inline-flex rounded-full border border-champagne-700/40 px-2 py-0.5 text-[11px] uppercase tracking-[0.16em] text-champagne-300">{club.city}</span>
+                  <span className="mt-2 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-champagne-700/40 px-2 py-0.5 text-[11px] uppercase tracking-[0.14em] text-champagne-300">
+                      <MapPin className="size-3" /> {club.city}
+                    </span>
+                    <span className="inline-flex rounded-full border border-champagne-700/30 px-2 py-0.5 text-[11px] text-muted-foreground">{experience.mood}</span>
+                  </span>
                 </span>
               </button>
               );
@@ -184,7 +194,7 @@ export function RequestFormSteps({
 
       {step === 2 && (
         <div className="space-y-3">
-          <div className="rounded-lg border border-champagne-700/40 bg-ink-800/90 p-4">
+          <div className="rounded-lg border border-champagne-700/40 bg-[radial-gradient(circle_at_top_right,rgba(216,183,100,0.16),transparent_34%),rgba(17,17,19,0.94)] p-4">
             <div className="flex items-center gap-3">
               <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="xl" />
               <div>
@@ -194,7 +204,7 @@ export function RequestFormSteps({
               </div>
             </div>
           </div>
-          <h3 className="font-serif text-2xl">Choose service</h3>
+          <h3 className="font-serif text-2xl">What should we arrange?</h3>
           <div className="grid grid-cols-2 gap-3">
             {selectedExperience.services.map((service) => {
               const Icon = service.icon;
@@ -208,11 +218,13 @@ export function RequestFormSteps({
                   form.setValue("serviceLabel", service.label, { shouldValidate: true });
                 }}
                 className={cn(
-                  "flex min-h-28 flex-col justify-between rounded-lg border bg-ink-700 p-4 text-left transition",
-                  active ? "border-champagne-300 shadow-glow" : "border-champagne-700/40"
+                  "group flex min-h-32 flex-col justify-between rounded-lg border bg-ink-700 p-4 text-left transition active:scale-[0.99]",
+                  active ? "border-champagne-300 bg-champagne-300/10 shadow-glow" : "border-champagne-700/40 hover:border-champagne-300/60"
                 )}
               >
-                <Icon className="size-6 text-champagne-300" />
+                <span className="flex size-10 items-center justify-center rounded-md bg-ink-900/70 text-champagne-300">
+                  <Icon className="size-5" />
+                </span>
                 <span>
                   <span className="block font-semibold">{service.label}</span>
                   <span className="mt-1 block text-xs leading-snug text-muted-foreground">{service.description}</span>
@@ -263,7 +275,10 @@ export function RequestFormSteps({
 
       {step === 3 && (
         <div className="space-y-4">
-          <h2 className="font-serif text-2xl">Guest details</h2>
+          <div className="rounded-lg border border-champagne-700/30 bg-secondary/50 p-4">
+            <h2 className="font-serif text-2xl">Who should we contact?</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Just the essentials. WhatsApp is best for fast confirmation.</p>
+          </div>
           <Field label="Name" error={form.formState.errors.name?.message}>
             <Input {...form.register("name")} placeholder="Full name" />
           </Field>
@@ -281,7 +296,10 @@ export function RequestFormSteps({
 
       {step === 4 && (
         <div className="space-y-4">
-          <h2 className="font-serif text-2xl">Night details</h2>
+          <div className="rounded-lg border border-champagne-700/30 bg-secondary/50 p-4">
+            <h2 className="font-serif text-2xl">When are you going?</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Approximate times are fine. We’ll confirm the details with you.</p>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Date" error={form.formState.errors.requestedDate?.message}>
               <Input {...form.register("requestedDate")} type="date" min={new Date().toISOString().slice(0, 10)} />
@@ -304,8 +322,11 @@ export function RequestFormSteps({
 
       {step === 5 && (
         <div className="space-y-4">
-          <h2 className="font-serif text-2xl">Confirm request</h2>
-          <div className="rounded-lg border border-champagne-700/40 bg-ink-800 p-4 text-sm">
+          <div className="rounded-lg border border-champagne-700/30 bg-gradient-to-br from-champagne-300/10 to-transparent p-4">
+            <h2 className="font-serif text-2xl">Ready to send</h2>
+            <p className="mt-1 text-sm text-muted-foreground">We’ll send this to the team and come back with the next step.</p>
+          </div>
+          <div className="rounded-lg border border-champagne-700/40 bg-ink-800 p-4 text-sm shadow-panel">
             <div className="mb-3 flex items-center gap-3">
               <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="md" />
               <div>
@@ -314,9 +335,15 @@ export function RequestFormSteps({
                 {selectedOccasion && <p className="text-champagne-300">{selectedOccasion.name} · {formatEventDate(selectedOccasion.event_date)}</p>}
               </div>
             </div>
-            <p className="text-muted-foreground">{formatEnum(values.requestType)} · {values.requestedDate} · {values.guestCount} guests</p>
-            <p className="mt-3">{values.name}</p>
-            <p className="text-muted-foreground">{values.phone}</p>
+            <div className="grid grid-cols-3 gap-2">
+              <ReviewFact icon={CalendarDays} label="Date" value={values.requestedDate} />
+              <ReviewFact icon={Users} label="Guests" value={String(values.guestCount)} />
+              <ReviewFact icon={Clock} label="Arrival" value={values.arrivalTime || "TBC"} />
+            </div>
+            <div className="mt-3 rounded-md bg-secondary/70 p-3">
+              <p className="font-semibold">{values.name}</p>
+              <p className="text-muted-foreground">{values.phone}</p>
+            </div>
           </div>
         </div>
       )}
@@ -355,6 +382,19 @@ function VenueLogo({ club, monogram, size = "md" }: Readonly<{ club?: Club | nul
         <span className={cn(size === "xl" ? "text-xl" : "text-lg")}>{monogram}</span>
       )}
     </span>
+  );
+}
+
+function ReviewFact({
+  icon: Icon,
+  label,
+  value
+}: Readonly<{ icon: typeof CalendarDays; label: string; value: string }>) {
+  return (
+    <div className="rounded-md bg-ink-900/70 p-2">
+      <p className="flex items-center gap-1 text-[11px] text-muted-foreground"><Icon className="size-3.5 text-champagne-300" />{label}</p>
+      <p className="mt-1 truncate font-semibold">{value}</p>
+    </div>
   );
 }
 
