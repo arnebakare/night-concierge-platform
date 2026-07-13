@@ -7,7 +7,7 @@ export function LuxuryCard({
   return (
     <section
       className={cn(
-        "rounded-lg border border-champagne-700/40 bg-card/90 p-4 shadow-panel backdrop-blur",
+        "rounded-lg border border-champagne-700/35 bg-card/90 p-4 shadow-panel ring-1 ring-white/[0.025] backdrop-blur transition-colors",
         className
       )}
     >

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { RequestCard } from "@/components/request/request-card";
 import { RequestFilters } from "@/components/request/request-filters";
+import { RequestListSummary } from "@/components/request/request-list-summary";
 import { RequestStatusControl } from "@/components/request/request-status-control";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
 import { requireProfile } from "@/lib/auth";
@@ -31,6 +32,7 @@ export default async function ManagerRequestsPage({
           Completed and moved out of the active inbox.
         </div>
       )}
+      <RequestListSummary requests={requests} baseHref="/manager/requests" />
       <RequestFilters action="/manager/requests" values={filters} clubs={clubs} promoters={promoters} />
       <div className="easy-only space-y-3">
         {requests.length ? requests.map((request) => (

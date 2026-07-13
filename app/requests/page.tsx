@@ -4,6 +4,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { RequestCard } from "@/components/request/request-card";
 import { RequestFilters } from "@/components/request/request-filters";
+import { RequestListSummary } from "@/components/request/request-list-summary";
 import { RequestStatusControl } from "@/components/request/request-status-control";
 import { requireProfile } from "@/lib/auth";
 import { getRequestsForProfile } from "@/lib/data/app";
@@ -28,6 +29,7 @@ export default async function RequestsPage({
           Completed and moved out of your active requests.
         </div>
       )}
+      <RequestListSummary requests={requests} baseHref="/requests" />
       <RequestFilters action="/requests" values={filters} />
       <div className="space-y-3">
         {requests.length ? requests.map((request) => (

@@ -12,11 +12,11 @@ export function ActionTile({
     <Link
       href={href}
       className={cn(
-        "flex min-h-24 flex-col justify-between rounded-lg border border-champagne-700/40 bg-ink-700/90 p-4 text-left shadow-panel transition hover:border-champagne-300/70 active:scale-[0.98]",
+        "group flex min-h-24 flex-col justify-between rounded-lg border border-champagne-700/35 bg-ink-700/90 p-4 text-left shadow-panel ring-1 ring-white/[0.025] transition hover:-translate-y-0.5 hover:border-champagne-300/70 hover:bg-ink-600 active:scale-[0.98]",
         className
       )}
     >
-      <Icon className="size-6 text-champagne-300" />
+      <Icon className="size-6 text-champagne-300 transition group-hover:scale-105" />
       <span className="text-base font-semibold text-foreground">{label}</span>
     </Link>
   );
