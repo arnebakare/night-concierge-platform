@@ -11,7 +11,7 @@ import type { RequestStatus, RequestType } from "@/lib/types";
 
 export default async function RequestsPage({
   searchParams
-}: Readonly<{ searchParams: Promise<{ status?: string; type?: string; date?: string; q?: string }> }>) {
+}: Readonly<{ searchParams: Promise<{ status?: string; type?: string; date?: string; q?: string; archived?: string }> }>) {
   const profile = await requireProfile(["PROMOTER", "SUPER_ADMIN"]);
   const filters = await searchParams;
   const requests = await getRequestsForProfile(profile, {
@@ -23,12 +23,17 @@ export default async function RequestsPage({
 
   return (
     <AppShell profile={profile} title="My requests" eyebrow="Guestlist">
+      {filters.archived === "1" && (
+        <div className="mb-4 rounded-md border border-champagne-700/40 bg-champagne-300/10 p-3 text-sm text-champagne-100">
+          Completed and moved out of your active requests.
+        </div>
+      )}
       <RequestFilters action="/requests" values={filters} />
       <div className="space-y-3">
         {requests.length ? requests.map((request) => (
           <div key={request.id}>
             <RequestCard request={request} href={`/requests/${request.id}`} />
-            <RequestStatusControl requestId={request.id} status={request.status} />
+            <RequestStatusControl requestId={request.id} status={request.status} returnTo="/requests" />
           </div>
         )) : <EmptyState />}
       </div>

@@ -24,6 +24,7 @@ type SalesRequest = Pick<
 
 export function localDateString(offsetDays = 0) {
   const date = new Date();
+  date.setHours(12, 0, 0, 0);
   date.setDate(date.getDate() + offsetDays);
   return date.toISOString().slice(0, 10);
 }
@@ -36,7 +37,7 @@ export function parseWhatsAppLead(raw: string, clubs: Club[]): LeadDraft {
   const phone = text.match(/(\+?\d[\d\s().-]{6,}\d)/)?.[1]?.trim() ?? "";
   const guests = lower.match(/(\d{1,3})\s*(pax|people|persons|guests|guest|personer|pers|personas|personas?)/)?.[1];
   const budget = text.match(/(?:€|eur|budget|max|min|spend|gasto|presupuesto|pris|budget)\s*[:\-]?\s*(€?\s?\d{2,6}(?:\s?€)?)/i)?.[1] ?? "";
-  const arrival = text.match(/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/)?.[0]?.replace(".", ":") ?? "";
+  const arrival = inferArrivalTime(text);
   const language = inferLanguage(lower);
 
   return {
@@ -44,7 +45,7 @@ export function parseWhatsAppLead(raw: string, clubs: Club[]): LeadDraft {
     phone,
     clubId: club?.id ?? "",
     requestType,
-    requestedDate: inferDate(lower),
+    requestedDate: inferDate(text),
     arrivalTime: arrival,
     guestCount: guests ? Number(guests) : requestType === "TABLE" ? 4 : 2,
     budget,
@@ -112,10 +113,15 @@ export function nextSalesAction(status: RequestStatus) {
 }
 
 export function whatsAppHref(phone?: string | null, message?: string) {
+  if (isTemporaryPhone(phone)) return "#";
   const digits = phone?.replace(/\D/g, "") || "";
   if (!digits) return "#";
   const text = message ? `?text=${encodeURIComponent(message)}` : "";
   return `https://wa.me/${digits}${text}`;
+}
+
+export function isTemporaryPhone(phone?: string | null) {
+  return Boolean(phone?.startsWith("lead-") || /^000\d{10,}$/.test(phone ?? ""));
 }
 
 function inferRequestType(lower: string): RequestType {
@@ -126,7 +132,14 @@ function inferRequestType(lower: string): RequestType {
 }
 
 function inferDate(lower: string) {
-  if (/\b(tomorrow|imorgon|mañana|manana)\b/.test(lower)) return localDateString(1);
+  const text = lower.toLowerCase();
+  const explicit = parseExplicitDate(text);
+  if (explicit) return explicit;
+  const weekday = parseWeekday(text);
+  if (weekday) return weekday;
+  if (/\b(day after tomorrow|övermorgon|pasado mañana|pasado manana)\b/.test(text)) return localDateString(2);
+  if (/\b(tomorrow|imorgon|mañana|manana)\b/.test(text)) return localDateString(1);
+  if (/\b(today|tonight|ikväll|ikvall|hoy|esta noche)\b/.test(text)) return localDateString(0);
   return localDateString(0);
 }
 
@@ -138,4 +151,95 @@ function inferLanguage(lower: string): LeadDraft["language"] {
 
 function cleanContext(message: string) {
   return message.replace(/^Selected (service|occasion):.+$/gm, "").trim();
+}
+
+function parseExplicitDate(text: string) {
+  const namedMonth = parseNamedMonthDate(text);
+  if (namedMonth) return namedMonth;
+
+  const iso = text.match(/\b(20\d{2})[-/.](0?[1-9]|1[0-2])[-/.](0?[1-9]|[12]\d|3[01])\b/);
+  if (iso) return toDateString(Number(iso[1]), Number(iso[2]), Number(iso[3]));
+
+  const european = text.match(/\b(0?[1-9]|[12]\d|3[01])[-/.](0?[1-9]|1[0-2])(?:[-/.](20\d{2}|\d{2}))?\b/);
+  if (!european) return null;
+  const year = normalizeYear(european[3]);
+  return futureDateString(year, Number(european[2]), Number(european[1]));
+}
+
+function parseNamedMonthDate(text: string) {
+  const months = [
+    ["jan", "january", "enero", "januari"],
+    ["feb", "february", "febrero", "februari"],
+    ["mar", "march", "marzo", "mars"],
+    ["apr", "april", "abril"],
+    ["may", "mayo", "maj"],
+    ["jun", "june", "junio", "juni"],
+    ["jul", "july", "julio", "juli"],
+    ["aug", "august", "agosto", "augusti"],
+    ["sep", "sept", "september", "septiembre"],
+    ["oct", "october", "octubre", "oktober"],
+    ["nov", "november", "noviembre"],
+    ["dec", "december", "diciembre", "december"]
+  ];
+  for (let index = 0; index < months.length; index += 1) {
+    const monthName = months[index].join("|");
+    const dayBefore = text.match(new RegExp(`\\b(0?[1-9]|[12]\\d|3[01])\\s*(?:st|nd|rd|th)?\\s+(${monthName})\\b`));
+    if (dayBefore) return futureDateString(new Date().getFullYear(), index + 1, Number(dayBefore[1]));
+    const monthBefore = text.match(new RegExp(`\\b(${monthName})\\s+(0?[1-9]|[12]\\d|3[01])\\b`));
+    if (monthBefore) return futureDateString(new Date().getFullYear(), index + 1, Number(monthBefore[2]));
+  }
+  return null;
+}
+
+function parseWeekday(text: string) {
+  const weekdays = [
+    ["sunday", "söndag", "sondag", "domingo"],
+    ["monday", "måndag", "mandag", "lunes"],
+    ["tuesday", "tisdag", "martes"],
+    ["wednesday", "onsdag", "miércoles", "miercoles"],
+    ["thursday", "torsdag", "jueves"],
+    ["friday", "fredag", "viernes"],
+    ["saturday", "lördag", "lordag", "sábado", "sabado"]
+  ];
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  const todayDay = today.getDay();
+  for (let day = 0; day < weekdays.length; day += 1) {
+    if (weekdays[day].some((name) => new RegExp(`\\b${name}\\b`).test(text))) {
+      const offset = (day - todayDay + 7) % 7 || 7;
+      return localDateString(offset);
+    }
+  }
+  return null;
+}
+
+function inferArrivalTime(text: string) {
+  const explicit = text.match(/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/);
+  if (explicit) return `${explicit[1].padStart(2, "0")}:${explicit[2]}`;
+  const compact = text.match(/\b([01]?\d|2[0-3])\s*(pm|am)\b/i);
+  if (!compact) return "";
+  let hour = Number(compact[1]);
+  const suffix = compact[2].toLowerCase();
+  if (suffix === "pm" && hour < 12) hour += 12;
+  if (suffix === "am" && hour === 12) hour = 0;
+  return `${String(hour).padStart(2, "0")}:00`;
+}
+
+function normalizeYear(value?: string) {
+  if (!value) return new Date().getFullYear();
+  const year = Number(value);
+  return year < 100 ? 2000 + year : year;
+}
+
+function futureDateString(year: number, month: number, day: number) {
+  const candidate = new Date(year, month - 1, day, 12);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (candidate < today && !String(year).startsWith("20")) candidate.setFullYear(candidate.getFullYear() + 1);
+  if (candidate < today) candidate.setFullYear(candidate.getFullYear() + 1);
+  return toDateString(candidate.getFullYear(), candidate.getMonth() + 1, candidate.getDate());
+}
+
+function toDateString(year: number, month: number, day: number) {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }

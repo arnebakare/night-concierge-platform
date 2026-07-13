@@ -6,7 +6,7 @@ import { updateRequestStatus } from "@/lib/actions/management-actions";
 import type { ConciergeRequest } from "@/lib/types";
 import { buildAvailabilityMessage, buildClientReply, buildUpsellIdeas, nextSalesAction, whatsAppHref } from "@/lib/sales/funnel";
 
-export function SalesAssistantPanel({ request }: Readonly<{ request: ConciergeRequest }>) {
+export function SalesAssistantPanel({ request, returnTo }: Readonly<{ request: ConciergeRequest; returnTo?: string }>) {
   const availabilityMessage = buildAvailabilityMessage(request);
   const clientReply = buildClientReply(request);
   const upsells = buildUpsellIdeas(request);
@@ -63,7 +63,7 @@ export function SalesAssistantPanel({ request }: Readonly<{ request: ConciergeRe
         <StatusButton requestId={request.id} status="CONTACTED" label="Client replied" />
         <StatusButton requestId={request.id} status="PENDING" label="Asked venue" />
         <StatusButton requestId={request.id} status="CONFIRMED" label="Confirmed" primary />
-        <StatusButton requestId={request.id} status="ARRIVED" label="Complete" />
+        <StatusButton requestId={request.id} status="ARRIVED" label="Complete" returnTo={returnTo} />
       </div>
     </LuxuryCard>
   );
@@ -73,11 +73,13 @@ function StatusButton({
   requestId,
   status,
   label,
-  primary
-}: Readonly<{ requestId: string; status: string; label: string; primary?: boolean }>) {
+  primary,
+  returnTo
+}: Readonly<{ requestId: string; status: string; label: string; primary?: boolean; returnTo?: string }>) {
   return (
     <form action={updateRequestStatus}>
       <input type="hidden" name="requestId" value={requestId} />
+      {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
       <Button className="w-full" type="submit" name="status" value={status} variant={primary ? "default" : "secondary"}>
         {label}
       </Button>

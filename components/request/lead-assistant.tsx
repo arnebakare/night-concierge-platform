@@ -69,8 +69,8 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
         requestType: draft.requestType,
         requestedDate: draft.requestedDate,
         guestCount: draft.guestCount,
-        name: draft.clientName,
-        phone: draft.phone,
+        name: draft.clientName || "Unknown guest",
+        phone: draft.phone || `000${Date.now()}`,
         email: "",
         instagram: "",
         arrivalTime: draft.arrivalTime,
@@ -160,7 +160,7 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
           <Textarea value={draft.message} onChange={(event) => setDraftField("message", event.target.value, setDraft)} />
         </Field>
 
-        <Button type="button" size="lg" className="w-full" onClick={submit} disabled={pending || !draft.clientName || !draft.phone || !draft.clubId}>
+        <Button type="button" size="lg" className="w-full" onClick={submit} disabled={pending || !draft.clubId}>
           <Send className="size-5" /> {pending ? "Creating" : "Create request"}
         </Button>
         {error && <p className="text-sm text-red-200">{error}</p>}

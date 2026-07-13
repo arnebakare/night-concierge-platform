@@ -40,11 +40,10 @@ export async function handleInboundWhatsApp(payload: TwilioInboundWhatsAppPayloa
   const draft = parseWhatsAppLead(body, clubs);
   const selectedClub = clubs.find((club) => club.id === draft.clubId) ?? clubs[0];
   const clientPhone = staff ? extractClientPhone(body) : from.replace(/^whatsapp:/, "");
-  const clientName = extractClientName(body) || payload.ProfileName || (staff ? "" : "WhatsApp Guest");
+  const clientName = extractClientName(body) || (!staff ? payload.ProfileName : "") || "Unknown guest";
+  const fallbackPhone = clientPhone || fallbackLeadPhone(providerMessageId, from);
   const missing = [
-    !selectedClub ? "venue" : null,
-    !clientName ? "client name" : null,
-    !clientPhone ? "client WhatsApp" : null
+    !selectedClub ? "venue" : null
   ].filter(Boolean);
 
   const inboundId = await insertInboundMessage(supabase, {
@@ -54,21 +53,21 @@ export async function handleInboundWhatsApp(payload: TwilioInboundWhatsAppPayloa
     body,
     profileName: payload.ProfileName ?? null,
     sourceProfileId: staff?.id ?? null,
-    parseResult: { ...draft, clientName, clientPhone, senderRole: staff?.role ?? "CLIENT_OR_UNKNOWN" },
+    parseResult: { ...draft, clientName, clientPhone: clientPhone || null, senderRole: staff?.role ?? "CLIENT_OR_UNKNOWN" },
     status: missing.length ? "NEEDS_REVIEW" : "RECEIVED"
   });
 
   if (missing.length || !selectedClub) {
     return {
       ok: false,
-      reply: `I can add this, but I need: ${missing.join(", ")}. Send for example: "Olivia +4670... table Mamzel tomorrow 6 guests 23:30 budget 1500".`
+      reply: `I can add this, but I need: ${missing.join(", ")}. Example: "table Mamzel tomorrow 6 guests 23:30 budget 1500".`
     };
   }
 
   try {
     const clientId = await upsertClient(supabase, {
       name: clientName,
-      phone: clientPhone,
+      phone: fallbackPhone,
       createdBy: staff?.id ?? null
     });
     const managerId = staff?.role === "PROMOTER_MANAGER" ? staff.id : staff?.manager_id ?? await resolveDefaultManagerForClub(supabase, selectedClub.id);
@@ -115,7 +114,7 @@ export async function handleInboundWhatsApp(payload: TwilioInboundWhatsAppPayloa
     return {
       ok: true,
       requestId: request.id,
-      reply: `Added to Night Concierge: ${clientName} · ${selectedClub.name} · ${draft.requestedDate} · ${draft.guestCount} guests.`
+      reply: `Added: ${clientName} · ${selectedClub.name} · ${draft.requestedDate} · ${draft.guestCount} guests.`
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -211,10 +210,16 @@ function extractClientName(body: string) {
 }
 
 function normalizePhone(phone: string) {
+  if (phone.startsWith("lead-")) return phone;
   const digits = onlyDigits(phone);
   return phone.trim().startsWith("+") ? `+${digits}` : digits;
 }
 
 function onlyDigits(value: string) {
   return value.replace(/\D/g, "");
+}
+
+function fallbackLeadPhone(providerMessageId: string | null, from: string) {
+  const sid = providerMessageId ? onlyDigits(providerMessageId).slice(-10) : "";
+  return `lead-${sid || onlyDigits(from).slice(-10) || Date.now()}`;
 }

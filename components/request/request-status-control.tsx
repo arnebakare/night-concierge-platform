@@ -15,7 +15,11 @@ const easyActions: Partial<Record<RequestStatus, { status: RequestStatus; label:
   CONFIRMED: [{ status: "ARRIVED", label: "Complete & archive" }]
 };
 
-export function RequestStatusControl({ requestId, status }: Readonly<{ requestId: string; status: RequestStatus }>) {
+export function RequestStatusControl({
+  requestId,
+  status,
+  returnTo
+}: Readonly<{ requestId: string; status: RequestStatus; returnTo?: string }>) {
   const actions = easyActions[status] ?? [];
 
   return (
@@ -25,6 +29,7 @@ export function RequestStatusControl({ requestId, status }: Readonly<{ requestId
           {actions.map((action) => (
             <form action={updateRequestStatus} key={action.status}>
               <input type="hidden" name="requestId" value={requestId} />
+              {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
               <Button className="w-full" type="submit" name="status" value={action.status} variant={action.variant ?? "default"}>
                 {action.label}
               </Button>
@@ -34,6 +39,7 @@ export function RequestStatusControl({ requestId, status }: Readonly<{ requestId
       )}
       <form action={updateRequestStatus} className="advanced-only mt-3 flex gap-2">
         <input type="hidden" name="requestId" value={requestId} />
+        {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
         <select
           name="status"
           defaultValue={status}

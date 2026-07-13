@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Clock, MessageCircle, Phone, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { SalesAssistantPanel } from "@/components/request/sales-assistant-panel";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
 import { RequestStatusControl } from "@/components/request/request-status-control";
+import { updateRequestClientContact } from "@/lib/actions/management-actions";
 import type { ConciergeRequest } from "@/lib/types";
-import { whatsAppHref } from "@/lib/sales/funnel";
+import { isTemporaryPhone, whatsAppHref } from "@/lib/sales/funnel";
 import { formatEnum } from "@/lib/utils";
 
 export function RequestDetail({
@@ -39,10 +42,10 @@ export function RequestDetail({
           <Fact icon={MessageCircle} label="Budget" value={request.budget ?? "Not set"} />
         </div>
 
-        <RequestStatusControl requestId={request.id} status={request.status} />
+        <RequestStatusControl requestId={request.id} status={request.status} returnTo={backHref} />
       </LuxuryCard>
 
-      <SalesAssistantPanel request={request} />
+      <SalesAssistantPanel request={request} returnTo={backHref} />
 
       <LuxuryCard className="space-y-3">
         <div className="flex items-start justify-between gap-3">
@@ -51,7 +54,7 @@ export function RequestDetail({
             <h3 className="mt-2 text-xl font-semibold">{request.clients?.name ?? "Guest"}</h3>
             <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
               <Phone className="size-4 text-champagne-300" />
-              {request.clients?.phone ?? "No phone"}
+              {visiblePhone(request.clients?.phone) || "No phone yet"}
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -75,6 +78,22 @@ export function RequestDetail({
         <p className="text-sm text-muted-foreground">
           VIP {request.clients?.vip_level ?? "STANDARD"} · {formatEnum(request.clients?.status ?? "NORMAL")}
         </p>
+        <details className="rounded-md border border-champagne-700/30 bg-ink-900/50 p-3">
+          <summary className="cursor-pointer text-sm font-semibold text-champagne-100">Add or fix contact details</summary>
+          <form action={updateRequestClientContact} className="mt-3 grid gap-3 sm:grid-cols-2">
+            <input type="hidden" name="requestId" value={request.id} />
+            <input type="hidden" name="clientId" value={request.client_id} />
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input name="name" defaultValue={request.clients?.name ?? ""} placeholder="Client name" required />
+            </div>
+            <div className="space-y-2">
+              <Label>WhatsApp</Label>
+              <Input name="phone" defaultValue={visiblePhone(request.clients?.phone)} placeholder="+34..." required />
+            </div>
+            <Button type="submit" className="sm:col-span-2">Save contact</Button>
+          </form>
+        </details>
       </LuxuryCard>
 
       <LuxuryCard>
@@ -89,8 +108,13 @@ export function RequestDetail({
 }
 
 function phoneHref(phone?: string) {
+  if (isTemporaryPhone(phone)) return "#";
   const digits = phone?.replace(/[^\d+]/g, "") || "";
   return digits ? `tel:${digits}` : "#";
+}
+
+function visiblePhone(phone?: string | null) {
+  return isTemporaryPhone(phone) ? "" : phone ?? "";
 }
 
 function Fact({

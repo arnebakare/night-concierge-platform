@@ -12,7 +12,7 @@ import type { RequestStatus, RequestType } from "@/lib/types";
 
 export default async function ManagerRequestsPage({
   searchParams
-}: Readonly<{ searchParams: Promise<{ status?: string; type?: string; date?: string; q?: string; club?: string; promoter?: string }> }>) {
+}: Readonly<{ searchParams: Promise<{ status?: string; type?: string; date?: string; q?: string; club?: string; promoter?: string; archived?: string }> }>) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const filters = await searchParams;
   const [requests, clubs, promoters] = await Promise.all([getRequestsForProfile(profile, {
@@ -26,12 +26,17 @@ export default async function ManagerRequestsPage({
 
   return (
     <AppShell profile={profile} title="Request inbox" eyebrow="Manager">
+      {filters.archived === "1" && (
+        <div className="mb-4 rounded-md border border-champagne-700/40 bg-champagne-300/10 p-3 text-sm text-champagne-100">
+          Completed and moved out of the active inbox.
+        </div>
+      )}
       <RequestFilters action="/manager/requests" values={filters} clubs={clubs} promoters={promoters} />
       <div className="easy-only space-y-3">
         {requests.length ? requests.map((request) => (
           <div key={request.id} className="mx-auto max-w-3xl">
             <RequestCard request={request} href={`/manager/requests/${request.id}`} />
-            <RequestStatusControl requestId={request.id} status={request.status} />
+            <RequestStatusControl requestId={request.id} status={request.status} returnTo="/manager/requests" />
           </div>
         )) : <EmptyState />}
       </div>
@@ -39,7 +44,7 @@ export default async function ManagerRequestsPage({
         {requests.length ? requests.map((request) => (
           <div key={request.id}>
             <RequestCard request={request} href={`/manager/requests/${request.id}`} />
-            <RequestStatusControl requestId={request.id} status={request.status} />
+            <RequestStatusControl requestId={request.id} status={request.status} returnTo="/manager/requests" />
           </div>
         )) : <EmptyState />}
       </div>
@@ -58,7 +63,7 @@ export default async function ManagerRequestsPage({
                 </td>
                 <td>{request.clubs?.name}</td>
                 <td>{formatEnum(request.request_type)}</td>
-                <td><RequestStatusBadge status={request.status} /><RequestStatusControl requestId={request.id} status={request.status} /></td>
+                <td><RequestStatusBadge status={request.status} /><RequestStatusControl requestId={request.id} status={request.status} returnTo="/manager/requests" /></td>
                 <td>{request.requested_date}</td>
                 <td>{request.promoter?.name ?? "Unassigned"}</td>
               </tr>

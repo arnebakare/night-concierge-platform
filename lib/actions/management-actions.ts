@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { requireProfile } from "@/lib/auth";
@@ -15,14 +16,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const statusSchema = z.object({
   requestId: z.string().min(1),
-  status: z.enum(["NEW", "CONTACTED", "PENDING", "CONFIRMED", "ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"])
+  status: z.enum(["NEW", "CONTACTED", "PENDING", "CONFIRMED", "ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"]),
+  returnTo: z.string().optional().or(z.literal(""))
 });
 
 export async function updateRequestStatus(formData: FormData) {
   const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const parsed = statusSchema.safeParse({
     requestId: formData.get("requestId"),
-    status: formData.get("status")
+    status: formData.get("status"),
+    returnTo: formData.get("returnTo") || ""
   });
   if (!parsed.success) return;
 
@@ -31,6 +34,7 @@ export async function updateRequestStatus(formData: FormData) {
     revalidatePath("/manager/requests");
     revalidatePath(`/requests/${parsed.data.requestId}`);
     revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+    redirectAfterArchive(parsed.data.status, parsed.data.returnTo);
     return;
   }
 
@@ -56,6 +60,58 @@ export async function updateRequestStatus(formData: FormData) {
   revalidatePath(`/manager/requests/${parsed.data.requestId}`);
   revalidatePath("/dashboard");
   revalidatePath("/manager");
+  redirectAfterArchive(parsed.data.status, parsed.data.returnTo);
+}
+
+const requestClientContactSchema = z.object({
+  requestId: z.string().min(1),
+  clientId: z.string().min(1),
+  name: z.string().trim().min(2).max(100),
+  phone: z.string().trim().min(2).max(40)
+});
+
+export async function updateRequestClientContact(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = requestClientContactSchema.safeParse({
+    requestId: formData.get("requestId"),
+    clientId: formData.get("clientId"),
+    name: formData.get("name"),
+    phone: formData.get("phone")
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath(`/requests/${parsed.data.requestId}`);
+    revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+    return;
+  }
+
+  const supabase = await createClient();
+  const { data: previous } = await supabase.from("clients").select("name, phone").eq("id", parsed.data.clientId).maybeSingle();
+  const { error } = await supabase
+    .from("clients")
+    .update({ name: parsed.data.name, phone: parsed.data.phone })
+    .eq("id", parsed.data.clientId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "REQUEST_CLIENT_CONTACT_UPDATED",
+    entityType: "clients",
+    entityId: parsed.data.clientId,
+    metadata: { requestId: parsed.data.requestId, from: previous ?? null, to: { name: parsed.data.name, phone: parsed.data.phone } }
+  });
+
+  revalidatePath(`/requests/${parsed.data.requestId}`);
+  revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+  revalidatePath("/clients");
+  revalidatePath("/manager/clients");
+}
+
+function redirectAfterArchive(status: z.infer<typeof statusSchema>["status"], returnTo?: string) {
+  if (!["ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"].includes(status) || !returnTo?.startsWith("/")) return;
+  const separator = returnTo.includes("?") ? "&" : "?";
+  redirect(`${returnTo}${separator}archived=1`);
 }
 
 const tableCostSchema = z.object({
