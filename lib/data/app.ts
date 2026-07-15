@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Client, Club, ConciergeEvent, ConciergeRequest, Profile, RequestStatus, RequestType } from "@/lib/types";
+import type { Client, Club, ConciergeEvent, ConciergeRequest, Profile, RequestStatus, RequestType, SchedulePlan } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -429,6 +429,40 @@ export async function getEventsForSchedule(from: string, to: string) {
   }
 }
 
+export async function getSchedulePlansForProfile(profile: Profile) {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("schedule_plans")
+      .select("id, user_id, client_id, title, city, date_from, date_to, spend_profile, prompt_text, message, plan, source, created_at, clients(name, phone), profiles(name, email)")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (profile.role === "PROMOTER") query = query.eq("user_id", profile.id);
+    const { data, error } = await query;
+    if (error) throw error;
+    return normalizeSchedulePlans(data);
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return demoSchedulePlans();
+  }
+}
+
+export async function getSchedulePlanDetail(planId: string) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("schedule_plans")
+      .select("id, user_id, client_id, title, city, date_from, date_to, spend_profile, prompt_text, message, plan, source, created_at, clients(name, phone), profiles(name, email)")
+      .eq("id", planId)
+      .single();
+    if (error) throw error;
+    return normalizeSchedulePlans([data])[0] ?? null;
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return demoSchedulePlans().find((plan) => plan.id === planId) ?? demoSchedulePlans()[0] ?? null;
+  }
+}
+
 export async function getEventImportRuns() {
   try {
     const supabase = await createClient();
@@ -631,6 +665,50 @@ function applyClientFilters(clients: Client[], filters?: ClientFilters) {
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(query))
   );
+}
+
+function normalizeSchedulePlans(data: unknown): SchedulePlan[] {
+  return ((data as Array<Omit<SchedulePlan, "clients" | "profiles"> & {
+    clients?: SchedulePlan["clients"] | SchedulePlan["clients"][] | null;
+    profiles?: SchedulePlan["profiles"] | SchedulePlan["profiles"][] | null;
+  }> | null) ?? []).map((plan) => ({
+    ...plan,
+    clients: Array.isArray(plan.clients) ? plan.clients[0] ?? null : plan.clients ?? null,
+    profiles: Array.isArray(plan.profiles) ? plan.profiles[0] ?? null : plan.profiles ?? null
+  }));
+}
+
+function demoSchedulePlans(): SchedulePlan[] {
+  const today = new Date().toISOString().slice(0, 10);
+  return [{
+    id: "demo-schedule-plan",
+    user_id: demoProfile.id,
+    client_id: null,
+    title: "Marbella plan · demo",
+    city: "Marbella",
+    date_from: today,
+    date_to: today,
+    spend_profile: "HIGH_SPEND",
+    prompt_text: "Demo high-spend client",
+    message: "I put together a polished Marbella plan for you:\n\nToday - Casanis into Le Jade\n14:00 · La Plage Casanis (Beach club)\n21:30 · Nobu Marbella (Restaurant)\n01:00 · Le Jade (After-party)\n\nI can check availability and adjust it depending on what kind of day/night you prefer.",
+    plan: {
+      title: "Marbella demo plan",
+      days: [{
+        date: today,
+        headline: "Casanis into Le Jade",
+        stops: [
+          { time: "14:00", venue: "La Plage Casanis", category: "Beach club", area: "Elviria", why: "Beach lunch and social start.", bookingAngle: "Ask for lunch or beach setup." },
+          { time: "21:30", venue: "Nobu Marbella", category: "Restaurant", area: "Puente Romano", why: "Polished dinner.", bookingAngle: "Confirm table size." },
+          { time: "01:00", venue: "Le Jade", category: "After-party", area: "Marbella", why: "Strong late continuation.", bookingAngle: "Keep as the late option." }
+        ],
+        note: "Confirm availability before promising exact tables."
+      }]
+    },
+    source: "APP",
+    created_at: new Date().toISOString(),
+    clients: null,
+    profiles: { name: demoProfile.name, email: demoProfile.email }
+  }];
 }
 
 function applyNoteFilters(

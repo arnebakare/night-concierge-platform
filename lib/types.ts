@@ -77,3 +77,21 @@ export type ConciergeRequest = {
   clubs?: Pick<Club, "name" | "city" | "slug"> | null;
   promoter?: Pick<Profile, "name" | "email"> | null;
 };
+
+export type SchedulePlan = {
+  id: string;
+  user_id: string | null;
+  client_id: string | null;
+  title: string;
+  city: string;
+  date_from: string;
+  date_to: string;
+  spend_profile: "NORMAL" | "HIGH_SPEND";
+  prompt_text: string | null;
+  message: string;
+  plan: Record<string, unknown>;
+  source: "APP" | "WHATSAPP";
+  created_at: string;
+  clients?: Pick<Client, "name" | "phone"> | null;
+  profiles?: Pick<Profile, "name" | "email"> | null;
+};

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseWhatsAppLead } from "@/lib/sales/funnel";
+import { generateSchedulePlan, type SpendProfile } from "@/lib/services/ai-schedule";
 import type { Club, Profile } from "@/lib/types";
 
 export type TwilioInboundWhatsAppPayload = {
@@ -26,8 +27,11 @@ export async function handleInboundWhatsApp(payload: TwilioInboundWhatsAppPayloa
   }
 
   const existing = providerMessageId
-    ? await supabase.from("inbound_whatsapp_messages").select("id, created_request_id").eq("provider_message_id", providerMessageId).maybeSingle()
+    ? await supabase.from("inbound_whatsapp_messages").select("id, created_request_id, created_schedule_plan_id").eq("provider_message_id", providerMessageId).maybeSingle()
     : { data: null };
+  if (existing.data?.created_schedule_plan_id) {
+    return { ok: true, reply: "Schedule already created in Night Concierge." };
+  }
   if (existing.data?.created_request_id) {
     return { ok: true, reply: "Already added to Night Concierge." };
   }
@@ -37,6 +41,17 @@ export async function handleInboundWhatsApp(payload: TwilioInboundWhatsAppPayloa
     findStaffByPhone(supabase, from)
   ]);
   const clubs = (clubsData ?? []) as Club[];
+  if (isScheduleCommand(body)) {
+    return createScheduleFromWhatsApp(supabase, {
+      body,
+      from,
+      to,
+      providerMessageId,
+      profileName: payload.ProfileName ?? null,
+      staff
+    });
+  }
+
   const draft = parseWhatsAppLead(body, clubs);
   const selectedClub = clubs.find((club) => club.id === draft.clubId) ?? clubs[0];
   const clientPhone = staff ? extractClientPhone(body) : from.replace(/^whatsapp:/, "");
@@ -123,6 +138,82 @@ export async function handleInboundWhatsApp(payload: TwilioInboundWhatsAppPayloa
   }
 }
 
+async function createScheduleFromWhatsApp(
+  supabase: SupabaseClient,
+  input: {
+    body: string;
+    from: string;
+    to: string;
+    providerMessageId: string | null;
+    profileName: string | null;
+    staff: StaffProfile | null;
+  }
+) {
+  const parsed = parseScheduleCommand(input.body);
+  const inboundId = await insertInboundMessage(supabase, {
+    providerMessageId: input.providerMessageId,
+    from: input.from,
+    to: input.to,
+    body: input.body,
+    profileName: input.profileName,
+    sourceProfileId: input.staff?.id ?? null,
+    parseResult: { command: "schedule", ...parsed },
+    status: parsed ? "RECEIVED" : "NEEDS_REVIEW"
+  });
+
+  if (!parsed) {
+    return {
+      ok: false,
+      reply: 'Send like: "schedule 4-8 aug high spend" or "schedule 2026-08-04 to 2026-08-08 normal".'
+    };
+  }
+
+  const events = await getScheduleEvents(supabase, parsed.from, parsed.to);
+  const generated = await generateSchedulePlan({
+    dateFrom: parsed.from,
+    dateTo: parsed.to,
+    spendProfile: parsed.spendProfile,
+    city: "Marbella",
+    clientContext: "Generated from WhatsApp command.",
+    events
+  });
+
+  const { data, error } = await supabase
+    .from("schedule_plans")
+    .insert({
+      user_id: input.staff?.id ?? null,
+      title: generated.title,
+      city: "Marbella",
+      date_from: parsed.from,
+      date_to: parsed.to,
+      spend_profile: parsed.spendProfile,
+      prompt_text: input.body,
+      message: generated.whatsappMessage,
+      plan: generated,
+      source: "WHATSAPP"
+    })
+    .select("id")
+    .single();
+  if (error || !data) {
+    await supabase.from("inbound_whatsapp_messages").update({ status: "FAILED", error_message: error?.message ?? "Could not save schedule." }).eq("id", inboundId);
+    return { ok: false, reply: "I could not create the schedule. Please check Night Concierge." };
+  }
+
+  await supabase
+    .from("inbound_whatsapp_messages")
+    .update({ status: "CREATED", created_schedule_plan_id: data.id })
+    .eq("id", inboundId);
+  await supabase.from("audit_logs").insert({
+    user_id: input.staff?.id ?? null,
+    action: "SCHEDULE_PLAN_CREATED_FROM_WHATSAPP",
+    entity_type: "schedule_plans",
+    entity_id: data.id,
+    metadata: { from: parsed.from, to: parsed.to, spendProfile: parsed.spendProfile }
+  });
+
+  return { ok: true, reply: generated.whatsappMessage };
+}
+
 async function findStaffByPhone(supabase: SupabaseClient, from: string): Promise<StaffProfile | null> {
   const digits = onlyDigits(from);
   const { data } = await supabase
@@ -190,6 +281,78 @@ async function resolveDefaultManagerForClub(supabase: SupabaseClient, clubId: st
     .limit(1)
     .maybeSingle();
   return data?.user_id ?? null;
+}
+
+async function getScheduleEvents(supabase: SupabaseClient, from: string, to: string) {
+  const { data } = await supabase
+    .from("events")
+    .select("id, club_id, name, slug, event_date, description, active, source_url, source_key, imported_at, clubs(name, city, slug)")
+    .eq("active", true)
+    .gte("event_date", from)
+    .lte("event_date", to)
+    .order("event_date", { ascending: true })
+    .order("name", { ascending: true })
+    .limit(120);
+  return ((data ?? []) as Array<Record<string, unknown> & { clubs?: unknown | unknown[] }>).map((event) => ({
+    ...event,
+    clubs: Array.isArray(event.clubs) ? event.clubs[0] ?? null : event.clubs ?? null
+  })) as never[];
+}
+
+function isScheduleCommand(body: string) {
+  return /^\s*(schedule|plan|trail)\b/i.test(body);
+}
+
+function parseScheduleCommand(body: string): { from: string; to: string; spendProfile: SpendProfile } | null {
+  const lower = body.toLowerCase();
+  const spendProfile: SpendProfile = /high\s*spend|vip|premium|high/i.test(lower) ? "HIGH_SPEND" : "NORMAL";
+  const isoRange = lower.match(/\b(20\d{2}-\d{2}-\d{2})\s*(?:to|-|until)\s*(20\d{2}-\d{2}-\d{2})\b/);
+  if (isoRange) return normalizeRange(isoRange[1], isoRange[2], spendProfile);
+
+  const monthRange = lower.match(/\b(\d{1,2})(?:\s*[-–]\s*(\d{1,2}))?\s+([a-zåäöáéíóúñ]+)\b/i);
+  if (monthRange) {
+    const month = monthNumber(monthRange[3]);
+    if (!month) return null;
+    const year = inferYear(month);
+    const from = toDateString(year, month, Number(monthRange[1]));
+    const to = toDateString(year, month, Number(monthRange[2] ?? monthRange[1]));
+    return normalizeRange(from, to, spendProfile);
+  }
+
+  return null;
+}
+
+function normalizeRange(from: string, to: string, spendProfile: SpendProfile) {
+  return from <= to ? { from, to, spendProfile } : { from: to, to: from, spendProfile };
+}
+
+function monthNumber(value: string) {
+  const months = [
+    ["jan", "january", "enero", "januari"],
+    ["feb", "february", "febrero", "februari"],
+    ["mar", "march", "marzo", "mars"],
+    ["apr", "april", "abril"],
+    ["may", "mayo", "maj"],
+    ["jun", "june", "junio", "juni"],
+    ["jul", "july", "julio", "juli"],
+    ["aug", "august", "agosto", "augusti"],
+    ["sep", "sept", "september", "septiembre"],
+    ["oct", "october", "octubre", "oktober"],
+    ["nov", "november", "noviembre"],
+    ["dec", "december", "diciembre"]
+  ];
+  const index = months.findIndex((names) => names.includes(value.toLowerCase()));
+  return index === -1 ? null : index + 1;
+}
+
+function inferYear(month: number) {
+  const now = new Date();
+  const year = now.getFullYear();
+  return month < now.getMonth() + 1 ? year + 1 : year;
+}
+
+function toDateString(year: number, month: number, day: number) {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 function normalizeWhatsAppAddress(value?: string | null) {
