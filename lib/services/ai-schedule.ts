@@ -46,6 +46,13 @@ type AiVenueRule = {
   guidance: string | null;
 };
 
+type PreviousDayContext = {
+  date: string;
+  venues: string[];
+  categories: ScheduleStop["category"][];
+  note: string;
+};
+
 const venueGuide = [
   { name: "La Plage Casanis", category: "Beach club", area: "Elviria", vibe: "beach lunch, stylish daytime, sunset groups, Wednesday/Sunday DJ party until 00:00", spend: "normal/high", priority: "Wednesday and Sunday higher priority as the main party block, not only a restaurant/lunch stop" },
   { name: "Le Jade", category: "After-party", area: "Marbella", vibe: "late intimate after-party", spend: "normal/high", priority: "Wednesday and Sunday higher priority, especially after La Plage Casanis" },
@@ -108,7 +115,7 @@ export async function generateSchedulePlan(input: ScheduleInput): Promise<Schedu
     const plannerRules = await getAiVenueRules();
     const days: ScheduleDay[] = [];
     for (const date of dateRange(input.dateFrom, input.dateTo)) {
-      days.push(await requestScheduleDay(apiKey, model, input, date, plannerRules));
+      days.push(await requestScheduleDay(apiKey, model, input, date, plannerRules, days));
     }
     const title = `${input.city ?? "Marbella"} Party Itinerary: ${formatEnglishRange(input.dateFrom, input.dateTo)}`;
     return { title, days, whatsappMessage: buildConciergeMessage(days, input.spendProfile), modelUsed: model, generatedBy: "OPENAI" };
@@ -117,7 +124,7 @@ export async function generateSchedulePlan(input: ScheduleInput): Promise<Schedu
   }
 }
 
-async function requestScheduleDay(apiKey: string, model: string, input: ScheduleInput, date: string, plannerRules: AiVenueRule[]) {
+async function requestScheduleDay(apiKey: string, model: string, input: ScheduleInput, date: string, plannerRules: AiVenueRule[], previousDays: ScheduleDay[]) {
   const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -143,7 +150,7 @@ async function requestScheduleDay(apiKey: string, model: string, input: Schedule
           },
           {
             role: "user",
-            content: buildPrompt(input, date, plannerRules)
+            content: buildPrompt(input, date, plannerRules, previousDays)
           }
         ],
         text: {
@@ -165,7 +172,8 @@ async function requestScheduleDay(apiKey: string, model: string, input: Schedule
   return day;
 }
 
-function buildPrompt(input: ScheduleInput, date: string, plannerRules: AiVenueRule[]) {
+function buildPrompt(input: ScheduleInput, date: string, plannerRules: AiVenueRule[], previousDays: ScheduleDay[]) {
+  const previousDayContext = previousDays.map(toPreviousDayContext);
   return JSON.stringify({
     task: "Build one Marbella party trail day for a promoter to send to a client on WhatsApp.",
     city: input.city ?? "Marbella",
@@ -173,23 +181,29 @@ function buildPrompt(input: ScheduleInput, date: string, plannerRules: AiVenueRu
     fullDateRange: { from: input.dateFrom, to: input.dateTo },
     spendProfile: input.spendProfile,
     clientContext: input.clientContext || "",
+    previousDays: previousDayContext,
+    alreadyUsedVenueNames: [...new Set(previousDayContext.flatMap((day) => day.venues))],
     rules: [
       "Return exactly one day object in the days array.",
       "The only day.date must exactly equal the requested date.",
       "The customer is mainly a party/nightlife client. Build the day around music, DJs, beach-club parties, dinner only when it improves the night, and late club/after-party energy.",
       "Include beach clubs, restaurants, and nightclubs/after-parties where suitable, but prioritize party flow over a generic tourist itinerary.",
       "Each day should have 2-4 stops: party beach/daytime, optional dinner, late night/after-party. Do not force dinner if the party block already runs late.",
-      "For HIGH_SPEND, favor La Cabane, Nikki Beach, Nobu, Cipriani, Nota Blu, Motel Particulier, Bon Bonniere, premium tables.",
-      "For NORMAL, keep it polished but not over the top: La Plage Casanis, Playa Padre, Mamzel, Momento, Le Jade.",
+      "For HIGH_SPEND, favor La Cabane, Nikki Beach, Nobu, Cipriani, Nota Blu, Motel Particulier, Bon Bonniere, premium tables, but still vary venues across the full range.",
+      "For NORMAL, keep it polished but not over the top: Playa Padre, La Plage Casanis, Mamzel, Momento, Le Jade, Pangea, and other approachable Marbella party options. Do not make normal spend feel like the same VIP circuit every day.",
       "On Wednesdays and Sundays, give a clear higher priority to La Plage Casanis and Le Jade. Treat La Plage Casanis as a party with DJs until 00:00, not only as lunch or dinner.",
+      "Outside Wednesday and Sunday, La Plage Casanis and Le Jade are options, not defaults. Do not use them on every date just because they have high local weight.",
       "On Wednesdays and Sundays, do not schedule dinner between La Plage Casanis and Le Jade unless the client context explicitly asks for dinner. A good pattern is La Plage Casanis party until 00:00, then Le Jade later.",
       "Use web search for current public programming on selected dates. Search official venue sites and public social/web results for DJs/artists at La Plage Casanis, Le Jade, Playa Padre, La Cabane, Momento, Motel Particulier, Bonbonniere, Pangea, Sublim Beach, GAIA, Coya, and other relevant Marbella venues.",
       "When a DJ, artist, or named event is found for a venue/date, put it directly in the stop.venue field using this style: 'La Plage Casanis - Arodes' or 'Le Jade - Secret Guest'.",
       "When a stop is a choice between two venues, put both directly in stop.venue using English style, for example: 'GAIA or Coya' or 'Bonbonniere or Pangea'.",
       "Prioritize big DJ names or clearly DJ-led events over generic restaurant stops when they happen during the selected dates.",
-      "Do not invent specific DJ names. If no DJ is known, say DJ/programming to confirm rather than naming one.",
-      "Do not repeat the same venues every day. Vary the beach club, dinner, and late-night options across the date range unless a specific DJ/event makes repeating a venue the best choice.",
-      "Use localPlannerRules as the Marbella taste layer. Higher weight means the venue should be preferred when the date and client fit. Priority days mean the venue is especially relevant on those weekdays.",
+      "Do not invent specific DJ names. If no DJ is known for the exact venue and date, say DJ/programming to confirm rather than naming one.",
+      "Do not repeat a specific DJ name on multiple days unless a current source clearly shows that DJ plays each of those exact dates.",
+      "Use previousDays and alreadyUsedVenueNames to make the full trip feel varied. Avoid repeating the same base venue on consecutive days.",
+      "Across a multi-day range, do not repeat the same base venue more than once unless there is a confirmed big DJ, artist, or named event on that exact date. If repeating, explain the event reason in why.",
+      "Vary the beach club, dinner, and late-night options across the date range. If yesterday used La Plage Casanis, Mamzel, and Le Jade, today should normally use different venues.",
+      "Use localPlannerRules as the Marbella taste layer. Higher weight means the venue should be preferred when the date and client fit, not that it should be repeated daily. Priority days mean the venue is especially relevant on those weekdays.",
       "Respect avoidAfterVenueNames to avoid over-heavy or locally awkward sequences. For example, if one venue says to avoid another after it, do not put both in the same day unless there is a major DJ/event reason.",
       "A confirmed big DJ, artist, or strong event can override venue weights and avoidance guidance, but mention the DJ or event clearly in the venue field.",
       "For the final WhatsApp message, use a short section per day with English weekday headings, bullet lines, and emojis. Do not include times or category labels in the customer message."
@@ -266,6 +280,24 @@ function parseJsonObject(text: string) {
     }
     throw error;
   }
+}
+
+function toPreviousDayContext(day: ScheduleDay): PreviousDayContext {
+  return {
+    date: day.date,
+    venues: day.stops.map((stop) => baseVenueName(stop.venue)),
+    categories: day.stops.map((stop) => stop.category),
+    note: day.note
+  };
+}
+
+function baseVenueName(venue: string) {
+  return venue
+    .split(/\s+-\s+|\s+–\s+/)[0]
+    .split(/\s+or\s+/i)
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(" or ");
 }
 
 function buildConciergeMessage(days: ScheduleDay[], spend: SpendProfile) {
