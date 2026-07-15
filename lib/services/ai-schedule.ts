@@ -51,7 +51,7 @@ const venueGuide = [
 
 export async function generateSchedulePlan(input: ScheduleInput): Promise<SchedulePlanResult> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
-  const model = process.env.OPENAI_SCHEDULE_MODEL?.trim() || "gpt-5.1-mini";
+  const model = process.env.OPENAI_SCHEDULE_MODEL?.trim() || "gpt-4.1-mini";
   if (!apiKey) return fallbackSchedule(input, model);
 
   try {
