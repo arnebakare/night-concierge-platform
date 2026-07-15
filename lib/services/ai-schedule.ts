@@ -22,6 +22,7 @@ export type SchedulePlanResult = {
   whatsappMessage: string;
   modelUsed: string;
   generatedBy: "OPENAI" | "FALLBACK";
+  failureReason?: string;
 };
 
 export type ScheduleInput = {
@@ -92,12 +93,12 @@ export async function generateSchedulePlan(input: ScheduleInput): Promise<Schedu
         }
       })
     });
-    if (!response.ok) throw new Error(`OpenAI request failed: ${response.status}`);
+    if (!response.ok) throw new Error(await readOpenAiError(response));
     const payload = await response.json() as { output_text?: string; output?: unknown };
     const parsed = parseModelJson(payload);
     return { ...parsed, whatsappMessage: buildConciergeMessage(parsed.days, input.spendProfile), modelUsed: model, generatedBy: "OPENAI" };
-  } catch {
-    return fallbackSchedule(input, model);
+  } catch (error) {
+    return fallbackSchedule(input, model, error);
   }
 }
 
@@ -177,7 +178,9 @@ function scheduleJsonSchema() {
 
 function parseModelJson(payload: { output_text?: string; output?: unknown }) {
   const text = payload.output_text || extractOutputText(payload.output) || "";
+  if (!text) throw new Error("OpenAI returned no output text.");
   const parsed = JSON.parse(text) as Omit<SchedulePlanResult, "modelUsed" | "generatedBy">;
+  if (!Array.isArray(parsed.days)) throw new Error("OpenAI response did not include schedule days.");
   return parsed;
 }
 
@@ -225,16 +228,41 @@ function extractOutputText(output: unknown): string {
   }).join("\n");
 }
 
-function fallbackSchedule(input: ScheduleInput, model: string): SchedulePlanResult {
+async function readOpenAiError(response: Response) {
+  const fallback = `OpenAI request failed with HTTP ${response.status}.`;
+  try {
+    const payload = await response.json() as { error?: { message?: string; code?: string; type?: string } };
+    const details = [
+      payload.error?.message,
+      payload.error?.code ? `code: ${payload.error.code}` : null,
+      payload.error?.type ? `type: ${payload.error.type}` : null
+    ].filter(Boolean).join(" · ");
+    return details ? `${fallback} ${details}` : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function fallbackSchedule(input: ScheduleInput, model: string, error?: unknown): SchedulePlanResult {
+  const failureReason = readableError(error);
   return {
     title: `${input.city ?? "Marbella"} plan · ${input.dateFrom}${input.dateFrom === input.dateTo ? "" : ` to ${input.dateTo}`}`,
     days: [],
     whatsappMessage: [
       "AI schedule search is not available right now.",
       "",
+      `Reason: ${failureReason}`,
+      "",
       "Please try again in a moment, or check the OpenAI API key/model settings. I did not create a fake researched itinerary."
     ].join("\n"),
     modelUsed: model,
-    generatedBy: "FALLBACK"
+    generatedBy: "FALLBACK",
+    failureReason
   };
+}
+
+function readableError(error: unknown) {
+  if (error instanceof Error && error.message) return error.message.slice(0, 800);
+  if (typeof error === "string" && error.trim()) return error.trim().slice(0, 800);
+  return "Unknown OpenAI error.";
 }

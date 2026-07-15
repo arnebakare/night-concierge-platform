@@ -13,6 +13,7 @@ export function SchedulePlanView({
 }: Readonly<{ plan: SchedulePlan; clients?: Client[] }>) {
   const days = readDays(plan.plan);
   const aiStatus = readAiStatus(plan.plan);
+  const failureReason = readFailureReason(plan.plan);
 
   return (
     <div className="space-y-4">
@@ -49,6 +50,13 @@ export function SchedulePlanView({
         <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Customer message</p>
         <p className="mt-3 whitespace-pre-line rounded-md bg-secondary/70 p-4 text-sm leading-relaxed text-muted-foreground">{plan.message}</p>
       </LuxuryCard>
+
+      {failureReason && (
+        <LuxuryCard className="border-amber-400/35 bg-amber-950/20">
+          <p className="text-xs uppercase tracking-[0.2em] text-amber-200">AI error</p>
+          <p className="mt-2 whitespace-pre-line text-sm text-amber-100/90">{failureReason}</p>
+        </LuxuryCard>
+      )}
 
       <div className="space-y-4">
         {days.map((day) => (
@@ -99,6 +107,10 @@ function readDays(plan: Record<string, unknown>) {
 
 function readAiStatus(plan: Record<string, unknown>) {
   return plan.generatedBy === "OPENAI" ? "OpenAI web search" : "Fallback/no AI";
+}
+
+function readFailureReason(plan: Record<string, unknown>) {
+  return typeof plan.failureReason === "string" && plan.failureReason.trim() ? plan.failureReason : null;
 }
 
 function formatDate(value: string) {
