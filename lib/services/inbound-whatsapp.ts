@@ -209,7 +209,16 @@ async function createScheduleFromWhatsApp(
     metadata: { from: parsed.from, to: parsed.to, spendProfile: parsed.spendProfile }
   });
 
-  return { ok: true, reply: generated.whatsappMessage };
+  return { ok: true, reply: formatScheduleReply(generated.whatsappMessage, data.id) };
+}
+
+function formatScheduleReply(message: string, planId: string) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+  const link = appUrl ? `${appUrl}/schedule/plans/${planId}` : "";
+  return [
+    message,
+    link ? `Saved in Night Concierge: ${link}` : "Saved in Night Concierge."
+  ].join("\n\n");
 }
 
 async function findStaffByPhone(supabase: SupabaseClient, from: string): Promise<StaffProfile | null> {
