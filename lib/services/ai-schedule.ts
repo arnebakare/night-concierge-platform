@@ -129,8 +129,7 @@ function buildPrompt(input: ScheduleInput) {
     knownVenues: venueGuide,
     outputShape: {
       title: "string",
-      days: [{ date: "YYYY-MM-DD", headline: "string", stops: [{ time: "string", venue: "string", category: "Beach club|Restaurant|Nightclub|After-party", area: "string", why: "string", bookingAngle: "string" }], note: "string" }],
-      whatsappMessage: "string"
+      days: [{ date: "YYYY-MM-DD", headline: "string", stops: [{ time: "string", venue: "string", category: "Beach club|Restaurant|Nightclub|After-party", area: "string", why: "string", bookingAngle: "string" }], note: "string" }]
     }
   });
 }
@@ -139,10 +138,9 @@ function scheduleJsonSchema() {
   return {
     type: "object",
     additionalProperties: false,
-    required: ["title", "days", "whatsappMessage"],
+    required: ["title", "days"],
     properties: {
       title: { type: "string" },
-      whatsappMessage: { type: "string" },
       days: {
         type: "array",
         items: {
@@ -179,9 +177,27 @@ function scheduleJsonSchema() {
 function parseModelJson(payload: { output_text?: string; output?: unknown }) {
   const text = payload.output_text || extractOutputText(payload.output) || "";
   if (!text) throw new Error("OpenAI returned no output text.");
-  const parsed = JSON.parse(text) as Omit<SchedulePlanResult, "modelUsed" | "generatedBy">;
+  const parsed = parseJsonObject(text) as Omit<SchedulePlanResult, "modelUsed" | "generatedBy">;
   if (!Array.isArray(parsed.days)) throw new Error("OpenAI response did not include schedule days.");
   return parsed;
+}
+
+function parseJsonObject(text: string) {
+  const clean = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  try {
+    return JSON.parse(clean);
+  } catch (error) {
+    const start = clean.indexOf("{");
+    const end = clean.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      try {
+        return JSON.parse(clean.slice(start, end + 1));
+      } catch {
+        // Fall through to the original parse error for the most accurate position.
+      }
+    }
+    throw error;
+  }
 }
 
 function buildConciergeMessage(days: ScheduleDay[], spend: SpendProfile) {
