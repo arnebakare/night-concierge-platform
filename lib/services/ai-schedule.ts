@@ -55,20 +55,18 @@ export async function generateSchedulePlan(input: ScheduleInput): Promise<Schedu
   if (!apiKey) return fallbackSchedule(input, model);
 
   try {
-    const parsed = await requestSchedulePlan(apiKey, model, input);
-    return { ...parsed, whatsappMessage: buildConciergeMessage(parsed.days, input.spendProfile), modelUsed: model, generatedBy: "OPENAI" };
-  } catch (error) {
-    try {
-      const retryHint = error instanceof Error ? error.message : "The previous response did not cover the full selected date range.";
-      const parsed = await requestSchedulePlan(apiKey, model, input, retryHint);
-      return { ...parsed, whatsappMessage: buildConciergeMessage(parsed.days, input.spendProfile), modelUsed: model, generatedBy: "OPENAI" };
-    } catch (retryError) {
-      return fallbackSchedule(input, model, retryError);
+    const days: ScheduleDay[] = [];
+    for (const date of dateRange(input.dateFrom, input.dateTo)) {
+      days.push(await requestScheduleDay(apiKey, model, input, date));
     }
+    const title = `${input.city ?? "Marbella"} Party Itinerary: ${formatEnglishRange(input.dateFrom, input.dateTo)}`;
+    return { title, days, whatsappMessage: buildConciergeMessage(days, input.spendProfile), modelUsed: model, generatedBy: "OPENAI" };
+  } catch (error) {
+    return fallbackSchedule(input, model, error);
   }
 }
 
-async function requestSchedulePlan(apiKey: string, model: string, input: ScheduleInput, retryHint?: string) {
+async function requestScheduleDay(apiKey: string, model: string, input: ScheduleInput, date: string) {
   const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -94,7 +92,7 @@ async function requestSchedulePlan(apiKey: string, model: string, input: Schedul
           },
           {
             role: "user",
-            content: buildPrompt(input, retryHint)
+            content: buildPrompt(input, date)
           }
         ],
         text: {
@@ -110,25 +108,23 @@ async function requestSchedulePlan(apiKey: string, model: string, input: Schedul
   if (!response.ok) throw new Error(await readOpenAiError(response));
   const payload = await response.json() as { output_text?: string; output?: unknown };
   const parsed = parseModelJson(payload);
-  assertDateCoverage(parsed.days, input);
-  return parsed;
+  const day = parsed.days[0];
+  if (!day) throw new Error(`OpenAI returned no schedule day for ${date}.`);
+  if (day.date !== date) throw new Error(`OpenAI returned ${day.date} when ${date} was requested.`);
+  return day;
 }
 
-function buildPrompt(input: ScheduleInput, retryHint?: string) {
-  const exactDates = dateRange(input.dateFrom, input.dateTo);
+function buildPrompt(input: ScheduleInput, date: string) {
   return JSON.stringify({
-    task: "Build a per-day Marbella trail for a promoter to send to a client on WhatsApp.",
+    task: "Build one Marbella party trail day for a promoter to send to a client on WhatsApp.",
     city: input.city ?? "Marbella",
-    dateFrom: input.dateFrom,
-    dateTo: input.dateTo,
-    exactDates,
+    date,
+    fullDateRange: { from: input.dateFrom, to: input.dateTo },
     spendProfile: input.spendProfile,
     clientContext: input.clientContext || "",
-    retryHint: retryHint || "",
     rules: [
-      "You must return exactly one day object for every date in exactDates, in the same order. Do not skip dates, summarize dates, or only return the first day.",
-      "The days array length must equal exactDates.length.",
-      "Each day.date must exactly match one date from exactDates in YYYY-MM-DD format.",
+      "Return exactly one day object in the days array.",
+      "The only day.date must exactly equal the requested date.",
       "The customer is mainly a party/nightlife client. Build the day around music, DJs, beach-club parties, dinner only when it improves the night, and late club/after-party energy.",
       "Include beach clubs, restaurants, and nightclubs/after-parties where suitable, but prioritize party flow over a generic tourist itinerary.",
       "Each day should have 2-4 stops: party beach/daytime, optional dinner, late night/after-party. Do not force dinner if the party block already runs late.",
@@ -147,7 +143,7 @@ function buildPrompt(input: ScheduleInput, retryHint?: string) {
     knownVenues: venueGuide,
     outputShape: {
       title: "string",
-      days: exactDates.map((date) => ({ date, headline: "string", stops: [{ time: "string", venue: "string", category: "Beach club|Restaurant|Nightclub|After-party", area: "string", why: "string", bookingAngle: "string" }], note: "string" }))
+      days: [{ date, headline: "string", stops: [{ time: "string", venue: "string", category: "Beach club|Restaurant|Nightclub|After-party", area: "string", why: "string", bookingAngle: "string" }], note: "string" }]
     }
   });
 }
@@ -218,21 +214,6 @@ function parseJsonObject(text: string) {
   }
 }
 
-function assertDateCoverage(days: ScheduleDay[], input: ScheduleInput) {
-  const expectedDates = dateRange(input.dateFrom, input.dateTo);
-  const actualDates = days.map((day) => day.date);
-  const missing = expectedDates.filter((date) => !actualDates.includes(date));
-  const extra = actualDates.filter((date) => !expectedDates.includes(date));
-
-  if (missing.length || extra.length || actualDates.length !== expectedDates.length) {
-    throw new Error([
-      `OpenAI returned ${actualDates.length} day(s), but ${expectedDates.length} were requested.`,
-      missing.length ? `Missing dates: ${missing.join(", ")}.` : null,
-      extra.length ? `Unexpected dates: ${extra.join(", ")}.` : null
-    ].filter(Boolean).join(" "));
-  }
-}
-
 function buildConciergeMessage(days: ScheduleDay[], spend: SpendProfile) {
   const intro = spend === "HIGH_SPEND"
     ? "I put together a strong Marbella party plan:"
@@ -261,6 +242,10 @@ function formatEnglishDay(value: string) {
   const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${weekdays[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
+}
+
+function formatEnglishRange(from: string, to: string) {
+  return from === to ? formatEnglishDay(from) : `${formatEnglishDay(from)} to ${formatEnglishDay(to)}`;
 }
 
 function dateRange(from: string, to: string) {
