@@ -25,9 +25,9 @@ export default async function SchedulePage() {
               <Sparkles className="size-5" />
             </div>
             <div>
-              <h2 className="font-serif text-2xl">Build a customer-ready Marbella trail</h2>
+              <h2 className="font-serif text-2xl">Build a customer-ready party trail</h2>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                Choose dates and spend level. AI suggests beach clubs, restaurants, and nightclubs per day, with Casanis and Le Jade gently prioritized on Wednesdays and Sundays.
+                Choose dates and spend level. AI suggests beach-club parties, DJs, dinner only where it helps the night, and clubs per day, with La Plage and Le Jade prioritized on Wednesdays and Sundays.
               </p>
             </div>
           </div>
@@ -45,13 +45,13 @@ export default async function SchedulePage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <SpendOption value="NORMAL" label="Normal" description="Polished but easygoing" defaultChecked />
-              <SpendOption value="HIGH_SPEND" label="High spend" description="Premium tables and restaurants" />
+              <SpendOption value="NORMAL" label="Normal" description="Polished party flow" defaultChecked />
+              <SpendOption value="HIGH_SPEND" label="High spend" description="Best tables and bigger nights" />
             </div>
 
             <label className="space-y-2">
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-champagne-300">Client preference optional</span>
-              <Textarea name="clientContext" placeholder="Example: couple, likes beach clubs and dinner show, wants one late club option..." />
+              <Textarea name="clientContext" placeholder="Example: group of 6, wants DJs/party beach club, big-name acts if available, one late club option..." />
             </label>
 
             <Button type="submit" size="lg" className="w-full">

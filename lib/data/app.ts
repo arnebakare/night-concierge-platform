@@ -690,18 +690,17 @@ function demoSchedulePlans(): SchedulePlan[] {
     date_to: today,
     spend_profile: "HIGH_SPEND",
     prompt_text: "Demo high-spend client",
-    message: "I put together a polished Marbella plan for you:\n\nToday - Casanis into Le Jade\n14:00 · La Plage Casanis (Beach club)\n21:30 · Nobu Marbella (Restaurant)\n01:00 · Le Jade (After-party)\n\nI can check availability and adjust it depending on what kind of day/night you prefer.",
+    message: "I put together a strong Marbella party plan for you:\n\nToday - La Plage party into Le Jade\n17:00 · La Plage Casanis (Beach club)\n00:30 · Le Jade (After-party)\n\nI can check availability, DJ programming, and adjust it depending on what kind of night you prefer.",
     plan: {
       title: "Marbella demo plan",
       days: [{
         date: today,
-        headline: "Casanis into Le Jade",
+        headline: "La Plage party into Le Jade",
         stops: [
-          { time: "14:00", venue: "La Plage Casanis", category: "Beach club", area: "Elviria", why: "Beach lunch and social start.", bookingAngle: "Ask for lunch or beach setup." },
-          { time: "21:30", venue: "Nobu Marbella", category: "Restaurant", area: "Puente Romano", why: "Polished dinner.", bookingAngle: "Confirm table size." },
-          { time: "01:00", venue: "Le Jade", category: "After-party", area: "Marbella", why: "Strong late continuation.", bookingAngle: "Keep as the late option." }
+          { time: "17:00", venue: "La Plage Casanis", category: "Beach club", area: "Elviria", why: "Wednesday/Sunday party block with DJs through sunset until 00:00.", bookingAngle: "Ask for table setup and confirm DJ programming." },
+          { time: "00:30", venue: "Le Jade", category: "After-party", area: "Marbella", why: "Natural after-party move after La Plage.", bookingAngle: "Keep as the late option." }
         ],
-        note: "Confirm availability before promising exact tables."
+        note: "Confirm availability and DJ programming before promising exact tables."
       }]
     },
     source: "APP",

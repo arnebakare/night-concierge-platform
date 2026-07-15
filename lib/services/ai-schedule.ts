@@ -36,18 +36,18 @@ export type ScheduleInput = {
 };
 
 const venueGuide = [
-  { name: "La Plage Casanis", category: "Beach club", area: "Elviria", vibe: "beach lunch, stylish daytime, sunset groups", spend: "normal/high", priority: "Wednesday and Sunday higher priority, especially as a daytime start" },
+  { name: "La Plage Casanis", category: "Beach club", area: "Elviria", vibe: "beach lunch, stylish daytime, sunset groups, Wednesday/Sunday DJ party until 00:00", spend: "normal/high", priority: "Wednesday and Sunday higher priority as the main party block, not only a restaurant/lunch stop" },
   { name: "Le Jade", category: "After-party", area: "Marbella", vibe: "late intimate after-party", spend: "normal/high", priority: "Wednesday and Sunday higher priority, especially after La Plage Casanis" },
-  { name: "Playa Padre", category: "Beach club", area: "Marbella beach", vibe: "boho beach club, music, lunch", spend: "normal/high", priority: "strong beach club alternative" },
+  { name: "Playa Padre", category: "Beach club", area: "Marbella beach", vibe: "boho beach club, music, DJs, party lunch", spend: "normal/high", priority: "strong beach club alternative, especially when a named DJ or programmed party is available" },
   { name: "La Cabane", category: "Beach club", area: "Los Monteros", vibe: "elegant beach club, polished lunch", spend: "high", priority: "high-spend daytime option" },
   { name: "Nikki Beach Marbella", category: "Beach club", area: "Elviria", vibe: "international beach club, champagne groups", spend: "high", priority: "high-spend beach day alternative" },
-  { name: "Mamzel", category: "Restaurant", area: "Marbella", vibe: "dinner show, celebration, table energy", spend: "normal/high", priority: "strong dinner anchor" },
+  { name: "Mamzel", category: "Restaurant", area: "Marbella", vibe: "dinner show, celebration, table energy", spend: "normal/high", priority: "strong dinner anchor on non-Casanis party nights" },
   { name: "Motel Particulier", category: "Restaurant", area: "Marbella", vibe: "dinner and late lounge feel", spend: "high", priority: "high-spend dinner/lounge" },
   { name: "Nobu Marbella", category: "Restaurant", area: "Puente Romano", vibe: "premium dinner, international clients", spend: "high", priority: "safe high-spend restaurant recommendation" },
   { name: "Cipriani Marbella", category: "Restaurant", area: "Puente Romano", vibe: "classic high-spend dinner", spend: "high", priority: "high-spend polished dinner" },
   { name: "Nota Blu", category: "Restaurant", area: "Marbella", vibe: "elegant dinner, polished crowd", spend: "high", priority: "high-spend dinner alternative" },
-  { name: "Momento", category: "Nightclub", area: "Marbella", vibe: "club night, DJs, VIP tables", spend: "normal/high", priority: "prime late-night club" },
-  { name: "Bon Bonniere", category: "Nightclub", area: "Marbella", vibe: "late club, table-driven", spend: "high", priority: "high-spend late option" },
+  { name: "Momento", category: "Nightclub", area: "Marbella", vibe: "club night, DJs, VIP tables", spend: "normal/high", priority: "prime late-night club, prioritize when big DJ names are playing" },
+  { name: "Bon Bonniere", category: "Nightclub", area: "Marbella", vibe: "late club, table-driven, DJ-led nights", spend: "high", priority: "high-spend late option, prioritize when big DJ names are playing" },
   { name: "Olivia Valere", category: "Nightclub", area: "Marbella", vibe: "classic Marbella nightclub", spend: "normal/high", priority: "fallback late-night club" }
 ];
 
@@ -110,12 +110,16 @@ function buildPrompt(input: ScheduleInput) {
     spendProfile: input.spendProfile,
     clientContext: input.clientContext || "",
     rules: [
-      "Include beach clubs, restaurants, and nightclubs/after-parties where suitable.",
-      "Each day should have 2-4 stops: day/beach, dinner, late night. Do not force all categories if one day would feel too busy.",
+      "The customer is mainly a party/nightlife client. Build the day around music, DJs, beach-club parties, dinner only when it improves the night, and late club/after-party energy.",
+      "Include beach clubs, restaurants, and nightclubs/after-parties where suitable, but prioritize party flow over a generic tourist itinerary.",
+      "Each day should have 2-4 stops: party beach/daytime, optional dinner, late night/after-party. Do not force dinner if the party block already runs late.",
       "For HIGH_SPEND, favor La Cabane, Nikki Beach, Nobu, Cipriani, Nota Blu, Motel Particulier, Bon Bonniere, premium tables.",
       "For NORMAL, keep it polished but not over the top: La Plage Casanis, Playa Padre, Mamzel, Momento, Le Jade.",
-      "On Wednesdays and Sundays, give a small higher priority to La Plage Casanis and Le Jade. A good pattern is La Plage Casanis daytime/sunset then Le Jade later.",
-      "Do not invent specific DJ names unless provided in events.",
+      "On Wednesdays and Sundays, give a clear higher priority to La Plage Casanis and Le Jade. Treat La Plage Casanis as a party with DJs until 00:00, not only as lunch or dinner.",
+      "On Wednesdays and Sundays, do not schedule dinner between La Plage Casanis and Le Jade unless the client context explicitly asks for dinner. A good pattern is La Plage Casanis party until 00:00, then Le Jade later.",
+      "Use knownEvents to identify DJs, artists, parties, and special occasions. If a DJ or artist is known for that date, include the name in the stop why/bookingAngle and in the WhatsApp message.",
+      "Prioritize big DJ names or clearly DJ-led events over generic restaurant stops when they happen during the selected dates.",
+      "Do not invent specific DJ names. If no DJ is known, say DJ/programming to confirm rather than naming one.",
       "Keep the WhatsApp message clean, short, and friendly. No exaggerated VIP wording."
     ],
     knownVenues: venueGuide,
@@ -195,15 +199,14 @@ function fallbackSchedule(input: ScheduleInput, model: string): SchedulePlanResu
     const casanisNight = day === 0 || day === 3;
     const high = input.spendProfile === "HIGH_SPEND";
     const stops: ScheduleStop[] = casanisNight ? [
-      { time: "14:00", venue: "La Plage Casanis", category: "Beach club", area: "Elviria", why: "Strong Wednesday/Sunday starting point with beach lunch and easy social energy.", bookingAngle: "Ask for lunch or beach setup depending on group mood." },
-      { time: "21:30", venue: high ? "Nobu Marbella" : "Mamzel", category: "Restaurant", area: high ? "Puente Romano" : "Marbella", why: high ? "Polished high-spend dinner before the late move." : "Fun dinner-show option before continuing.", bookingAngle: "Confirm dinner table size and preferred timing." },
-      { time: "01:00", venue: "Le Jade", category: "After-party", area: "Marbella", why: "Best follow-on when Casanis is part of the day.", bookingAngle: "Keep it as the late option if they want to continue." }
+      { time: "17:00", venue: "La Plage Casanis", category: "Beach club", area: "Elviria", why: "Wednesday/Sunday party block with DJs running through sunset until 00:00.", bookingAngle: "Ask for table/beach setup and confirm the DJ programming before promising names." },
+      { time: "00:30", venue: "Le Jade", category: "After-party", area: "Marbella", why: "Natural after-party move after La Plage without breaking the flow for dinner.", bookingAngle: "Keep it as the late option if they want to continue after Casanis." }
     ] : [
-      { time: "14:00", venue: high ? "La Cabane" : "Playa Padre", category: "Beach club", area: high ? "Los Monteros" : "Marbella beach", why: high ? "Elegant beach club for a premium client." : "Relaxed but polished beach club start.", bookingAngle: "Ask if they prefer lunch table or beach setup." },
+      { time: "16:00", venue: high ? "La Cabane" : "Playa Padre", category: "Beach club", area: high ? "Los Monteros" : "Marbella beach", why: high ? "Elegant beach club with the right table energy if programming is strong." : "Music-led beach club start with party potential.", bookingAngle: "Ask if they prefer a party table, lunch table, or beach setup." },
       { time: "21:30", venue: high ? "Cipriani Marbella" : "Mamzel", category: "Restaurant", area: "Marbella", why: high ? "Classic high-spend dinner choice." : "Reliable dinner with atmosphere.", bookingAngle: "Confirm table and group size first." },
-      { time: "00:30", venue: high ? "Bon Bonniere" : "Momento", category: "Nightclub", area: "Marbella", why: high ? "Premium late table option." : "Strong club option for the late part of the night.", bookingAngle: "Check table or guestlist based on spend." }
+      { time: "00:30", venue: high ? "Bon Bonniere" : "Momento", category: "Nightclub", area: "Marbella", why: high ? "Premium late table option, especially if a strong DJ is playing." : "Strong DJ/table option for the late part of the night.", bookingAngle: "Check DJ programming, table minimum, or guestlist based on spend." }
     ];
-    return { date, headline: casanisNight ? "Casanis into Le Jade" : high ? "Polished high-spend Marbella trail" : "Easy Marbella day-to-night trail", stops, note: "Confirm availability before promising exact tables." };
+    return { date, headline: casanisNight ? "La Plage party into Le Jade" : high ? "High-spend party trail" : "Marbella party trail", stops, note: "Confirm availability and DJ programming before promising exact tables." };
   });
 
   return {
@@ -216,7 +219,7 @@ function fallbackSchedule(input: ScheduleInput, model: string): SchedulePlanResu
 }
 
 function buildWhatsAppMessage(days: ScheduleDay[], spend: SpendProfile) {
-  const intro = spend === "HIGH_SPEND" ? "I put together a polished Marbella plan for you:" : "I put together a nice Marbella plan for you:";
+  const intro = spend === "HIGH_SPEND" ? "I put together a strong Marbella party plan for you:" : "I put together a nice Marbella party plan for you:";
   return [
     intro,
     ...days.flatMap((day) => [
