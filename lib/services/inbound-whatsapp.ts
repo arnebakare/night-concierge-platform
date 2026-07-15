@@ -168,14 +168,12 @@ async function createScheduleFromWhatsApp(
     };
   }
 
-  const events = await getScheduleEvents(supabase, parsed.from, parsed.to);
   const generated = await generateSchedulePlan({
     dateFrom: parsed.from,
     dateTo: parsed.to,
     spendProfile: parsed.spendProfile,
     city: "Marbella",
-    clientContext: "Generated from WhatsApp command.",
-    events
+    clientContext: "Generated from WhatsApp command."
   });
 
   const { data, error } = await supabase
@@ -281,22 +279,6 @@ async function resolveDefaultManagerForClub(supabase: SupabaseClient, clubId: st
     .limit(1)
     .maybeSingle();
   return data?.user_id ?? null;
-}
-
-async function getScheduleEvents(supabase: SupabaseClient, from: string, to: string) {
-  const { data } = await supabase
-    .from("events")
-    .select("id, club_id, name, slug, event_date, description, active, source_url, source_key, imported_at, clubs(name, city, slug)")
-    .eq("active", true)
-    .gte("event_date", from)
-    .lte("event_date", to)
-    .order("event_date", { ascending: true })
-    .order("name", { ascending: true })
-    .limit(120);
-  return ((data ?? []) as Array<Record<string, unknown> & { clubs?: unknown | unknown[] }>).map((event) => ({
-    ...event,
-    clubs: Array.isArray(event.clubs) ? event.clubs[0] ?? null : event.clubs ?? null
-  })) as never[];
 }
 
 function isScheduleCommand(body: string) {

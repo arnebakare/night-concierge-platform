@@ -12,6 +12,7 @@ export function SchedulePlanView({
   clients = []
 }: Readonly<{ plan: SchedulePlan; clients?: Client[] }>) {
   const days = readDays(plan.plan);
+  const aiStatus = readAiStatus(plan.plan);
 
   return (
     <div className="space-y-4">
@@ -20,7 +21,7 @@ export function SchedulePlanView({
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">{plan.city} · {plan.spend_profile === "HIGH_SPEND" ? "High spend" : "Normal"}</p>
             <h2 className="mt-2 font-serif text-3xl">{plan.title}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{formatDate(plan.date_from)}{plan.date_from === plan.date_to ? "" : ` to ${formatDate(plan.date_to)}`} · {plan.source === "WHATSAPP" ? "Created from WhatsApp" : "Created in app"}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{formatDate(plan.date_from)}{plan.date_from === plan.date_to ? "" : ` to ${formatDate(plan.date_to)}`} · {plan.source === "WHATSAPP" ? "Created from WhatsApp" : "Created in app"} · {aiStatus}</p>
           </div>
           <div className="flex gap-2">
             <CopyMessageButton text={plan.message} label="Copy message" />
@@ -94,6 +95,10 @@ export function SchedulePlanView({
 function readDays(plan: Record<string, unknown>) {
   const days = plan.days;
   return Array.isArray(days) ? days as ScheduleDay[] : [];
+}
+
+function readAiStatus(plan: Record<string, unknown>) {
+  return plan.generatedBy === "OPENAI" ? "OpenAI web search" : "Fallback/no AI";
 }
 
 function formatDate(value: string) {

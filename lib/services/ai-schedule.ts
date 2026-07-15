@@ -1,5 +1,3 @@
-import type { ConciergeEvent } from "@/lib/types";
-
 export type SpendProfile = "NORMAL" | "HIGH_SPEND";
 
 export type ScheduleStop = {
@@ -32,14 +30,6 @@ export type ScheduleInput = {
   spendProfile: SpendProfile;
   city?: string;
   clientContext?: string;
-  events?: ConciergeEvent[];
-};
-
-type ScheduleEventHighlight = {
-  date: string;
-  venue: string;
-  title: string;
-  detail: string | null;
 };
 
 const venueGuide = [
@@ -105,16 +95,13 @@ export async function generateSchedulePlan(input: ScheduleInput): Promise<Schedu
     if (!response.ok) throw new Error(`OpenAI request failed: ${response.status}`);
     const payload = await response.json() as { output_text?: string; output?: unknown };
     const parsed = parseModelJson(payload);
-    const plan = ensureEventNamesInMessage(parsed, input);
-    return { ...plan, whatsappMessage: buildConciergeMessage(plan.days, input.spendProfile, getEventHighlights(input)), modelUsed: model, generatedBy: "OPENAI" };
+    return { ...parsed, whatsappMessage: buildConciergeMessage(parsed.days, input.spendProfile), modelUsed: model, generatedBy: "OPENAI" };
   } catch {
     return fallbackSchedule(input, model);
   }
 }
 
 function buildPrompt(input: ScheduleInput) {
-  const eventHighlights = getEventHighlights(input);
-
   return JSON.stringify({
     task: "Build a per-day Marbella trail for a promoter to send to a client on WhatsApp.",
     city: input.city ?? "Marbella",
@@ -130,17 +117,15 @@ function buildPrompt(input: ScheduleInput) {
       "For NORMAL, keep it polished but not over the top: La Plage Casanis, Playa Padre, Mamzel, Momento, Le Jade.",
       "On Wednesdays and Sundays, give a clear higher priority to La Plage Casanis and Le Jade. Treat La Plage Casanis as a party with DJs until 00:00, not only as lunch or dinner.",
       "On Wednesdays and Sundays, do not schedule dinner between La Plage Casanis and Le Jade unless the client context explicitly asks for dinner. A good pattern is La Plage Casanis party until 00:00, then Le Jade later.",
-      "Use knownEvents to identify DJs, artists, parties, and special occasions. If a DJ or artist is known for that date, include the name in the stop why/bookingAngle and in the WhatsApp message.",
       "Use web search for current public programming on selected dates. Search official venue sites and public social/web results for DJs/artists at La Plage Casanis, Le Jade, Playa Padre, La Cabane, Momento, Motel Particulier, Bonbonniere, Pangea, Sublim Beach, GAIA, Coya, and other relevant Marbella venues.",
       "When a DJ, artist, or named event is found for a venue/date, put it directly in the stop.venue field using this style: 'La Plage Casanis - Arodes' or 'Le Jade - Secret Guest'.",
-      "When a stop is a choice between two venues, put both directly in stop.venue using Swedish style, for example: 'GAIA eller Coya' or 'Bonbonniere eller Pangea'.",
-      "The customer WhatsApp message must explicitly include every relevant DJ, artist, party, or event name from eventHighlights for the selected dates.",
+      "When a stop is a choice between two venues, put both directly in stop.venue using English style, for example: 'GAIA or Coya' or 'Bonbonniere or Pangea'.",
       "Prioritize big DJ names or clearly DJ-led events over generic restaurant stops when they happen during the selected dates.",
       "Do not invent specific DJ names. If no DJ is known, say DJ/programming to confirm rather than naming one.",
-      "For the final WhatsApp message, use a short section per day with Swedish weekday headings, bullet lines, and emojis. Do not include times or category labels in the customer message."
+      "Do not repeat the same venues every day. Vary the beach club, dinner, and late-night options across the date range unless a specific DJ/event makes repeating a venue the best choice.",
+      "For the final WhatsApp message, use a short section per day with English weekday headings, bullet lines, and emojis. Do not include times or category labels in the customer message."
     ],
     knownVenues: venueGuide,
-    knownEvents: eventHighlights,
     outputShape: {
       title: "string",
       days: [{ date: "YYYY-MM-DD", headline: "string", stops: [{ time: "string", venue: "string", category: "Beach club|Restaurant|Nightclub|After-party", area: "string", why: "string", bookingAngle: "string" }], note: "string" }],
@@ -196,69 +181,21 @@ function parseModelJson(payload: { output_text?: string; output?: unknown }) {
   return parsed;
 }
 
-function ensureEventNamesInMessage(
-  plan: Omit<SchedulePlanResult, "modelUsed" | "generatedBy">,
-  input: ScheduleInput
-): Omit<SchedulePlanResult, "modelUsed" | "generatedBy"> {
-  const highlights = getEventHighlights(input);
-  if (!highlights.length) return plan;
-
-  const messageText = normalizeText(plan.whatsappMessage);
-  const missing = highlights.filter((event) => !messageText.includes(normalizeText(event.title))).slice(0, 10);
-  if (!missing.length) return plan;
-
-  return {
-    ...plan,
-    whatsappMessage: [
-      plan.whatsappMessage.trim(),
-      "",
-      "Events/DJs to note:",
-      ...missing.map((event) => `${formatDisplayDate(event.date)} · ${event.venue}: ${formatEventHighlight(event)}`)
-    ].join("\n")
-  };
-}
-
-function buildConciergeMessage(days: ScheduleDay[], spend: SpendProfile, events: ScheduleEventHighlight[] = []) {
+function buildConciergeMessage(days: ScheduleDay[], spend: SpendProfile) {
   const intro = spend === "HIGH_SPEND"
-    ? "Jag satte ihop ett starkt Marbella-upplagg:"
-    : "Jag satte ihop ett fint Marbella-upplagg:";
+    ? "I put together a strong Marbella party plan:"
+    : "I put together a nice Marbella party plan:";
 
   return [
     intro,
     ...days.flatMap((day) => [
       "",
-      formatSwedishDay(day.date),
-      ...day.stops.map((stop) => `• ${categoryEmoji(stop.category)} ${formatStopForCustomer(stop, events, day.date)}`)
+      formatEnglishDay(day.date),
+      ...day.stops.map((stop) => `• ${categoryEmoji(stop.category)} ${stop.venue}`)
     ]),
     "",
-    "Jag kan kolla tillgänglighet och justera efter vilken känsla ni vill ha."
+    "I can check availability and adjust it depending on the kind of night you want."
   ].join("\n");
-}
-
-function formatStopForCustomer(stop: ScheduleStop, events: ScheduleEventHighlight[], date: string) {
-  const event = findEventForStop(stop, events, date);
-  if (!event) return stop.venue;
-  const eventTitle = eventTitleForVenue(event, stop.venue);
-  if (!eventTitle || normalizeText(stop.venue).includes(normalizeText(eventTitle))) return stop.venue;
-  if (normalizeText(stop.venue).includes(normalizeText(event.title))) return stop.venue;
-  return `${stop.venue} - ${eventTitle}`;
-}
-
-function findEventForStop(stop: ScheduleStop, events: ScheduleEventHighlight[], date: string) {
-  const stopVenue = normalizeVenue(stop.venue);
-  return events.find((event) => (
-    event.date === date &&
-    (stopVenue.includes(normalizeVenue(event.venue)) || normalizeVenue(event.venue).includes(stopVenue))
-  ));
-}
-
-function eventTitleForVenue(event: ScheduleEventHighlight, venue: string) {
-  return event.title
-    .replace(new RegExp(`^${escapeRegExp(event.venue)}\\s*[-–:]?\\s*`, "i"), "")
-    .replace(new RegExp(`^${escapeRegExp(venue)}\\s*[-–:]?\\s*`, "i"), "")
-    .replace(/\b(after\s*party|guestlist|programme|program|vip|requests?)\b/gi, "")
-    .replace(/\s+/g, " ")
-    .trim() || event.title;
 }
 
 function categoryEmoji(category: ScheduleStop["category"]) {
@@ -267,49 +204,11 @@ function categoryEmoji(category: ScheduleStop["category"]) {
   return "☀️";
 }
 
-function formatSwedishDay(value: string) {
+function formatEnglishDay(value: string) {
   const date = new Date(`${value}T12:00:00`);
-  const weekdays = ["Söndag", "Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag"];
-  const months = ["Jan", "Feb", "Mar", "Apr", "Maj", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
+  const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${weekdays[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
-}
-
-function normalizeVenue(value: string) {
-  return normalizeText(value)
-    .replace(/bon\s*bonniere/g, "bonbonniere")
-    .replace(/la\s+plage\s+casanis/g, "la plage")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function getEventHighlights(input: ScheduleInput): ScheduleEventHighlight[] {
-  return (input.events ?? [])
-    .filter((event) => event.active !== false && event.event_date >= input.dateFrom && event.event_date <= input.dateTo)
-    .map((event) => ({
-      date: event.event_date,
-      venue: event.clubs?.name ?? "Marbella",
-      title: event.name,
-      detail: event.description ? cleanEventDescription(event.description) : null
-    }))
-    .filter((event) => Boolean(event.title))
-    .sort((a, b) => a.date.localeCompare(b.date) || a.venue.localeCompare(b.venue));
-}
-
-function formatEventHighlight(event: ScheduleEventHighlight) {
-  if (!event.detail || normalizeText(event.detail).includes(normalizeText(event.title))) return event.title;
-  return `${event.title} - ${event.detail}`;
-}
-
-function cleanEventDescription(description: string) {
-  return description.replace(/\s+/g, " ").trim().slice(0, 140);
-}
-
-function normalizeText(value: string) {
-  return value.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
 function extractOutputText(output: unknown): string {
@@ -327,42 +226,15 @@ function extractOutputText(output: unknown): string {
 }
 
 function fallbackSchedule(input: ScheduleInput, model: string): SchedulePlanResult {
-  const eventHighlights = getEventHighlights(input);
-  const days = dateRange(input.dateFrom, input.dateTo).map((date) => {
-    const day = new Date(`${date}T12:00:00`).getDay();
-    const casanisNight = day === 0 || day === 3;
-    const high = input.spendProfile === "HIGH_SPEND";
-    const stops: ScheduleStop[] = casanisNight ? [
-      { time: "17:00", venue: "La Plage Casanis", category: "Beach club", area: "Elviria", why: "Wednesday/Sunday party block with DJs running through sunset until 00:00.", bookingAngle: "Ask for table/beach setup and confirm the DJ programming before promising names." },
-      { time: "00:30", venue: "Le Jade", category: "After-party", area: "Marbella", why: "Natural after-party move after La Plage without breaking the flow for dinner.", bookingAngle: "Keep it as the late option if they want to continue after Casanis." }
-    ] : [
-      { time: "16:00", venue: high ? "La Cabane" : "Playa Padre", category: "Beach club", area: high ? "Los Monteros" : "Marbella beach", why: high ? "Elegant beach club with the right table energy if programming is strong." : "Music-led beach club start with party potential.", bookingAngle: "Ask if they prefer a party table, lunch table, or beach setup." },
-      { time: "21:30", venue: high ? "Cipriani Marbella" : "Mamzel", category: "Restaurant", area: "Marbella", why: high ? "Classic high-spend dinner choice." : "Reliable dinner with atmosphere.", bookingAngle: "Confirm table and group size first." },
-      { time: "00:30", venue: high ? "Bon Bonniere" : "Momento", category: "Nightclub", area: "Marbella", why: high ? "Premium late table option, especially if a strong DJ is playing." : "Strong DJ/table option for the late part of the night.", bookingAngle: "Check DJ programming, table minimum, or guestlist based on spend." }
-    ];
-    return { date, headline: casanisNight ? "La Plage party into Le Jade" : high ? "High-spend party trail" : "Marbella party trail", stops, note: "Confirm availability and DJ programming before promising exact tables." };
-  });
-
   return {
     title: `${input.city ?? "Marbella"} plan · ${input.dateFrom}${input.dateFrom === input.dateTo ? "" : ` to ${input.dateTo}`}`,
-    days,
-    whatsappMessage: buildConciergeMessage(days, input.spendProfile, eventHighlights),
+    days: [],
+    whatsappMessage: [
+      "AI schedule search is not available right now.",
+      "",
+      "Please try again in a moment, or check the OpenAI API key/model settings. I did not create a fake researched itinerary."
+    ].join("\n"),
     modelUsed: model,
     generatedBy: "FALLBACK"
   };
-}
-
-function dateRange(from: string, to: string) {
-  const dates: string[] = [];
-  const cursor = new Date(`${from}T12:00:00`);
-  const end = new Date(`${to}T12:00:00`);
-  while (cursor <= end && dates.length < 14) {
-    dates.push(cursor.toISOString().slice(0, 10));
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return dates;
-}
-
-function formatDisplayDate(value: string) {
-  return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" }).format(new Date(`${value}T12:00:00`));
 }

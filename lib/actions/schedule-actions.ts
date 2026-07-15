@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getEventsForSchedule } from "@/lib/data/app";
 import { generateSchedulePlan } from "@/lib/services/ai-schedule";
 import { writeAuditLog } from "@/lib/services/audit";
 
@@ -30,14 +29,12 @@ export async function createSchedulePlan(formData: FormData) {
   const dateTo = parsed.data.to || dateFrom;
   const from = dateFrom <= dateTo ? dateFrom : dateTo;
   const to = dateFrom <= dateTo ? dateTo : dateFrom;
-  const events = await getEventsForSchedule(from, to);
   const generated = await generateSchedulePlan({
     dateFrom: from,
     dateTo: to,
     spendProfile: parsed.data.spendProfile,
     city: "Marbella",
-    clientContext: parsed.data.clientContext || "",
-    events
+    clientContext: parsed.data.clientContext || ""
   });
 
   const supabase = await createClient();
