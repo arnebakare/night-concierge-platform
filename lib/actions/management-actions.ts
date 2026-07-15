@@ -312,6 +312,158 @@ const clubStatusSchema = z.object({
   active: z.enum(["true", "false"]).transform((value) => value === "true")
 });
 
+const scheduleVenueTypes = ["BEACH_CLUB", "RESTAURANT", "NIGHTCLUB", "AFTER_PARTY", "HYBRID"] as const;
+const scheduleDays = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"] as const;
+const scheduleVenueRuleSchema = z.object({
+  ruleId: z.string().trim().optional(),
+  venueName: z.string().trim().min(2).max(120),
+  venueType: z.enum(scheduleVenueTypes),
+  area: z.preprocess((value) => typeof value === "string" && value.trim() ? value.trim() : null, z.string().max(120).nullable()),
+  priorityDays: z.array(z.enum(scheduleDays)).max(7),
+  weight: z.coerce.number().min(0.1).max(10),
+  avoidAfterVenueNames: z.string().trim().max(500),
+  guidance: z.preprocess((value) => typeof value === "string" && value.trim() ? value.trim() : null, z.string().max(500).nullable()),
+  active: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
+function parseVenueRuleForm(formData: FormData) {
+  const days = formData.getAll("priorityDays").map(String);
+  const parsed = scheduleVenueRuleSchema.safeParse({
+    ruleId: formData.get("ruleId") || "",
+    venueName: formData.get("venueName"),
+    venueType: formData.get("venueType"),
+    area: formData.get("area") || "",
+    priorityDays: days,
+    weight: formData.get("weight") || 1,
+    avoidAfterVenueNames: formData.get("avoidAfterVenueNames") || "",
+    guidance: formData.get("guidance") || "",
+    active: formData.get("active") || "true"
+  });
+  if (!parsed.success) return null;
+  return {
+    ...parsed.data,
+    avoidAfterVenueNames: parsed.data.avoidAfterVenueNames
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .slice(0, 12)
+  };
+}
+
+export async function createScheduleVenueRule(formData: FormData) {
+  const profile = await requireProfile(["SUPER_ADMIN"]);
+  const parsed = parseVenueRuleForm(formData);
+  if (!parsed) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/admin/planner");
+    return;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("schedule_venue_rules")
+    .insert({
+      venue_name: parsed.venueName,
+      venue_type: parsed.venueType,
+      area: parsed.area,
+      priority_days: parsed.priorityDays,
+      weight: parsed.weight,
+      avoid_after_venue_names: parsed.avoidAfterVenueNames,
+      guidance: parsed.guidance,
+      active: parsed.active
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "SCHEDULE_VENUE_RULE_CREATED",
+    entityType: "schedule_venue_rules",
+    entityId: data.id,
+    metadata: { venueName: parsed.venueName, weight: parsed.weight }
+  });
+
+  revalidatePath("/admin/planner");
+  revalidatePath("/schedule");
+}
+
+export async function updateScheduleVenueRule(formData: FormData) {
+  const profile = await requireProfile(["SUPER_ADMIN"]);
+  const parsed = parseVenueRuleForm(formData);
+  if (!parsed?.ruleId) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/admin/planner");
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("schedule_venue_rules")
+    .update({
+      venue_name: parsed.venueName,
+      venue_type: parsed.venueType,
+      area: parsed.area,
+      priority_days: parsed.priorityDays,
+      weight: parsed.weight,
+      avoid_after_venue_names: parsed.avoidAfterVenueNames,
+      guidance: parsed.guidance,
+      active: parsed.active
+    })
+    .eq("id", parsed.ruleId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "SCHEDULE_VENUE_RULE_UPDATED",
+    entityType: "schedule_venue_rules",
+    entityId: parsed.ruleId,
+    metadata: { venueName: parsed.venueName, weight: parsed.weight, active: parsed.active }
+  });
+
+  revalidatePath("/admin/planner");
+  revalidatePath("/schedule");
+}
+
+const scheduleVenueRuleStatusSchema = z.object({
+  ruleId: z.string().min(1),
+  active: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
+export async function setScheduleVenueRuleActive(formData: FormData) {
+  const profile = await requireProfile(["SUPER_ADMIN"]);
+  const parsed = scheduleVenueRuleStatusSchema.safeParse({
+    ruleId: formData.get("ruleId"),
+    active: formData.get("active")
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/admin/planner");
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("schedule_venue_rules")
+    .update({ active: parsed.data.active })
+    .eq("id", parsed.data.ruleId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: parsed.data.active ? "SCHEDULE_VENUE_RULE_REACTIVATED" : "SCHEDULE_VENUE_RULE_ARCHIVED",
+    entityType: "schedule_venue_rules",
+    entityId: parsed.data.ruleId,
+    metadata: { active: parsed.data.active }
+  });
+
+  revalidatePath("/admin/planner");
+  revalidatePath("/schedule");
+}
+
 const requestTypesForServices = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"] as const;
 const serviceIconNames = ["Calendar", "Crown", "GlassWater", "Music2", "Sparkles", "Sun", "Utensils", "Users", "Waves"] as const;
 const clubExperienceSchema = z.object({

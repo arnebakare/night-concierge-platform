@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Client, Club, ConciergeEvent, ConciergeRequest, Profile, RequestStatus, RequestType, SchedulePlan } from "@/lib/types";
+import type { Client, Club, ConciergeEvent, ConciergeRequest, Profile, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -463,6 +463,26 @@ export async function getSchedulePlanDetail(planId: string) {
   }
 }
 
+export async function getScheduleVenueRules(options?: { activeOnly?: boolean }) {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("schedule_venue_rules")
+      .select("id, venue_name, venue_type, area, priority_days, weight, avoid_after_venue_names, guidance, active, created_at, updated_at")
+      .order("active", { ascending: false })
+      .order("weight", { ascending: false })
+      .order("venue_name");
+    if (options?.activeOnly) query = query.eq("active", true);
+    const { data, error } = await query;
+    if (error) throw error;
+    return normalizeScheduleVenueRules(data);
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    const rules = demoScheduleVenueRules();
+    return options?.activeOnly ? rules.filter((rule) => rule.active) : rules;
+  }
+}
+
 export async function getEventImportRuns() {
   try {
     const supabase = await createClient();
@@ -676,6 +696,25 @@ function normalizeSchedulePlans(data: unknown): SchedulePlan[] {
     clients: Array.isArray(plan.clients) ? plan.clients[0] ?? null : plan.clients ?? null,
     profiles: Array.isArray(plan.profiles) ? plan.profiles[0] ?? null : plan.profiles ?? null
   }));
+}
+
+function normalizeScheduleVenueRules(data: unknown): ScheduleVenueRule[] {
+  return ((data as ScheduleVenueRule[] | null) ?? []).map((rule) => ({
+    ...rule,
+    weight: Number(rule.weight),
+    priority_days: Array.isArray(rule.priority_days) ? rule.priority_days : [],
+    avoid_after_venue_names: Array.isArray(rule.avoid_after_venue_names) ? rule.avoid_after_venue_names : []
+  }));
+}
+
+function demoScheduleVenueRules(): ScheduleVenueRule[] {
+  return [
+    { id: "demo-rule-1", venue_name: "La Plage Casanis", venue_type: "BEACH_CLUB", area: "Elviria", priority_days: ["WEDNESDAY", "SUNDAY"], weight: 3.5, avoid_after_venue_names: [], guidance: "Party with DJs until 00:00 on Wednesdays and Sundays. Do not place dinner between La Plage and Le Jade.", active: true },
+    { id: "demo-rule-2", venue_name: "Le Jade", venue_type: "AFTER_PARTY", area: "Marbella", priority_days: ["WEDNESDAY", "SUNDAY"], weight: 3.25, avoid_after_venue_names: [], guidance: "Natural after-party after La Plage Casanis on Wednesdays and Sundays.", active: true },
+    { id: "demo-rule-3", venue_name: "Motel Particulier", venue_type: "HYBRID", area: "Marbella", priority_days: [], weight: 1.05, avoid_after_venue_names: ["Bon Bonniere"], guidance: "Dinner and late lounge. Avoid pairing with Bon Bonniere unless the customer wants a very heavy night.", active: true },
+    { id: "demo-rule-4", venue_name: "Bon Bonniere", venue_type: "NIGHTCLUB", area: "Marbella", priority_days: [], weight: 1.25, avoid_after_venue_names: ["Motel Particulier"], guidance: "Late table-driven club. Prioritize when a big DJ is playing.", active: true },
+    { id: "demo-rule-5", venue_name: "Momento", venue_type: "NIGHTCLUB", area: "Marbella", priority_days: [], weight: 1.4, avoid_after_venue_names: [], guidance: "Prime late-night club, especially with a known DJ.", active: true }
+  ];
 }
 
 function demoSchedulePlans(): SchedulePlan[] {

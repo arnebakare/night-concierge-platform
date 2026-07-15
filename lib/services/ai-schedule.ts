@@ -1,3 +1,6 @@
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { ScheduleVenueRule } from "@/lib/types";
+
 export type SpendProfile = "NORMAL" | "HIGH_SPEND";
 
 export type ScheduleStop = {
@@ -33,6 +36,16 @@ export type ScheduleInput = {
   clientContext?: string;
 };
 
+type AiVenueRule = {
+  venueName: string;
+  venueType: string;
+  area: string | null;
+  priorityDays: string[];
+  weight: number;
+  avoidAfterVenueNames: string[];
+  guidance: string | null;
+};
+
 const venueGuide = [
   { name: "La Plage Casanis", category: "Beach club", area: "Elviria", vibe: "beach lunch, stylish daytime, sunset groups, Wednesday/Sunday DJ party until 00:00", spend: "normal/high", priority: "Wednesday and Sunday higher priority as the main party block, not only a restaurant/lunch stop" },
   { name: "Le Jade", category: "After-party", area: "Marbella", vibe: "late intimate after-party", spend: "normal/high", priority: "Wednesday and Sunday higher priority, especially after La Plage Casanis" },
@@ -49,15 +62,53 @@ const venueGuide = [
   { name: "Olivia Valere", category: "Nightclub", area: "Marbella", vibe: "classic Marbella nightclub", spend: "normal/high", priority: "fallback late-night club" }
 ];
 
+async function getAiVenueRules(): Promise<AiVenueRule[]> {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("schedule_venue_rules")
+      .select("venue_name, venue_type, area, priority_days, weight, avoid_after_venue_names, guidance")
+      .eq("active", true)
+      .order("weight", { ascending: false })
+      .order("venue_name");
+    if (error) throw error;
+    const rules = ((data ?? []) as Pick<ScheduleVenueRule, "venue_name" | "venue_type" | "area" | "priority_days" | "weight" | "avoid_after_venue_names" | "guidance">[]).map((rule) => ({
+      venueName: rule.venue_name,
+      venueType: rule.venue_type,
+      area: rule.area,
+      priorityDays: rule.priority_days ?? [],
+      weight: Number(rule.weight),
+      avoidAfterVenueNames: rule.avoid_after_venue_names ?? [],
+      guidance: rule.guidance
+    }));
+    return rules.length ? rules : fallbackVenueRules();
+  } catch {
+    return fallbackVenueRules();
+  }
+}
+
+function fallbackVenueRules(): AiVenueRule[] {
+  return venueGuide.map((venue) => ({
+    venueName: venue.name,
+    venueType: venue.category.toUpperCase().replaceAll("-", "_").replaceAll(" ", "_"),
+    area: venue.area,
+    priorityDays: venue.name === "La Plage Casanis" || venue.name === "Le Jade" ? ["WEDNESDAY", "SUNDAY"] : [],
+    weight: venue.name === "La Plage Casanis" || venue.name === "Le Jade" ? 3 : 1,
+    avoidAfterVenueNames: venue.name === "Motel Particulier" ? ["Bon Bonniere"] : venue.name === "Bon Bonniere" ? ["Motel Particulier"] : [],
+    guidance: `${venue.vibe}. ${venue.priority}`
+  }));
+}
+
 export async function generateSchedulePlan(input: ScheduleInput): Promise<SchedulePlanResult> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   const model = process.env.OPENAI_SCHEDULE_MODEL?.trim() || "gpt-4.1-mini";
   if (!apiKey) return fallbackSchedule(input, model);
 
   try {
+    const plannerRules = await getAiVenueRules();
     const days: ScheduleDay[] = [];
     for (const date of dateRange(input.dateFrom, input.dateTo)) {
-      days.push(await requestScheduleDay(apiKey, model, input, date));
+      days.push(await requestScheduleDay(apiKey, model, input, date, plannerRules));
     }
     const title = `${input.city ?? "Marbella"} Party Itinerary: ${formatEnglishRange(input.dateFrom, input.dateTo)}`;
     return { title, days, whatsappMessage: buildConciergeMessage(days, input.spendProfile), modelUsed: model, generatedBy: "OPENAI" };
@@ -66,7 +117,7 @@ export async function generateSchedulePlan(input: ScheduleInput): Promise<Schedu
   }
 }
 
-async function requestScheduleDay(apiKey: string, model: string, input: ScheduleInput, date: string) {
+async function requestScheduleDay(apiKey: string, model: string, input: ScheduleInput, date: string, plannerRules: AiVenueRule[]) {
   const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -92,7 +143,7 @@ async function requestScheduleDay(apiKey: string, model: string, input: Schedule
           },
           {
             role: "user",
-            content: buildPrompt(input, date)
+            content: buildPrompt(input, date, plannerRules)
           }
         ],
         text: {
@@ -114,7 +165,7 @@ async function requestScheduleDay(apiKey: string, model: string, input: Schedule
   return day;
 }
 
-function buildPrompt(input: ScheduleInput, date: string) {
+function buildPrompt(input: ScheduleInput, date: string, plannerRules: AiVenueRule[]) {
   return JSON.stringify({
     task: "Build one Marbella party trail day for a promoter to send to a client on WhatsApp.",
     city: input.city ?? "Marbella",
@@ -138,9 +189,12 @@ function buildPrompt(input: ScheduleInput, date: string) {
       "Prioritize big DJ names or clearly DJ-led events over generic restaurant stops when they happen during the selected dates.",
       "Do not invent specific DJ names. If no DJ is known, say DJ/programming to confirm rather than naming one.",
       "Do not repeat the same venues every day. Vary the beach club, dinner, and late-night options across the date range unless a specific DJ/event makes repeating a venue the best choice.",
+      "Use localPlannerRules as the Marbella taste layer. Higher weight means the venue should be preferred when the date and client fit. Priority days mean the venue is especially relevant on those weekdays.",
+      "Respect avoidAfterVenueNames to avoid over-heavy or locally awkward sequences. For example, if one venue says to avoid another after it, do not put both in the same day unless there is a major DJ/event reason.",
+      "A confirmed big DJ, artist, or strong event can override venue weights and avoidance guidance, but mention the DJ or event clearly in the venue field.",
       "For the final WhatsApp message, use a short section per day with English weekday headings, bullet lines, and emojis. Do not include times or category labels in the customer message."
     ],
-    knownVenues: venueGuide,
+    localPlannerRules: plannerRules,
     outputShape: {
       title: "string",
       days: [{ date, headline: "string", stops: [{ time: "string", venue: "string", category: "Beach club|Restaurant|Nightclub|After-party", area: "string", why: "string", bookingAngle: "string" }], note: "string" }]

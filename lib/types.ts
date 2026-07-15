@@ -95,3 +95,17 @@ export type SchedulePlan = {
   clients?: Pick<Client, "name" | "phone"> | null;
   profiles?: Pick<Profile, "name" | "email"> | null;
 };
+
+export type ScheduleVenueRule = {
+  id: string;
+  venue_name: string;
+  venue_type: "BEACH_CLUB" | "RESTAURANT" | "NIGHTCLUB" | "AFTER_PARTY" | "HYBRID";
+  area: string | null;
+  priority_days: string[];
+  weight: number;
+  avoid_after_venue_names: string[];
+  guidance: string | null;
+  active: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
