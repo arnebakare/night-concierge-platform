@@ -12,41 +12,40 @@ export function RetentionClientCard({ client }: Readonly<{ client: RetentionClie
     : "";
 
   return (
-    <LuxuryCard className="retention-card">
-      <div className="flex items-center justify-between gap-3">
+    <LuxuryCard className="retention-card client-row">
+      <div className="grid gap-3 lg:grid-cols-[minmax(180px,0.8fr)_minmax(260px,1.2fr)_auto] lg:items-center">
         <div className="min-w-0">
-          <p className="text-base font-semibold leading-tight">{client.name}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">{dormantLabel}</p>
+          <p className="truncate text-sm font-semibold leading-tight md:text-base">{client.name}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{dormantLabel}</p>
           {client.last_outreach_at && <p className="mt-1 text-xs text-champagne-300">Last contacted {new Date(client.last_outreach_at).toLocaleDateString()}</p>}
         </div>
-        <span className="rounded-full border border-champagne-700/50 px-2 py-1 text-xs text-champagne-100">{client.vip_level}</span>
-      </div>
 
-      <div className="mt-3 rounded-md border border-champagne-700/30 bg-ink-950/50 p-2.5 text-xs leading-relaxed text-muted-foreground md:text-sm">
-        {message}
-      </div>
+        <div className="rounded-md border border-champagne-700/30 bg-ink-950/50 p-2.5 text-xs leading-relaxed text-muted-foreground">
+          {message}
+        </div>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <form action={sendClientRetentionMessage}>
-          <input type="hidden" name="clientId" value={client.id} />
-          <input type="hidden" name="channel" value="WHATSAPP" />
-          <input type="hidden" name="destination" value={client.phone} />
-          <input type="hidden" name="message" value={message} />
-          <Button type="submit" className="w-full" disabled={!client.phone}>
-            <MessageCircle className="size-4" />
-            Send WhatsApp
-          </Button>
-        </form>
-        <form action={sendClientRetentionMessage}>
-          <input type="hidden" name="clientId" value={client.id} />
-          <input type="hidden" name="channel" value="EMAIL" />
-          <input type="hidden" name="destination" value={client.email ?? ""} />
-          <input type="hidden" name="message" value={message} />
-          <Button type="submit" variant="secondary" className="w-full" disabled={!client.email}>
-            <Mail className="size-4" />
-            Send email
-          </Button>
-        </form>
+        <div className="grid gap-2 sm:grid-cols-2 lg:min-w-64">
+          <form action={sendClientRetentionMessage}>
+            <input type="hidden" name="clientId" value={client.id} />
+            <input type="hidden" name="channel" value="WHATSAPP" />
+            <input type="hidden" name="destination" value={client.phone} />
+            <input type="hidden" name="message" value={message} />
+            <Button type="submit" className="w-full" size="sm" disabled={!client.phone}>
+              <MessageCircle className="size-4" />
+              WhatsApp
+            </Button>
+          </form>
+          <form action={sendClientRetentionMessage}>
+            <input type="hidden" name="clientId" value={client.id} />
+            <input type="hidden" name="channel" value="EMAIL" />
+            <input type="hidden" name="destination" value={client.email ?? ""} />
+            <input type="hidden" name="message" value={message} />
+            <Button type="submit" variant="secondary" className="w-full" size="sm" disabled={!client.email}>
+              <Mail className="size-4" />
+              Email
+            </Button>
+          </form>
+        </div>
       </div>
 
       {mailtoHref && (

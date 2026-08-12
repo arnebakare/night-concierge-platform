@@ -13,16 +13,23 @@ export default async function ManagerPromotersPage({ searchParams }: Readonly<{ 
   return (
     <AppShell profile={profile} title="Promoters" eyebrow="Team">
       <div className="mb-4"><ClientSearchForm action="/manager/promoters" value={filters.q} placeholder="Search team by name, email or phone" /></div>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="compact-list grid gap-2">
         {promoters.map((promoter) => (
           <Link key={promoter.id} href={`/manager/promoters/${promoter.id}`}>
-            <LuxuryCard className="transition hover:border-champagne-300/60">
-              <p className="text-lg font-semibold">{promoter.name}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{promoter.request_count} requests · {promoter.active ? "Active" : "Suspended"}</p>
+            <LuxuryCard className="client-row transition hover:border-champagne-300/60">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold md:text-base">{promoter.name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{promoter.request_count} requests</p>
+                </div>
+                <span className={promoter.active ? "text-xs font-semibold text-emerald-400" : "text-xs font-semibold text-muted-foreground"}>
+                  {promoter.active ? "Active" : "Suspended"}
+                </span>
+              </div>
             </LuxuryCard>
           </Link>
         ))}
-        {!promoters.length && <LuxuryCard className="text-center text-sm text-muted-foreground md:col-span-3">No promoters match this search.</LuxuryCard>}
+        {!promoters.length && <LuxuryCard className="text-center text-sm text-muted-foreground">No promoters match this search.</LuxuryCard>}
       </div>
     </AppShell>
   );

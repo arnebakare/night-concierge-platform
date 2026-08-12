@@ -2,7 +2,6 @@ import { ChevronDown, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LuxuryCard } from "@/components/ui/luxury-card";
 import { createClientRecord } from "@/lib/actions/management-actions";
 import type { Role } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
@@ -22,9 +21,9 @@ export function ClientCreateForm({ role }: Readonly<{ role: Role }>) {
         </span>
         <ChevronDown className="size-5 text-champagne-300 transition group-open:rotate-180" />
       </summary>
-      <LuxuryCard className="mt-3 border-champagne-700/20 bg-background/35 shadow-none">
-        <form action={createClientRecord} className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-2">
+      <div className="mt-3 rounded-md border border-champagne-700/20 bg-background/35 p-3">
+        <form action={createClientRecord} className="space-y-3">
+        <div className="grid gap-2 md:grid-cols-2">
           <Field label="Name">
             <Input name="name" placeholder="Daniel" required />
           </Field>
@@ -53,18 +52,18 @@ export function ClientCreateForm({ role }: Readonly<{ role: Role }>) {
             </select>
           </Field>
         </div>
-        <Button type="submit" className="w-full md:w-auto" size="lg">
+        <Button type="submit" className="w-full md:w-auto">
           Create client
         </Button>
       </form>
-      </LuxuryCard>
+      </div>
     </details>
   );
 }
 
 function Field({ label, children }: Readonly<{ label: string; children: React.ReactNode }>) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <Label>{label}</Label>
       {children}
     </div>

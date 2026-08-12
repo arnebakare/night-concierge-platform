@@ -20,11 +20,11 @@ export function RequestListSummary({
     .reduce((sum, request) => sum + request.guest_count, 0);
 
   return (
-    <LuxuryCard className="mb-4 space-y-4 overflow-hidden">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-champagne-300">Tonight cockpit</p>
-          <h2 className="mt-1 font-serif text-2xl">What needs attention</h2>
+    <LuxuryCard className="ops-summary mb-4 overflow-hidden">
+      <div className="flex flex-col gap-3 border-b border-border/80 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Live inbox</p>
+          <h2 className="mt-1 text-xl font-semibold tracking-normal">What needs attention</h2>
         </div>
         {showLeadAction && (
           <Button asChild>
@@ -35,14 +35,14 @@ export function RequestListSummary({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="ops-metrics grid grid-cols-2 divide-x divide-y divide-border/80 overflow-hidden rounded-md border border-border/80 md:grid-cols-4 md:divide-y-0">
         <Metric icon={Sparkles} label="Need reply" value={String(needsReply)} />
         <Metric icon={CheckCircle2} label="Confirmed" value={String(confirmed)} />
-        <Metric icon={CalendarDays} label="Tonight guests" value={String(tonightGuests)} />
+        <Metric icon={CalendarDays} label="Tonight" value={`${tonightGuests} guests`} />
         <Metric icon={UserRoundPlus} label="Missing contact" value={String(missingContact)} muted={missingContact === 0} />
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1 text-sm">
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 text-sm">
         <QuickLink href={baseHref} label="Live" />
         <QuickLink href={`${baseHref}?date=${today}`} label="Today" />
         <QuickLink href={`${baseHref}?date=${tomorrow}`} label="Tomorrow" />
@@ -61,12 +61,12 @@ function Metric({
   muted
 }: Readonly<{ icon: typeof Sparkles; label: string; value: string; muted?: boolean }>) {
   return (
-    <div className="rounded-md border border-champagne-700/25 bg-ink-900/60 p-3">
+    <div className="metric-cell bg-card p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">{label}</span>
         <Icon className={muted ? "size-4 text-muted-foreground" : "size-4 text-champagne-300"} />
       </div>
-      <p className="mt-2 font-serif text-3xl leading-none">{value}</p>
+      <p className="mt-2 text-2xl font-semibold leading-none tracking-tight">{value}</p>
     </div>
   );
 }

@@ -17,7 +17,7 @@ export default async function ManagerClientsPage({
       <div className="space-y-4">
         <ClientSearchForm action="/manager/clients" value={filters.q} placeholder="Search by phone, name, Instagram, VIP level" />
         <ClientCreateForm role={profile.role} />
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="compact-list grid gap-2">
           {clients.length ? clients.map((client) => <ClientCard key={client.id} client={client} href={`/manager/clients/${client.id}`} />) : <EmptyState />}
         </div>
       </div>
@@ -27,7 +27,7 @@ export default async function ManagerClientsPage({
 
 function EmptyState() {
   return (
-    <div className="rounded-lg border border-champagne-700/40 bg-card/80 p-6 text-center text-sm text-muted-foreground md:col-span-2">
+    <div className="rounded-lg border border-champagne-700/40 bg-card/80 p-6 text-center text-sm text-muted-foreground">
       No clients match this search.
     </div>
   );

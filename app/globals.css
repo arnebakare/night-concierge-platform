@@ -73,7 +73,7 @@ body {
 .cms-shell .app-header {
   margin-bottom: 1rem;
   border-bottom: 1px solid hsl(var(--border));
-  padding-bottom: 0.9rem;
+  padding-bottom: 0.75rem;
 }
 
 .cms-shell .app-eyebrow {
@@ -121,9 +121,10 @@ body {
 .cms-shell .luxury-card {
   border-color: #e2e8f0 !important;
   background: #ffffff !important;
-  padding: 0.85rem !important;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.055) !important;
-  ring-color: transparent !important;
+  color: #0f172a !important;
+  padding: 0.8rem !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  --tw-ring-color: transparent !important;
 }
 
 .cms-shell .luxury-card:hover {
@@ -132,6 +133,15 @@ body {
 
 .cms-shell .luxury-card h2,
 .cms-shell .luxury-card h3 {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #0f172a;
+  letter-spacing: 0;
+}
+
+.cms-shell section h2 {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
   color: #0f172a;
 }
 
@@ -155,6 +165,7 @@ body {
 
 .cms-shell .lead-row {
   background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
 }
 
 .cms-shell .lead-row .bg-secondary {
@@ -193,6 +204,24 @@ body {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
+.cms-shell button[class*="bg-secondary"],
+.cms-shell a[class*="bg-secondary"] {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.cms-shell button[class*="bg-secondary"]:hover,
+.cms-shell a[class*="bg-secondary"]:hover {
+  background: #eef2f7 !important;
+}
+
+.cms-shell button[class*="bg-primary"],
+.cms-shell a[class*="bg-primary"] {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
 .cms-shell input::placeholder,
 .cms-shell textarea::placeholder {
   color: #94a3b8 !important;
@@ -213,6 +242,35 @@ body {
   color: #8a6d22 !important;
 }
 
+.cms-shell .text-emerald-400 {
+  color: #047857 !important;
+}
+
+.cms-shell .text-emerald-100,
+.cms-shell .text-green-100 {
+  color: #047857 !important;
+}
+
+.cms-shell .text-sky-100 {
+  color: #0369a1 !important;
+}
+
+.cms-shell .text-amber-100 {
+  color: #92400e !important;
+}
+
+.cms-shell .text-zinc-100 {
+  color: #3f3f46 !important;
+}
+
+.cms-shell .text-red-100 {
+  color: #b91c1c !important;
+}
+
+.cms-shell .text-red-300 {
+  color: #b91c1c !important;
+}
+
 .cms-shell .border-champagne-700\/30,
 .cms-shell .border-champagne-700\/35,
 .cms-shell .border-champagne-700\/40,
@@ -222,8 +280,11 @@ body {
 
 .cms-shell .bg-ink-900,
 .cms-shell .bg-ink-900\/55,
+.cms-shell .bg-ink-900\/60,
 .cms-shell .bg-ink-950,
 .cms-shell .bg-ink-950\/50,
+.cms-shell .bg-ink-950\/60,
+.cms-shell .bg-ink-800,
 .cms-shell .bg-card\/80,
 .cms-shell .bg-card\/90,
 .cms-shell .bg-secondary,
@@ -237,11 +298,50 @@ body {
 
 .cms-shell .request-card .luxury-card,
 .cms-shell .client-card .luxury-card {
-  padding: 0 !important;
+  padding: 0.7rem 0.8rem !important;
 }
 
 .cms-shell .compact-list {
-  gap: 0.55rem;
+  gap: 0.45rem;
+}
+
+.cms-shell .client-row {
+  border-radius: 0.6rem !important;
+}
+
+.cms-shell .retention-card .rounded-md.border {
+  background: #f8fafc !important;
+}
+
+.cms-shell .ops-summary {
+  padding: 0.85rem !important;
+}
+
+.cms-shell .ops-summary .metric-cell {
+  background: #ffffff !important;
+}
+
+.cms-shell .ops-summary .metric-cell p {
+  color: #0f172a !important;
+}
+
+.cms-shell details {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+.cms-shell summary {
+  color: #0f172a !important;
+}
+
+.cms-shell details[open] summary {
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.75rem;
+}
+
+.cms-shell .rounded-lg.border.border-champagne-700\/35.bg-card\/75 {
+  background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .cms-shell table {

@@ -41,9 +41,9 @@ export default async function RetentionPage({
         <ConfigCard label="Email" ready={emailConfig.ready} detail={emailConfig.ready ? `Sending from ${emailConfig.from}` : "Add RESEND_API_KEY and EMAIL_FROM in Vercel"} />
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="compact-list grid gap-2">
         {clients.length ? clients.map((client) => <RetentionClientCard key={client.id} client={client} />) : (
-          <LuxuryCard className="text-center text-sm text-muted-foreground md:col-span-2">
+          <LuxuryCard className="text-center text-sm text-muted-foreground">
             No clients match this retention window.
           </LuxuryCard>
         )}
