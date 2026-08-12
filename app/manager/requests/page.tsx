@@ -34,7 +34,7 @@ export default async function ManagerRequestsPage({
       )}
       <RequestListSummary requests={requests} baseHref="/manager/requests" />
       <RequestFilters action="/manager/requests" values={filters} clubs={clubs} promoters={promoters} />
-      <div className="easy-only space-y-3">
+      <div className="easy-only compact-list grid gap-2">
         {requests.length ? requests.map((request) => (
           <div key={request.id} className="mx-auto max-w-3xl">
             <RequestCard request={request} href={`/manager/requests/${request.id}`} />
@@ -42,7 +42,7 @@ export default async function ManagerRequestsPage({
           </div>
         )) : <EmptyState />}
       </div>
-      <div className="advanced-only space-y-3 md:hidden">
+      <div className="advanced-only compact-list grid gap-2 md:hidden">
         {requests.length ? requests.map((request) => (
           <div key={request.id}>
             <RequestCard request={request} href={`/manager/requests/${request.id}`} />
@@ -50,7 +50,7 @@ export default async function ManagerRequestsPage({
           </div>
         )) : <EmptyState />}
       </div>
-      <div className="advanced-only hidden overflow-hidden rounded-lg border border-champagne-700/40 md:block">
+      <div className="advanced-only hidden overflow-hidden rounded-lg border border-champagne-700/40 bg-card md:block">
         <table className="w-full text-left text-sm">
           <thead className="bg-ink-800 text-muted-foreground">
             <tr><th className="p-3">Client</th><th>Club</th><th>Type</th><th>Status</th><th>Date</th><th>Promoter</th></tr>

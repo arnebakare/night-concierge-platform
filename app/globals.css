@@ -48,6 +48,167 @@ body {
   padding-bottom: calc(env(safe-area-inset-bottom) + 5.5rem);
 }
 
+.cms-shell {
+  --background: 220 25% 97%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --border: 220 18% 88%;
+  --input: 220 30% 98%;
+  --ring: 41 58% 46%;
+  --primary: 222 47% 11%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 20% 94%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 220 20% 95%;
+  --muted-foreground: 220 9% 43%;
+  background:
+    linear-gradient(180deg, #f8fafc 0%, #eef2f6 100%);
+}
+
+.cms-shell .safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 4.75rem);
+}
+
+.cms-shell .app-header {
+  margin-bottom: 1rem;
+  border-bottom: 1px solid hsl(var(--border));
+  padding-bottom: 0.9rem;
+}
+
+.cms-shell .app-eyebrow {
+  color: #8a6d22 !important;
+  letter-spacing: 0.16em;
+}
+
+.cms-shell .app-title {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: clamp(1.65rem, 2.4vw, 2.35rem);
+  font-weight: 750;
+  letter-spacing: 0;
+}
+
+.cms-shell .operator-chip,
+.cms-shell aside {
+  background: rgba(255, 255, 255, 0.86) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+}
+
+.cms-shell aside {
+  color: #0f172a;
+}
+
+.cms-shell aside a {
+  color: #475569;
+}
+
+.cms-shell aside a:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.cms-shell aside .text-champagne-300 {
+  color: #8a6d22 !important;
+}
+
+.cms-shell nav.fixed {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 -14px 34px rgba(15, 23, 42, 0.08);
+}
+
+.cms-shell .luxury-card {
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  padding: 0.85rem !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.055) !important;
+  ring-color: transparent !important;
+}
+
+.cms-shell .luxury-card:hover {
+  border-color: #cbd5e1 !important;
+}
+
+.cms-shell input,
+.cms-shell textarea,
+.cms-shell select {
+  min-height: 2.5rem;
+  border-color: #d9e1ea !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.cms-shell input::placeholder,
+.cms-shell textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.cms-shell button,
+.cms-shell a {
+  letter-spacing: 0;
+}
+
+.cms-shell .text-champagne-50,
+.cms-shell .text-champagne-100 {
+  color: #0f172a !important;
+}
+
+.cms-shell .text-champagne-200,
+.cms-shell .text-champagne-300 {
+  color: #8a6d22 !important;
+}
+
+.cms-shell .border-champagne-700\/30,
+.cms-shell .border-champagne-700\/35,
+.cms-shell .border-champagne-700\/40,
+.cms-shell .border-champagne-700\/50 {
+  border-color: #e2e8f0 !important;
+}
+
+.cms-shell .bg-ink-900,
+.cms-shell .bg-ink-900\/55,
+.cms-shell .bg-ink-950,
+.cms-shell .bg-ink-950\/50,
+.cms-shell .bg-card\/80,
+.cms-shell .bg-card\/90,
+.cms-shell .bg-secondary,
+.cms-shell .bg-secondary\/80 {
+  background: #f8fafc !important;
+}
+
+.cms-shell .shadow-glow {
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08) !important;
+}
+
+.cms-shell .request-card .luxury-card,
+.cms-shell .client-card .luxury-card {
+  padding: 0 !important;
+}
+
+.cms-shell .compact-list {
+  gap: 0.55rem;
+}
+
+.cms-shell table {
+  background: #ffffff;
+}
+
+.cms-shell thead {
+  background: #f8fafc !important;
+  color: #64748b !important;
+}
+
+.cms-shell th,
+.cms-shell td {
+  padding: 0.65rem 0.75rem;
+}
+
+.cms-shell tr {
+  border-color: #e2e8f0 !important;
+}
+
 .line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;

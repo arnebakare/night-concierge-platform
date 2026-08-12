@@ -12,21 +12,21 @@ export function RetentionClientCard({ client }: Readonly<{ client: RetentionClie
     : "";
 
   return (
-    <LuxuryCard>
-      <div className="flex items-start justify-between gap-3">
+    <LuxuryCard className="retention-card">
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-lg font-semibold">{client.name}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{dormantLabel}</p>
+          <p className="text-base font-semibold leading-tight">{client.name}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">{dormantLabel}</p>
           {client.last_outreach_at && <p className="mt-1 text-xs text-champagne-300">Last contacted {new Date(client.last_outreach_at).toLocaleDateString()}</p>}
         </div>
         <span className="rounded-full border border-champagne-700/50 px-2 py-1 text-xs text-champagne-100">{client.vip_level}</span>
       </div>
 
-      <div className="mt-4 rounded-md border border-champagne-700/30 bg-ink-950/50 p-3 text-sm text-muted-foreground">
+      <div className="mt-3 rounded-md border border-champagne-700/30 bg-ink-950/50 p-2.5 text-xs leading-relaxed text-muted-foreground md:text-sm">
         {message}
       </div>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <form action={sendClientRetentionMessage}>
           <input type="hidden" name="clientId" value={client.id} />
           <input type="hidden" name="channel" value="WHATSAPP" />

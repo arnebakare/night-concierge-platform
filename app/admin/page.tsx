@@ -9,8 +9,12 @@ export default async function AdminPage() {
   const [clubs, users, notifications] = await Promise.all([getClubsForAdmin(), getUsersForAdmin(), getNotificationHistory()]);
   return (
     <AppShell profile={profile} title="Global control" eyebrow="Super admin">
-      <div className="mb-4 grid grid-cols-3 gap-3"><LuxuryCard><p className="text-xs text-muted-foreground">Active clubs</p><p className="mt-2 font-serif text-3xl">{clubs.filter((club) => club.active).length}</p></LuxuryCard><LuxuryCard><p className="text-xs text-muted-foreground">Active users</p><p className="mt-2 font-serif text-3xl">{users.filter((user) => user.active).length}</p></LuxuryCard><LuxuryCard><p className="text-xs text-muted-foreground">WhatsApp failed</p><p className="mt-2 font-serif text-3xl">{notifications.filter((item) => item.status === "FAILED").length}</p></LuxuryCard></div>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <LuxuryCard><p className="text-xs font-medium text-muted-foreground">Active clubs</p><p className="mt-1 text-2xl font-semibold">{clubs.filter((club) => club.active).length}</p></LuxuryCard>
+        <LuxuryCard><p className="text-xs font-medium text-muted-foreground">Active users</p><p className="mt-1 text-2xl font-semibold">{users.filter((user) => user.active).length}</p></LuxuryCard>
+        <LuxuryCard><p className="text-xs font-medium text-muted-foreground">WhatsApp failed</p><p className="mt-1 text-2xl font-semibold">{notifications.filter((item) => item.status === "FAILED").length}</p></LuxuryCard>
+      </div>
+      <div className="compact-list grid gap-2 md:grid-cols-3">
         <Link href="/admin/clubs"><LuxuryCard><p className="font-semibold">Clubs</p><p className="text-sm text-muted-foreground">Create, edit, archive venues</p></LuxuryCard></Link>
         <Link href="/admin/planner"><LuxuryCard><p className="font-semibold">Planner rules</p><p className="text-sm text-muted-foreground">Tune AI venue weighting and local flow</p></LuxuryCard></Link>
         <Link href="/admin/users"><LuxuryCard><p className="font-semibold">Users</p><p className="text-sm text-muted-foreground">Managers, promoters, clients</p></LuxuryCard></Link>
