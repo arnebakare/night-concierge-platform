@@ -130,6 +130,59 @@ body {
   border-color: #cbd5e1 !important;
 }
 
+.cms-shell .luxury-card h2,
+.cms-shell .luxury-card h3 {
+  color: #0f172a;
+}
+
+.cms-shell .action-tile {
+  min-height: 5.1rem;
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.055) !important;
+}
+
+.cms-shell .action-tile:hover {
+  border-color: #cbd5e1 !important;
+  background: #f8fafc !important;
+  transform: translateY(-1px);
+}
+
+.cms-shell .action-tile span {
+  color: #0f172a !important;
+}
+
+.cms-shell .lead-row {
+  background: #ffffff !important;
+}
+
+.cms-shell .lead-row .bg-secondary {
+  background: #f8fafc !important;
+}
+
+.cms-shell .lead-row form button {
+  min-height: 2.15rem;
+}
+
+.cms-shell .lead-row:hover {
+  background: #fbfdff !important;
+}
+
+.cms-shell .rounded-md.border.border-champagne-700\/25.bg-ink-900\/60 {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.cms-shell .rounded-md.border.border-champagne-700\/25.bg-ink-900\/60 p {
+  color: #0f172a !important;
+}
+
+.cms-shell .rounded-md.border.border-champagne-700\/25.bg-ink-900\/60 .text-muted-foreground {
+  color: #64748b !important;
+}
+
 .cms-shell input,
 .cms-shell textarea,
 .cms-shell select {

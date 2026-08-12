@@ -1,10 +1,9 @@
 import { AppShell } from "@/components/layout/app-shell";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { RequestCard } from "@/components/request/request-card";
 import { RequestFilters } from "@/components/request/request-filters";
+import { RequestLeadRow } from "@/components/request/request-lead-row";
 import { RequestListSummary } from "@/components/request/request-list-summary";
-import { RequestStatusControl } from "@/components/request/request-status-control";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
 import { requireProfile } from "@/lib/auth";
 import { getActiveClubsForApp, getRequestsForProfile, getTeamPromoters, getUsersForAdmin } from "@/lib/data/app";
@@ -36,18 +35,12 @@ export default async function ManagerRequestsPage({
       <RequestFilters action="/manager/requests" values={filters} clubs={clubs} promoters={promoters} />
       <div className="easy-only compact-list grid gap-2">
         {requests.length ? requests.map((request) => (
-          <div key={request.id} className="mx-auto max-w-3xl">
-            <RequestCard request={request} href={`/manager/requests/${request.id}`} />
-            <RequestStatusControl requestId={request.id} status={request.status} returnTo="/manager/requests" />
-          </div>
+          <RequestLeadRow key={request.id} request={request} href={`/manager/requests/${request.id}`} returnTo="/manager/requests" />
         )) : <EmptyState />}
       </div>
       <div className="advanced-only compact-list grid gap-2 md:hidden">
         {requests.length ? requests.map((request) => (
-          <div key={request.id}>
-            <RequestCard request={request} href={`/manager/requests/${request.id}`} />
-            <RequestStatusControl requestId={request.id} status={request.status} returnTo="/manager/requests" />
-          </div>
+          <RequestLeadRow key={request.id} request={request} href={`/manager/requests/${request.id}`} returnTo="/manager/requests" />
         )) : <EmptyState />}
       </div>
       <div className="advanced-only hidden overflow-hidden rounded-lg border border-champagne-700/40 bg-card md:block">
@@ -65,7 +58,7 @@ export default async function ManagerRequestsPage({
                 </td>
                 <td>{request.clubs?.name}</td>
                 <td>{formatEnum(request.request_type)}</td>
-                <td><RequestStatusBadge status={request.status} /><RequestStatusControl requestId={request.id} status={request.status} returnTo="/manager/requests" /></td>
+                <td><RequestStatusBadge status={request.status} /></td>
                 <td>{request.requested_date}</td>
                 <td>{request.promoter?.name ?? "Unassigned"}</td>
               </tr>

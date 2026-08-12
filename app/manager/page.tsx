@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Button } from "@/components/ui/button";
-import { RequestCard } from "@/components/request/request-card";
+import { RequestLeadRow } from "@/components/request/request-lead-row";
 import { ActionTile } from "@/components/ui/action-tile";
 import { CalendarDays, HeartHandshake, Inbox, ListPlus, MessageCircle, UserRoundSearch, Users } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
@@ -54,7 +54,11 @@ export default async function ManagerPage() {
       </div>
       <section className="mt-5 space-y-3">
         <h2 className="font-serif text-2xl">Needs attention</h2>
-        {visibleRequests.length ? visibleRequests.map((request) => <RequestCard key={request.id} request={request} href={`/manager/requests/${request.id}`} />) : <p className="text-sm text-muted-foreground">Nothing needs attention right now.</p>}
+        <div className="compact-list grid gap-2">
+          {visibleRequests.length ? visibleRequests.map((request) => (
+            <RequestLeadRow key={request.id} request={request} href={`/manager/requests/${request.id}`} returnTo="/manager" showActions={false} />
+          )) : <p className="text-sm text-muted-foreground">Nothing needs attention right now.</p>}
+        </div>
       </section>
     </AppShell>
   );
