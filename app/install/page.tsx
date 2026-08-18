@@ -5,7 +5,9 @@ import { LuxuryCard } from "@/components/ui/luxury-card";
 
 export default function InstallPage() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-10">
+    <main className="request-marina-bg relative min-h-screen overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,5,6,0.24)_0%,rgba(5,5,6,0.78)_45%,rgba(5,5,6,0.98)_100%)]" />
+      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-10">
       <div className="mb-6">
         <p className="text-sm uppercase tracking-[0.3em] text-champagne-300">iPhone access</p>
         <h1 className="mt-3 font-serif text-4xl leading-tight text-foreground">Install Night Concierge</h1>
@@ -14,7 +16,7 @@ export default function InstallPage() {
         </p>
       </div>
 
-      <LuxuryCard className="space-y-4">
+      <LuxuryCard className="space-y-4 border-champagne-300/35 bg-ink-900/86 shadow-[0_24px_90px_rgba(0,0,0,0.48)]">
         <InstallStep icon={ExternalLink} title="Open this page in Safari" text="If this opened inside WhatsApp or Instagram, tap the browser menu and open it in Safari first." />
         <InstallStep icon={Share} title="Tap Share" text="Use the iPhone share button at the bottom of Safari." />
         <InstallStep icon={Smartphone} title="Tap Add to Home Screen" text="Keep the name Concierge, then tap Add." />
@@ -28,6 +30,7 @@ export default function InstallPage() {
         <Button asChild variant="secondary">
           <Link href="/request">Open booking form</Link>
         </Button>
+      </div>
       </div>
     </main>
   );

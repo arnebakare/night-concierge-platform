@@ -15,7 +15,7 @@ export default async function ClientRequestsPage() {
         <Button asChild><Link href="/request">New request</Link></Button>
       </div>
       <div className="space-y-3">
-        {requests.length ? requests.map((request) => <RequestCard key={request.id} request={request} href={`/client/requests/${request.id}`} />) : <EmptyState />}
+        {requests.length ? requests.map((request) => <RequestCard key={request.id} request={request} href={`/client/requests/${request.id}`} audience="client" />) : <EmptyState />}
       </div>
     </AppShell>
   );

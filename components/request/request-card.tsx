@@ -6,7 +6,7 @@ import type { ConciergeRequest } from "@/lib/types";
 import { isTemporaryPhone, nextSalesAction } from "@/lib/sales/funnel";
 import { formatEnum } from "@/lib/utils";
 
-export function RequestCard({ request, href }: Readonly<{ request: ConciergeRequest; href?: string }>) {
+export function RequestCard({ request, href, audience = "staff" }: Readonly<{ request: ConciergeRequest; href?: string; audience?: "staff" | "client" }>) {
   const service = request.message?.match(/^Selected service:\s*(.+)$/m)?.[1];
   const missingContact = !request.clients?.phone || isTemporaryPhone(request.clients.phone);
   const card = (
@@ -27,7 +27,7 @@ export function RequestCard({ request, href }: Readonly<{ request: ConciergeRequ
       </div>
       {request.message && !service && <p className="line-clamp-3 rounded-md bg-secondary/80 p-2 text-xs leading-relaxed text-muted-foreground md:text-sm">{request.message}</p>}
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-champagne-700/30 pt-2 text-xs">
-        <span className="rounded-full bg-champagne-300/10 px-2.5 py-1 text-champagne-100">{nextSalesAction(request.status)}</span>
+        <span className="rounded-full bg-champagne-300/10 px-2.5 py-1 text-champagne-100">{audience === "client" ? clientStatusHint(request.status) : nextSalesAction(request.status)}</span>
         <span className={missingContact ? "flex items-center gap-1 text-amber-100" : "flex items-center gap-1 text-muted-foreground"}>
           {missingContact ? <UserRoundPlus className="size-3" /> : <MessageCircle className="size-3" />}
           {missingContact ? "Add contact" : "Client contact"}
@@ -44,6 +44,17 @@ export function RequestCard({ request, href }: Readonly<{ request: ConciergeRequ
       {card}
     </Link>
   );
+}
+
+function clientStatusHint(status: ConciergeRequest["status"]) {
+  if (status === "NEW") return "Received";
+  if (status === "CONTACTED") return "Host contacted";
+  if (status === "PENDING") return "Checking availability";
+  if (status === "CONFIRMED") return "Confirmed";
+  if (status === "ARRIVED") return "Completed";
+  if (status === "DECLINED") return "Not available";
+  if (status === "CANCELLED") return "Cancelled";
+  return "Updated";
 }
 
 function Fact({

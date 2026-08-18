@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, Check, ChevronLeft, Clock, MapPin, Sparkles, Users } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, Clock, Minus, MapPin, Plus, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,6 +112,10 @@ export function RequestFormSteps({
     if (event) form.setValue("requestedDate", event.event_date, { shouldValidate: true });
   }
 
+  function setGuestCount(nextValue: number) {
+    form.setValue("guestCount", Math.max(1, Math.min(200, nextValue)), { shouldValidate: true });
+  }
+
   async function next() {
     const fieldsByStep: Record<number, (keyof PublicRequestInput)[]> = {
       1: ["clubId"], 2: ["requestType"], 3: ["name", "phone", "email", "instagram"], 4: ["requestedDate", "guestCount", "arrivalTime", "budget", "message"]
@@ -190,6 +194,11 @@ export function RequestFormSteps({
                     <span className="inline-flex rounded-full border border-champagne-700/30 px-2 py-0.5 text-[11px] text-muted-foreground">{experience.mood}</span>
                   </span>
                 </span>
+                {values.clubId === club.id && (
+                  <span className="ml-auto flex size-7 shrink-0 items-center justify-center rounded-full bg-champagne-300 text-ink-950">
+                    <Check className="size-4" />
+                  </span>
+                )}
               </button>
               );
             })}
@@ -233,7 +242,7 @@ export function RequestFormSteps({
                   form.setValue("serviceLabel", service.label, { shouldValidate: true });
                 }}
                 className={cn(
-                  "group flex min-h-28 flex-col justify-between rounded-lg border bg-ink-700 p-3.5 text-left transition active:scale-[0.99]",
+                  "group relative flex min-h-28 flex-col justify-between rounded-lg border bg-ink-700 p-3.5 text-left transition active:scale-[0.99]",
                   active ? "border-champagne-300 bg-champagne-300/10 shadow-glow" : "border-champagne-700/40 hover:border-champagne-300/60"
                 )}
               >
@@ -244,6 +253,7 @@ export function RequestFormSteps({
                   <span className="block font-semibold">{service.label}</span>
                   <span className="mt-1 block text-xs leading-snug text-muted-foreground">{service.description}</span>
                 </span>
+                {active && <Check className="absolute right-3 top-3 size-4 text-champagne-300" />}
               </button>
               );
             })}
@@ -295,13 +305,13 @@ export function RequestFormSteps({
             <p className="mt-1 text-sm text-muted-foreground">WhatsApp is best. Email and Instagram are optional.</p>
           </div>
           <Field label="Name" error={form.formState.errors.name?.message}>
-            <Input {...form.register("name")} placeholder="Full name" />
+            <Input {...form.register("name")} placeholder="Full name" autoComplete="name" />
           </Field>
           <Field label="Phone / WhatsApp" error={form.formState.errors.phone?.message}>
-            <Input {...form.register("phone")} placeholder="+34 600 000 000" inputMode="tel" />
+            <Input {...form.register("phone")} placeholder="+34 600 000 000" inputMode="tel" autoComplete="tel" />
           </Field>
           <Field label="Email optional" error={form.formState.errors.email?.message}>
-            <Input {...form.register("email")} placeholder="name@email.com" inputMode="email" />
+            <Input {...form.register("email")} placeholder="name@email.com" inputMode="email" autoComplete="email" />
           </Field>
           <Field label="Instagram optional">
             <Input {...form.register("instagram")} placeholder="@handle" />
@@ -320,15 +330,38 @@ export function RequestFormSteps({
               <Input {...form.register("requestedDate")} type="date" min={new Date().toISOString().slice(0, 10)} />
             </Field>
             <Field label="Guests" error={form.formState.errors.guestCount?.message}>
-              <Input {...form.register("guestCount")} type="number" min={1} inputMode="numeric" />
+              <div className="grid grid-cols-[2.75rem_1fr_2.75rem] overflow-hidden rounded-md border border-champagne-700/35 bg-input">
+                <button type="button" aria-label="Remove guest" className="flex min-h-12 items-center justify-center border-r border-champagne-700/35 text-champagne-300" onClick={() => setGuestCount(Number(values.guestCount || 1) - 1)}>
+                  <Minus className="size-4" />
+                </button>
+                <Input {...form.register("guestCount")} type="number" min={1} inputMode="numeric" className="border-0 bg-transparent text-center shadow-none focus:ring-0" />
+                <button type="button" aria-label="Add guest" className="flex min-h-12 items-center justify-center border-l border-champagne-700/35 text-champagne-300" onClick={() => setGuestCount(Number(values.guestCount || 1) + 1)}>
+                  <Plus className="size-4" />
+                </button>
+              </div>
             </Field>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <QuickPick label="Tonight" onClick={() => form.setValue("requestedDate", dateString(0), { shouldValidate: true })} />
+            <QuickPick label="Tomorrow" onClick={() => form.setValue("requestedDate", dateString(1), { shouldValidate: true })} />
+            <QuickPick label="Weekend" onClick={() => form.setValue("requestedDate", nextWeekendDate(), { shouldValidate: true })} />
           </div>
           <Field label="Arrival time optional">
             <Input {...form.register("arrivalTime")} placeholder="Around 01:00" />
           </Field>
+          <div className="grid grid-cols-4 gap-2">
+            {["21:00", "23:00", "01:00", "TBC"].map((time) => (
+              <QuickPick key={time} label={time} active={values.arrivalTime === time} onClick={() => form.setValue("arrivalTime", time, { shouldValidate: true })} />
+            ))}
+          </div>
           <Field label="Budget optional">
             <Input {...form.register("budget")} placeholder="Bottle service, 1k, flexible..." />
           </Field>
+          <div className="grid grid-cols-3 gap-2">
+            {["Flexible", "1k+", "2k+"].map((budget) => (
+              <QuickPick key={budget} label={budget} active={values.budget === budget} onClick={() => form.setValue("budget", budget, { shouldValidate: true })} />
+            ))}
+          </div>
           <Field label="Message optional">
             <Textarea {...form.register("message")} placeholder="Occasion, preferences, special requests..." />
           </Field>
@@ -428,4 +461,35 @@ function Field({ label, error, children }: Readonly<{ label: string; error?: str
       {error && <p className="text-sm text-red-200">{error}</p>}
     </div>
   );
+}
+
+function QuickPick({ label, active, onClick }: Readonly<{ label: string; active?: boolean; onClick: () => void }>) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "min-h-10 rounded-md border border-champagne-700/35 bg-ink-900/60 px-2 text-sm font-medium text-muted-foreground transition active:scale-[0.98]",
+        active && "border-champagne-300 bg-champagne-300/10 text-champagne-100"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function dateString(offset: number) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + offset);
+  return date.toISOString().slice(0, 10);
+}
+
+function nextWeekendDate() {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  const day = date.getDay();
+  const daysUntilSaturday = (6 - day + 7) % 7 || 7;
+  date.setDate(date.getDate() + daysUntilSaturday);
+  return date.toISOString().slice(0, 10);
 }

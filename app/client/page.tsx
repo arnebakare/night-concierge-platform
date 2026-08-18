@@ -42,7 +42,7 @@ export default async function ClientPage() {
           <h2 className="font-serif text-2xl">Latest requests</h2>
           <Button asChild variant="secondary" size="sm"><Link href="/client/requests">View all</Link></Button>
         </div>
-        <div className="space-y-3">{requests.length ? requests.map((request) => <RequestCard key={request.id} request={request} href={`/client/requests/${request.id}`} />) : <EmptyRequests />}</div>
+        <div className="space-y-3">{requests.length ? requests.map((request) => <RequestCard key={request.id} request={request} href={`/client/requests/${request.id}`} audience="client" />) : <EmptyRequests />}</div>
       </div>
     </AppShell>
   );
