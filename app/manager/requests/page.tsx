@@ -39,12 +39,12 @@ export default async function ManagerRequestsPage({
       <div className="easy-only compact-list grid gap-2">
         {requests.length ? requests.map((request) => (
           <RequestLeadRow key={request.id} request={request} href={`/manager/requests/${request.id}`} returnTo="/manager/requests" />
-        )) : <EmptyState />}
+        )) : <EmptyState archived={archiveMode} />}
       </div>
       <div className="advanced-only compact-list grid gap-2 md:hidden">
         {requests.length ? requests.map((request) => (
           <RequestLeadRow key={request.id} request={request} href={`/manager/requests/${request.id}`} returnTo="/manager/requests" />
-        )) : <EmptyState />}
+        )) : <EmptyState archived={archiveMode} />}
       </div>
       <div className="advanced-only hidden overflow-hidden rounded-lg border border-champagne-700/40 bg-card md:block">
         <table className="w-full text-left text-sm">
@@ -91,10 +91,10 @@ function isArchivedStatus(status: RequestStatus) {
   return ["ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"].includes(status);
 }
 
-function EmptyState() {
+function EmptyState({ archived = false }: Readonly<{ archived?: boolean }>) {
   return (
     <div className="rounded-lg border border-champagne-700/40 bg-card/80 p-6 text-center text-sm text-muted-foreground">
-      No requests match these filters.
+      {archived ? "No completed or archived requests match these filters." : "No active requests match these filters."}
     </div>
   );
 }

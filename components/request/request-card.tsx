@@ -17,6 +17,7 @@ export function RequestCard({ request, href, audience = "staff" }: Readonly<{ re
         <div>
           <p className="text-base font-semibold leading-tight">{request.clients?.name ?? "Guest"}</p>
           <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">{request.clubs?.name ?? "Club"} · {service ?? formatEnum(request.request_type)}</p>
+          {audience === "staff" && <p className="mt-0.5 text-[11px] text-muted-foreground">{request.promoter?.name ?? "Unassigned"} · {formatEnum(request.source)}</p>}
         </div>
         <RequestStatusBadge status={request.status} />
       </div>

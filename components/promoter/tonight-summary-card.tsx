@@ -21,6 +21,9 @@ export function TonightSummaryCard({
         <Metric icon={Users} label="Guests" value={guests} />
         <Metric icon={Clock} label="Pending" value={pending} />
       </div>
+      <p className="mt-4 rounded-md border border-champagne-700/35 bg-ink-950/45 p-3 text-xs leading-5 text-muted-foreground">
+        Keep this clean: reply first, check availability, then confirm only when the venue gives you the option.
+      </p>
     </LuxuryCard>
   );
 }

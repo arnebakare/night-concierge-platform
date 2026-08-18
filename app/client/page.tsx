@@ -18,6 +18,9 @@ export default async function ClientPage() {
           <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Welcome back</p>
           <h2 className="mt-2 font-serif text-3xl">Ready when you are.</h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">Send a request in under a minute and the team will follow up on WhatsApp.</p>
+          <p className="mt-3 rounded-md border border-champagne-700/35 bg-ink-950/45 p-3 text-xs leading-5 text-muted-foreground">
+            You will always get the final venue details, timing, and any conditions from a host before anything is confirmed.
+          </p>
           <Button asChild className="mt-5 w-full" size="lg">
             <Link href="/request"><CalendarPlus className="size-5" /> New request</Link>
           </Button>
