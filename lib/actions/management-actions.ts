@@ -265,6 +265,14 @@ export async function sendRequestOffer(formData: FormData) {
   }).select("id").single();
   if (error || !data) throw new Error(error?.message ?? "Could not save offer.");
 
+  if (result.ok) {
+    await supabase
+      .from("requests")
+      .update({ status: "PENDING" })
+      .eq("id", parsed.data.requestId)
+      .in("status", ["NEW", "CONTACTED"]);
+  }
+
   await writeAuditLog(supabase, {
     userId: profile.id,
     action: result.ok ? "REQUEST_OFFER_SENT" : "REQUEST_OFFER_SEND_FAILED",
@@ -299,11 +307,22 @@ export async function updateRequestOfferStatus(formData: FormData) {
   }
 
   const supabase = await createClient();
+  const updateValues: { offer_status: z.infer<typeof offerStatusSchema>["status"]; sent_at?: string } = { offer_status: parsed.data.status };
+  if (parsed.data.status === "SENT") updateValues.sent_at = new Date().toISOString();
+
   const { error } = await supabase
     .from("request_offers")
-    .update({ offer_status: parsed.data.status, sent_at: parsed.data.status === "SENT" ? new Date().toISOString() : undefined })
+    .update(updateValues)
     .eq("id", parsed.data.offerId);
   if (error) throw new Error(error.message);
+
+  if (parsed.data.status === "ACCEPTED") {
+    await supabase.from("requests").update({ status: "CONFIRMED" }).eq("id", parsed.data.requestId);
+  }
+
+  if (parsed.data.status === "DECLINED") {
+    await supabase.from("requests").update({ status: "DECLINED" }).eq("id", parsed.data.requestId);
+  }
 
   await writeAuditLog(supabase, {
     userId: profile.id,
@@ -315,6 +334,10 @@ export async function updateRequestOfferStatus(formData: FormData) {
 
   revalidatePath(`/manager/requests/${parsed.data.requestId}`);
   revalidatePath(`/requests/${parsed.data.requestId}`);
+  revalidatePath("/manager/requests");
+  revalidatePath("/requests");
+  revalidatePath("/manager");
+  revalidatePath("/dashboard");
 }
 
 function readOfferForm(formData: FormData) {

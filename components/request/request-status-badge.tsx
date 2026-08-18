@@ -2,14 +2,14 @@ import { cn, formatEnum } from "@/lib/utils";
 import type { RequestStatus } from "@/lib/types";
 
 const tone: Record<RequestStatus, string> = {
-  NEW: "border-champagne-300/50 bg-champagne-500/15 text-champagne-100",
-  CONTACTED: "border-sky-300/40 bg-sky-500/15 text-sky-100",
-  PENDING: "border-amber-300/40 bg-amber-500/15 text-amber-100",
-  CONFIRMED: "border-emerald-300/40 bg-emerald-500/15 text-emerald-100",
-  ARRIVED: "border-green-300/40 bg-green-500/15 text-green-100",
-  NO_SHOW: "border-zinc-300/30 bg-zinc-500/15 text-zinc-100",
-  DECLINED: "border-red-300/40 bg-red-500/15 text-red-100",
-  CANCELLED: "border-zinc-300/30 bg-zinc-500/15 text-zinc-100"
+  NEW: "border-champagne-600/35 bg-champagne-300/20 text-champagne-800",
+  CONTACTED: "border-sky-200 bg-sky-50 text-sky-700",
+  PENDING: "border-amber-200 bg-amber-50 text-amber-700",
+  CONFIRMED: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  ARRIVED: "border-green-200 bg-green-50 text-green-700",
+  NO_SHOW: "border-zinc-200 bg-zinc-100 text-zinc-600",
+  DECLINED: "border-red-200 bg-red-50 text-red-700",
+  CANCELLED: "border-zinc-200 bg-zinc-100 text-zinc-600"
 };
 
 export function RequestStatusBadge({ status }: Readonly<{ status: RequestStatus }>) {
