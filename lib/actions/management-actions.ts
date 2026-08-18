@@ -119,6 +119,225 @@ const tableCostSchema = z.object({
   tableCost: z.string().trim().max(100).optional().or(z.literal(""))
 });
 
+const availabilitySlotSchema = z.object({
+  requestId: z.string().optional().or(z.literal("")),
+  clubId: z.string().min(1),
+  slotDate: z.string().min(1),
+  serviceType: z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"]),
+  title: z.string().trim().min(2).max(120),
+  area: z.string().trim().max(120).optional().or(z.literal("")),
+  minSpend: z.string().trim().max(100).optional().or(z.literal("")),
+  capacity: z.coerce.number().int().min(1).max(200).optional().or(z.literal("")),
+  status: z.enum(["AVAILABLE", "LIMITED", "WAITLIST", "SOLD_OUT"]),
+  notes: z.string().trim().max(500).optional().or(z.literal(""))
+});
+
+export async function createAvailabilitySlot(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = availabilitySlotSchema.safeParse({
+    requestId: formData.get("requestId"),
+    clubId: formData.get("clubId"),
+    slotDate: formData.get("slotDate"),
+    serviceType: formData.get("serviceType"),
+    title: formData.get("title"),
+    area: formData.get("area") || "",
+    minSpend: formData.get("minSpend") || "",
+    capacity: formData.get("capacity") || "",
+    status: formData.get("status") || "AVAILABLE",
+    notes: formData.get("notes") || ""
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    if (parsed.data.requestId) revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+    revalidatePath("/manager/availability");
+    return;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("availability_slots").insert({
+    club_id: parsed.data.clubId,
+    service_type: parsed.data.serviceType,
+    slot_date: parsed.data.slotDate,
+    title: parsed.data.title,
+    area: parsed.data.area || null,
+    min_spend: parsed.data.minSpend || null,
+    capacity: parsed.data.capacity || null,
+    status: parsed.data.status,
+    notes: parsed.data.notes || null,
+    created_by: profile.id
+  }).select("id").single();
+  if (error || !data) throw new Error(error?.message ?? "Could not save availability.");
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "AVAILABILITY_SLOT_CREATED",
+    entityType: "availability_slots",
+    entityId: data.id,
+    metadata: { requestId: parsed.data.requestId || null, clubId: parsed.data.clubId, date: parsed.data.slotDate, status: parsed.data.status }
+  });
+
+  if (parsed.data.requestId) {
+    revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+    revalidatePath(`/requests/${parsed.data.requestId}`);
+  }
+  revalidatePath("/manager/availability");
+}
+
+const requestOfferSchema = z.object({
+  requestId: z.string().min(1),
+  availabilitySlotId: z.string().min(1).optional().or(z.literal("")),
+  venueName: z.string().trim().min(2).max(120),
+  offerDate: z.string().min(1),
+  serviceLabel: z.string().trim().min(2).max(120),
+  arrivalTime: z.string().trim().max(40).optional().or(z.literal("")),
+  guestCount: z.coerce.number().int().min(1).max(200),
+  minSpend: z.string().trim().max(100).optional().or(z.literal("")),
+  message: z.string().trim().min(10).max(1200),
+  destination: z.string().trim().max(40).optional().or(z.literal(""))
+});
+
+export async function createRequestOffer(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = requestOfferSchema.safeParse(readOfferForm(formData));
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+    revalidatePath(`/requests/${parsed.data.requestId}`);
+    return;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("request_offers").insert({
+    request_id: parsed.data.requestId,
+    availability_slot_id: parsed.data.availabilitySlotId || null,
+    created_by: profile.id,
+    venue_name: parsed.data.venueName,
+    offer_date: parsed.data.offerDate,
+    service_label: parsed.data.serviceLabel,
+    arrival_time: parsed.data.arrivalTime || null,
+    guest_count: parsed.data.guestCount,
+    min_spend: parsed.data.minSpend || null,
+    message: parsed.data.message
+  }).select("id").single();
+  if (error || !data) throw new Error(error?.message ?? "Could not create offer.");
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "REQUEST_OFFER_CREATED",
+    entityType: "request_offers",
+    entityId: data.id,
+    metadata: { requestId: parsed.data.requestId, minSpend: parsed.data.minSpend || null }
+  });
+
+  revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+  revalidatePath(`/requests/${parsed.data.requestId}`);
+}
+
+export async function sendRequestOffer(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = requestOfferSchema.safeParse(readOfferForm(formData));
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+    revalidatePath(`/requests/${parsed.data.requestId}`);
+    return;
+  }
+
+  const supabase = await createClient();
+  const destination = normalizeWhatsAppDestination(parsed.data.destination);
+  const result = destination ? await sendStoredWhatsApp({ to: destination, body: parsed.data.message }) : { ok: false as const, error: "No WhatsApp number on the client." };
+  const { data, error } = await supabase.from("request_offers").insert({
+    request_id: parsed.data.requestId,
+    availability_slot_id: parsed.data.availabilitySlotId || null,
+    created_by: profile.id,
+    offer_status: result.ok ? "SENT" : "DRAFT",
+    venue_name: parsed.data.venueName,
+    offer_date: parsed.data.offerDate,
+    service_label: parsed.data.serviceLabel,
+    arrival_time: parsed.data.arrivalTime || null,
+    guest_count: parsed.data.guestCount,
+    min_spend: parsed.data.minSpend || null,
+    message: parsed.data.message,
+    sent_at: result.ok ? new Date().toISOString() : null
+  }).select("id").single();
+  if (error || !data) throw new Error(error?.message ?? "Could not save offer.");
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: result.ok ? "REQUEST_OFFER_SENT" : "REQUEST_OFFER_SEND_FAILED",
+    entityType: "request_offers",
+    entityId: data.id,
+    metadata: { requestId: parsed.data.requestId, destination, success: result.ok, error: result.ok ? null : result.error }
+  });
+
+  revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+  revalidatePath(`/requests/${parsed.data.requestId}`);
+}
+
+const offerStatusSchema = z.object({
+  offerId: z.string().min(1),
+  requestId: z.string().min(1),
+  status: z.enum(["DRAFT", "SENT", "ACCEPTED", "DECLINED", "EXPIRED"])
+});
+
+export async function updateRequestOfferStatus(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = offerStatusSchema.safeParse({
+    offerId: formData.get("offerId"),
+    requestId: formData.get("requestId"),
+    status: formData.get("status")
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+    revalidatePath(`/requests/${parsed.data.requestId}`);
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("request_offers")
+    .update({ offer_status: parsed.data.status, sent_at: parsed.data.status === "SENT" ? new Date().toISOString() : undefined })
+    .eq("id", parsed.data.offerId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "REQUEST_OFFER_STATUS_UPDATED",
+    entityType: "request_offers",
+    entityId: parsed.data.offerId,
+    metadata: { requestId: parsed.data.requestId, status: parsed.data.status }
+  });
+
+  revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+  revalidatePath(`/requests/${parsed.data.requestId}`);
+}
+
+function readOfferForm(formData: FormData) {
+  return {
+    requestId: formData.get("requestId"),
+    availabilitySlotId: formData.get("availabilitySlotId") || "",
+    venueName: formData.get("venueName"),
+    offerDate: formData.get("offerDate"),
+    serviceLabel: formData.get("serviceLabel"),
+    arrivalTime: formData.get("arrivalTime") || "",
+    guestCount: formData.get("guestCount"),
+    minSpend: formData.get("minSpend") || "",
+    message: formData.get("message"),
+    destination: formData.get("destination") || ""
+  };
+}
+
+function normalizeWhatsAppDestination(value?: string) {
+  const clean = value?.trim();
+  if (!clean) return "";
+  return clean.startsWith("whatsapp:") ? clean : `whatsapp:${clean}`;
+}
+
 export async function updateRequestTableCost(formData: FormData) {
   const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const parsed = tableCostSchema.safeParse({

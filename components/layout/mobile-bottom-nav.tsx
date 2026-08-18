@@ -18,8 +18,8 @@ const navByRole: Record<Role, { href: string; label: string; icon: typeof Home }
   PROMOTER_MANAGER: [
     { href: "/manager", label: "Home", icon: Home },
     { href: "/manager/requests", label: "Inbox", icon: Inbox },
+    { href: "/manager/availability", label: "Offers", icon: CalendarDays },
     { href: "/manager/clients", label: "Clients", icon: Search },
-    { href: "/schedule", label: "Schedule", icon: CalendarDays },
     { href: "/manager/retention", label: "Care", icon: HeartHandshake }
   ],
   SUPER_ADMIN: [

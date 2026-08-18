@@ -109,3 +109,40 @@ export type ScheduleVenueRule = {
   created_at?: string;
   updated_at?: string;
 };
+
+export type AvailabilitySlot = {
+  id: string;
+  club_id: string;
+  service_type: RequestType;
+  slot_date: string;
+  title: string;
+  area: string | null;
+  min_spend: string | null;
+  capacity: number | null;
+  status: "AVAILABLE" | "LIMITED" | "WAITLIST" | "SOLD_OUT";
+  notes: string | null;
+  active: boolean;
+  created_by: string | null;
+  created_at?: string;
+  updated_at?: string;
+  clubs?: Pick<Club, "name" | "city" | "slug"> | null;
+};
+
+export type RequestOffer = {
+  id: string;
+  request_id: string;
+  availability_slot_id: string | null;
+  created_by: string | null;
+  offer_status: "DRAFT" | "SENT" | "ACCEPTED" | "DECLINED" | "EXPIRED";
+  venue_name: string;
+  offer_date: string;
+  service_label: string;
+  arrival_time: string | null;
+  guest_count: number;
+  min_spend: string | null;
+  message: string;
+  sent_at: string | null;
+  created_at: string;
+  updated_at?: string;
+  profiles?: Pick<Profile, "name" | "email"> | null;
+};

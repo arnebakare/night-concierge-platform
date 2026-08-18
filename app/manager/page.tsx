@@ -27,6 +27,7 @@ export default async function ManagerPage() {
           <h2 className="mb-3 text-base font-semibold">What do you need?</h2>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <ActionTile href="/manager/requests" label="Handle requests" icon={Inbox} />
+            <ActionTile href="/manager/availability" label="Availability" icon={CalendarDays} />
             <ActionTile href="/manager/clients" label="Find a client" icon={UserRoundSearch} />
             <ActionTile href="/manager/promoters" label="View team" icon={Users} />
             <ActionTile href="/requests/lead" label="Paste lead" icon={MessageCircle} />

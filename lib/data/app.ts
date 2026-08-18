@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Client, Club, ConciergeEvent, ConciergeRequest, Profile, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
+import type { AvailabilitySlot, Client, Club, ConciergeEvent, ConciergeRequest, Profile, RequestOffer, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -89,6 +89,66 @@ export async function getRequestDetail(requestId: string) {
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
     return demoRequests.find((request) => request.id === requestId) ?? demoRequests[0] ?? null;
+  }
+}
+
+export async function getRequestCommerce(request: ConciergeRequest) {
+  try {
+    const supabase = await createClient();
+    const [{ data: slots, error: slotsError }, { data: offers, error: offersError }] = await Promise.all([
+      supabase
+        .from("availability_slots")
+        .select("id, club_id, service_type, slot_date, title, area, min_spend, capacity, status, notes, active, created_by, created_at, updated_at, clubs(name, city, slug)")
+        .eq("club_id", request.club_id)
+        .eq("slot_date", request.requested_date)
+        .eq("active", true)
+        .order("status")
+        .order("title"),
+      supabase
+        .from("request_offers")
+        .select("id, request_id, availability_slot_id, created_by, offer_status, venue_name, offer_date, service_label, arrival_time, guest_count, min_spend, message, sent_at, created_at, updated_at, profiles(name, email)")
+        .eq("request_id", request.id)
+        .order("created_at", { ascending: false })
+    ]);
+    if (slotsError || offersError) throw slotsError ?? offersError;
+    return {
+      slots: normalizeAvailabilitySlots(slots),
+      offers: normalizeRequestOffers(offers)
+    };
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return {
+      slots: demoAvailabilitySlots(request),
+      offers: demoRequestOffers(request)
+    };
+  }
+}
+
+export async function getAvailabilitySlotsForProfile(profile: Profile, options?: { date?: string; clubId?: string }) {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("availability_slots")
+      .select("id, club_id, service_type, slot_date, title, area, min_spend, capacity, status, notes, active, created_by, created_at, updated_at, clubs(name, city, slug)")
+      .eq("active", true)
+      .order("slot_date", { ascending: true })
+      .order("status")
+      .order("title")
+      .limit(120);
+    if (options?.date) query = query.eq("slot_date", options.date);
+    if (options?.clubId) query = query.eq("club_id", options.clubId);
+    if (profile.role === "PROMOTER_MANAGER") {
+      const clubIds = await managerClubIdsCsv(profile.id);
+      if (!clubIds) return [];
+      query = query.in("club_id", clubIds.split(","));
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    return normalizeAvailabilitySlots(data);
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    const demoRequest = demoRequests[0];
+    return demoAvailabilitySlots(demoRequest).filter((slot) => !options?.date || slot.slot_date === options.date);
   }
 }
 
@@ -705,6 +765,79 @@ function normalizeScheduleVenueRules(data: unknown): ScheduleVenueRule[] {
     priority_days: Array.isArray(rule.priority_days) ? rule.priority_days : [],
     avoid_after_venue_names: Array.isArray(rule.avoid_after_venue_names) ? rule.avoid_after_venue_names : []
   }));
+}
+
+function normalizeAvailabilitySlots(data: unknown): AvailabilitySlot[] {
+  return ((data as Array<Omit<AvailabilitySlot, "clubs"> & { clubs?: AvailabilitySlot["clubs"] | AvailabilitySlot["clubs"][] | null }> | null) ?? []).map((slot) => ({
+    ...slot,
+    clubs: Array.isArray(slot.clubs) ? slot.clubs[0] ?? null : slot.clubs ?? null
+  }));
+}
+
+function normalizeRequestOffers(data: unknown): RequestOffer[] {
+  return ((data as Array<Omit<RequestOffer, "profiles"> & { profiles?: RequestOffer["profiles"] | RequestOffer["profiles"][] | null }> | null) ?? []).map((offer) => ({
+    ...offer,
+    profiles: Array.isArray(offer.profiles) ? offer.profiles[0] ?? null : offer.profiles ?? null
+  }));
+}
+
+function demoAvailabilitySlots(request: ConciergeRequest): AvailabilitySlot[] {
+  return [
+    {
+      id: "demo-slot-main",
+      club_id: request.club_id,
+      service_type: request.request_type,
+      slot_date: request.requested_date,
+      title: "Main room table",
+      area: request.clubs?.name ?? "Venue",
+      min_spend: request.budget || "From 1k",
+      capacity: Math.max(request.guest_count, 6),
+      status: "AVAILABLE",
+      notes: "Demo option. Confirm final details with venue.",
+      active: true,
+      created_by: null,
+      clubs: request.clubs ?? null
+    },
+    {
+      id: "demo-slot-waitlist",
+      club_id: request.club_id,
+      service_type: request.request_type,
+      slot_date: request.requested_date,
+      title: "Backup option",
+      area: request.clubs?.name ?? "Venue",
+      min_spend: "To confirm",
+      capacity: request.guest_count,
+      status: "LIMITED",
+      notes: "Use if main room is no longer available.",
+      active: true,
+      created_by: null,
+      clubs: request.clubs ?? null
+    }
+  ];
+}
+
+function demoRequestOffers(request: ConciergeRequest): RequestOffer[] {
+  return [{
+    id: "demo-offer-1",
+    request_id: request.id,
+    availability_slot_id: "demo-slot-main",
+    created_by: demoProfile.id,
+    offer_status: "DRAFT",
+    venue_name: request.clubs?.name ?? "Venue",
+    offer_date: request.requested_date,
+    service_label: "Main room table",
+    arrival_time: request.arrival_time,
+    guest_count: request.guest_count,
+    min_spend: request.budget || "From 1k",
+    message: buildDemoOfferMessage(request),
+    sent_at: null,
+    created_at: new Date().toISOString(),
+    profiles: { name: demoProfile.name, email: demoProfile.email }
+  }];
+}
+
+function buildDemoOfferMessage(request: ConciergeRequest) {
+  return `Hi ${request.clients?.name ?? ""}, I checked ${request.clubs?.name ?? "the venue"} for ${request.requested_date}.\n\nThey can do a table for ${request.guest_count} guests${request.arrival_time ? ` around ${request.arrival_time}` : ""}${request.budget ? ` with ${request.budget}` : ""}.\n\nShould I hold this option for you?`;
 }
 
 function demoScheduleVenueRules(): ScheduleVenueRule[] {

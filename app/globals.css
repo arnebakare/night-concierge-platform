@@ -420,8 +420,20 @@ body {
 .cms-shell .request-command,
 .cms-shell .sales-assistant,
 .cms-shell .message-panel,
-.cms-shell .link-row {
+.cms-shell .link-row,
+.cms-shell .offer-panel,
+.cms-shell .availability-row {
   background: #ffffff !important;
+}
+
+.cms-shell .offer-panel .availability-row,
+.cms-shell .offer-panel details {
+  border-color: #e2e8f0 !important;
+  background: #f8fafc !important;
+}
+
+.cms-shell .offer-panel textarea {
+  min-height: 7.5rem;
 }
 
 .cms-shell .message-panel {
