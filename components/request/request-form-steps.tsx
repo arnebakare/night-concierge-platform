@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, Check, ChevronLeft, Clock, Minus, MapPin, Plus, Sparkles, Users } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, Clock, Minus, MapPin, Plus, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LuxuryCard } from "@/components/ui/luxury-card";
 import { createPublicRequest } from "@/lib/actions/request-actions";
 import { publicRequestSchema, type PublicRequestInput } from "@/lib/validation/request";
 import type { Club, ConciergeEvent } from "@/lib/types";
@@ -31,6 +30,7 @@ export function RequestFormSteps({
   defaults?: Partial<PublicRequestInput>;
 }>) {
   const [step, setStep] = useState(1);
+  const flowRef = useRef<HTMLElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAllVenues, setShowAllVenues] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -72,7 +72,7 @@ export function RequestFormSteps({
   const selectedClub = useMemo(() => clubs.find((club) => club.id === values.clubId), [clubs, values.clubId]);
   const selectedExperience = useMemo(() => getClubVenueExperience(selectedClub), [selectedClub]);
   const selectedClubEvents = useMemo(
-    () => events.filter((event) => event.club_id === values.clubId).slice(0, 5),
+    () => events.filter((event) => event.club_id === values.clubId).slice(0, 3),
     [events, values.clubId]
   );
   const selectedOccasion = useMemo(
@@ -94,6 +94,10 @@ export function RequestFormSteps({
     selectOccasion(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClubEvents, values.occasionId]);
+
+  useEffect(() => {
+    flowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [step]);
 
   function selectClub(club: Club) {
     const experience = getClubVenueExperience(club);
@@ -139,9 +143,9 @@ export function RequestFormSteps({
   }
 
   return (
-    <LuxuryCard className="request-flow-card space-y-5 border-champagne-300/35 bg-ink-900/82 shadow-[0_24px_90px_rgba(0,0,0,0.48)]">
+    <section ref={flowRef} className="request-flow-card overflow-hidden rounded-[1.35rem] border border-champagne-300/24 bg-ink-950/76 shadow-[0_24px_90px_rgba(0,0,0,0.42)]">
       {!clubs.length && <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-red-100">Requests are temporarily unavailable because no active clubs are configured.</div>}
-      <div className="space-y-3">
+      <div className="space-y-3 border-b border-champagne-700/24 bg-ink-950/36 px-4 pb-3 pt-4">
         <div className="flex items-center justify-between">
           <p className="text-xs uppercase tracking-[0.22em] text-champagne-300">{stepTitles[step - 1]}</p>
           <p className="text-sm text-muted-foreground">{step}/5</p>
@@ -152,7 +156,7 @@ export function RequestFormSteps({
           ))}
         </div>
         {selectedClub && step > 1 && (
-          <button type="button" onClick={() => setStep(1)} className="flex w-full items-center gap-3 rounded-lg border border-champagne-700/35 bg-ink-950/45 p-2.5 text-left transition hover:border-champagne-300/60">
+          <button type="button" onClick={() => setStep(1)} className="flex w-full items-center gap-3 rounded-xl border border-champagne-700/28 bg-white/[0.045] p-2.5 text-left transition hover:border-champagne-300/55">
             <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="md" />
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold text-champagne-50">{selectedExperience.wordmark}</span>
@@ -163,12 +167,11 @@ export function RequestFormSteps({
         )}
       </div>
 
+      <div className="space-y-5 px-4 py-4 pb-24">
+
       {step === 1 && (
         <div className="space-y-3">
-          <div className="rounded-lg border border-champagne-700/30 bg-gradient-to-br from-champagne-300/10 to-transparent p-4">
-            <h2 className="font-serif text-2xl">Choose your venue</h2>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Start with the place. The options are tailored to each venue.</p>
-          </div>
+          <StepIntro title="Where are you going?" description="Choose a venue first. We only show services that make sense for that place." />
           <div className="grid gap-3">
             {visibleClubs.map((club) => {
               const experience = getClubVenueExperience(club);
@@ -178,24 +181,24 @@ export function RequestFormSteps({
                 type="button"
                 onClick={() => selectClub(club)}
                 className={cn(
-                  "group relative flex min-h-28 items-center gap-4 overflow-hidden rounded-lg border bg-ink-700/90 p-4 text-left transition active:scale-[0.99]",
-                  values.clubId === club.id ? "border-champagne-300 bg-champagne-300/10 shadow-glow" : "border-champagne-700/40 hover:border-champagne-300/60"
+                  "group relative flex min-h-[5.7rem] items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left transition active:scale-[0.99]",
+                  values.clubId === club.id ? "border-champagne-300 bg-champagne-300/12 shadow-glow" : "border-champagne-700/28 bg-white/[0.045] hover:border-champagne-300/55"
                 )}
               >
-                <span className="absolute inset-y-3 left-0 w-1 rounded-r-full bg-champagne-300/70 opacity-0 transition group-hover:opacity-70" />
+                <span className={cn("absolute inset-y-3 left-0 w-1 rounded-r-full bg-champagne-300/70 opacity-0 transition", values.clubId === club.id && "opacity-100")} />
                 <VenueLogo club={club} monogram={experience.monogram} size="lg" />
                 <span className="min-w-0">
-                  <span className="block font-serif text-xl leading-tight">{experience.wordmark}</span>
-                  <span className="mt-1 block text-sm text-muted-foreground">{experience.tagline}</span>
+                  <span className="block font-serif text-[1.18rem] leading-tight">{experience.wordmark}</span>
+                  <span className="mt-1 block line-clamp-1 text-[13px] text-muted-foreground">{experience.tagline}</span>
                   <span className="mt-2 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-champagne-700/40 px-2 py-0.5 text-[11px] uppercase tracking-[0.14em] text-champagne-300">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-champagne-700/35 px-2 py-0.5 text-[10px] uppercase tracking-[0.13em] text-champagne-300">
                       <MapPin className="size-3" /> {club.city}
                     </span>
-                    <span className="inline-flex rounded-full border border-champagne-700/30 px-2 py-0.5 text-[11px] text-muted-foreground">{experience.mood}</span>
+                    <span className="inline-flex rounded-full border border-champagne-700/25 px-2 py-0.5 text-[10px] text-muted-foreground">{experience.mood}</span>
                   </span>
                 </span>
                 {values.clubId === club.id && (
-                  <span className="ml-auto flex size-7 shrink-0 items-center justify-center rounded-full bg-champagne-300 text-ink-950">
+                  <span className="ml-auto flex size-7 shrink-0 items-center justify-center rounded-full bg-champagne-300 text-ink-950 shadow-glow">
                     <Check className="size-4" />
                   </span>
                 )}
@@ -204,12 +207,12 @@ export function RequestFormSteps({
             })}
           </div>
           {hasMoreVenues && (
-            <Button type="button" variant="secondary" className="w-full" onClick={() => setShowAllVenues(true)}>
+            <Button type="button" variant="secondary" className="w-full rounded-xl" onClick={() => setShowAllVenues(true)}>
               Show more venues
             </Button>
           )}
           {showAllVenues && orderedClubs.length > 3 && (
-            <Button type="button" variant="ghost" className="w-full" onClick={() => setShowAllVenues(false)}>
+            <Button type="button" variant="ghost" className="w-full rounded-xl" onClick={() => setShowAllVenues(false)}>
               Show main venues
             </Button>
           )}
@@ -218,7 +221,7 @@ export function RequestFormSteps({
 
       {step === 2 && (
         <div className="space-y-3">
-          <div className="rounded-lg border border-champagne-700/40 bg-[radial-gradient(circle_at_top_right,rgba(216,183,100,0.16),transparent_34%),rgba(17,17,19,0.94)] p-4">
+          <div className="rounded-2xl border border-champagne-700/28 bg-[radial-gradient(circle_at_top_right,rgba(216,183,100,0.14),transparent_36%),rgba(255,255,255,0.045)] p-3.5">
             <div className="flex items-center gap-3">
               <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="xl" />
               <div>
@@ -228,7 +231,7 @@ export function RequestFormSteps({
               </div>
             </div>
           </div>
-          <h3 className="font-serif text-2xl">What should we arrange?</h3>
+          <StepIntro title="What should we arrange?" description="Pick the closest option. You can add details in the next step." />
           <div className="grid grid-cols-2 gap-3">
             {selectedExperience.services.map((service) => {
               const Icon = service.icon;
@@ -242,17 +245,17 @@ export function RequestFormSteps({
                   form.setValue("serviceLabel", service.label, { shouldValidate: true });
                 }}
                 className={cn(
-                  "group relative flex min-h-28 flex-col justify-between rounded-lg border bg-ink-700 p-3.5 text-left transition active:scale-[0.99]",
-                  active ? "border-champagne-300 bg-champagne-300/10 shadow-glow" : "border-champagne-700/40 hover:border-champagne-300/60"
+                  "group relative flex min-h-[7.1rem] flex-col justify-between rounded-2xl border p-3 text-left transition active:scale-[0.99]",
+                  active ? "border-champagne-300 bg-champagne-300/12 shadow-glow" : "border-champagne-700/28 bg-white/[0.045] hover:border-champagne-300/55"
                 )}
               >
-                <span className="flex size-10 items-center justify-center rounded-md bg-ink-900/70 text-champagne-300">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-ink-950/60 text-champagne-300">
                   <Icon className="size-5" />
                 </span>
                 <span>
                   <span className="block font-semibold">{service.label}</span>
-                  <span className="mt-1 block text-xs leading-snug text-muted-foreground">{service.description}</span>
-                  {service.priceHint && <span className="mt-2 inline-flex rounded-full border border-champagne-700/35 px-2 py-0.5 text-[11px] text-champagne-200">{service.priceHint}</span>}
+                  <span className="mt-1 block line-clamp-2 text-xs leading-snug text-muted-foreground">{service.description}</span>
+                  {service.priceHint && <span className="mt-2 inline-flex rounded-full border border-champagne-700/30 px-2 py-0.5 text-[10px] text-champagne-200">{service.priceHint}</span>}
                 </span>
                 {active && <Check className="absolute right-3 top-3 size-4 text-champagne-300" />}
               </button>
@@ -260,10 +263,10 @@ export function RequestFormSteps({
             })}
           </div>
           {selectedClubEvents.length > 0 && (
-            <div className="rounded-lg border border-champagne-700/40 bg-ink-950/50 p-3">
+            <div className="rounded-2xl border border-champagne-700/28 bg-white/[0.045] p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">What is on</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Occasions</p>
                   <p className="mt-1 text-sm text-muted-foreground">Optional. Tap an event to request that date.</p>
                 </div>
                 {values.occasionId && (
@@ -282,13 +285,13 @@ export function RequestFormSteps({
                       onClick={() => selectOccasion(event)}
                       className={cn(
                         "flex w-full items-start gap-3 rounded-md border p-2.5 text-left transition",
-                        active ? "border-champagne-300 bg-champagne-500/10" : "border-champagne-700/30 bg-ink-800/70"
+                        active ? "border-champagne-300 bg-champagne-500/12" : "border-champagne-700/25 bg-ink-950/45"
                       )}
                     >
                       <CalendarDays className="mt-0.5 size-5 shrink-0 text-champagne-300" />
                       <span className="min-w-0">
                         <span className="block font-semibold leading-tight">{event.name}</span>
-                        <span className="mt-1 block text-xs text-muted-foreground">{formatEventDate(event.event_date)}{event.description ? ` · ${event.description}` : ""}</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">{formatEventDate(event.event_date)}{customerEventDescription(event.description) ? ` · ${customerEventDescription(event.description)}` : ""}</span>
                       </span>
                     </button>
                   );
@@ -301,9 +304,10 @@ export function RequestFormSteps({
 
       {step === 3 && (
         <div className="space-y-4">
-          <div className="rounded-lg border border-champagne-700/30 bg-secondary/50 p-4">
-            <h2 className="font-serif text-2xl">Who should we contact?</h2>
-            <p className="mt-1 text-sm text-muted-foreground">WhatsApp is best. Email and Instagram are optional.</p>
+          <StepIntro title="Who should we contact?" description="WhatsApp is best. Email and Instagram are optional." />
+          <div className="flex items-start gap-2 rounded-xl border border-champagne-700/24 bg-white/[0.045] p-3 text-xs leading-5 text-muted-foreground">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-champagne-300" />
+            <span>Your details only go to the hosting team so they can reply and confirm availability.</span>
           </div>
           <Field label="Name" error={form.formState.errors.name?.message}>
             <Input {...form.register("name")} placeholder="Full name" autoComplete="name" />
@@ -322,10 +326,7 @@ export function RequestFormSteps({
 
       {step === 4 && (
         <div className="space-y-4">
-          <div className="rounded-lg border border-champagne-700/30 bg-secondary/50 p-4">
-            <h2 className="font-serif text-2xl">When are you going?</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Approximate times are fine. Add anything we should know.</p>
-          </div>
+          <StepIntro title="When are you going?" description="Approximate times are fine. Add anything we should know." />
           <div className="grid grid-cols-2 gap-3">
             <Field label="Date" error={form.formState.errors.requestedDate?.message}>
               <Input {...form.register("requestedDate")} type="date" min={new Date().toISOString().slice(0, 10)} />
@@ -364,18 +365,28 @@ export function RequestFormSteps({
             ))}
           </div>
           <Field label="Message optional">
-            <Textarea {...form.register("message")} placeholder="Occasion, preferences, special requests..." />
+            <Textarea {...form.register("message")} placeholder="Occasion, preferred area, special requests..." />
           </Field>
+          <div className="grid grid-cols-2 gap-2">
+            {["Birthday", "Best table possible", "Flexible timing", "Need fast reply"].map((note) => (
+              <QuickPick
+                key={note}
+                label={note}
+                active={values.message?.includes(note)}
+                onClick={() => {
+                  const current = values.message?.trim();
+                  form.setValue("message", current ? `${current}${current.includes(note) ? "" : `, ${note}`}` : note, { shouldValidate: true });
+                }}
+              />
+            ))}
+          </div>
         </div>
       )}
 
       {step === 5 && (
         <div className="space-y-4">
-          <div className="rounded-lg border border-champagne-700/30 bg-gradient-to-br from-champagne-300/10 to-transparent p-4">
-            <h2 className="font-serif text-2xl">Ready to send</h2>
-            <p className="mt-1 text-sm text-muted-foreground">The team receives this immediately and follows up personally.</p>
-          </div>
-          <div className="rounded-lg border border-champagne-700/40 bg-ink-800 p-4 text-sm shadow-panel">
+          <StepIntro title="Ready to send" description="The team receives this immediately and follows up personally." />
+          <div className="rounded-2xl border border-champagne-700/28 bg-white/[0.055] p-3.5 text-sm shadow-panel">
             <div className="mb-3 flex items-center gap-3">
               <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="md" />
               <div>
@@ -392,37 +403,50 @@ export function RequestFormSteps({
               <ReviewFact icon={Users} label="Guests" value={String(values.guestCount)} />
               <ReviewFact icon={Clock} label="Arrival" value={values.arrivalTime || "TBC"} />
             </div>
-            <div className="mt-3 rounded-md bg-secondary/70 p-3">
+            <div className="mt-3 rounded-xl bg-ink-950/58 p-3">
               <p className="font-semibold">{values.name}</p>
               <p className="text-muted-foreground">{values.phone}</p>
             </div>
-            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
+              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-champagne-300" />
+              <span>
               By sending, you ask the team to check availability. Your booking is only confirmed once a host replies.
+              </span>
             </p>
           </div>
         </div>
       )}
 
       {error && <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-red-100">{error}</p>}
+      </div>
 
-      <div className="flex gap-3">
+      <div className="request-action-bar flex gap-3 border-t border-champagne-700/24 bg-ink-950/82 p-3 backdrop-blur-xl">
         {step > 1 && (
-          <Button type="button" variant="secondary" size="lg" onClick={() => setStep((current) => current - 1)}>
+          <Button type="button" variant="secondary" size="lg" className="rounded-xl" onClick={() => setStep((current) => current - 1)}>
             <ChevronLeft className="size-5" />
           </Button>
         )}
         {step < 5 ? (
-          <Button type="button" className="flex-1" size="lg" onClick={next} disabled={!clubs.length}>
+          <Button type="button" className="flex-1 rounded-xl" size="lg" onClick={next} disabled={!clubs.length}>
             Continue
           </Button>
         ) : (
-          <Button type="button" className="flex-1" size="lg" onClick={submit} disabled={pending}>
+          <Button type="button" className="flex-1 rounded-xl" size="lg" onClick={submit} disabled={pending}>
             <Check className="size-5" />
             {pending ? "Sending" : "Send request"}
           </Button>
         )}
       </div>
-    </LuxuryCard>
+    </section>
+  );
+}
+
+function StepIntro({ title, description }: Readonly<{ title: string; description: string }>) {
+  return (
+    <div className="space-y-1">
+      <h2 className="font-serif text-[1.7rem] leading-tight text-champagne-50">{title}</h2>
+      <p className="text-sm leading-5 text-muted-foreground">{description}</p>
+    </div>
   );
 }
 
@@ -434,9 +458,9 @@ function VenueLogo({ club, monogram, size = "md" }: Readonly<{ club?: Club | nul
   const sizeClass = size === "xl" ? "size-16" : size === "lg" ? "size-14" : "size-12";
 
   return (
-    <span className={cn("flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-champagne-500/50 bg-ink-950/80 font-serif text-champagne-100", sizeClass)}>
+    <span className={cn("flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-champagne-500/35 bg-ink-950/70 font-serif text-champagne-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]", sizeClass)}>
       {club?.image_url ? (
-        <img src={club.image_url} alt={`${club.name} logo`} className="h-full w-full object-contain p-1" />
+        <img src={club.image_url} alt={`${club.name} logo`} className="h-full w-full object-contain p-1.5" />
       ) : (
         <span className={cn(size === "xl" ? "text-xl" : "text-lg")}>{monogram}</span>
       )}
@@ -450,7 +474,7 @@ function ReviewFact({
   value
 }: Readonly<{ icon: typeof CalendarDays; label: string; value: string }>) {
   return (
-    <div className="rounded-md bg-ink-900/70 p-2">
+    <div className="rounded-xl bg-ink-950/60 p-2.5">
       <p className="flex items-center gap-1 text-[11px] text-muted-foreground"><Icon className="size-3.5 text-champagne-300" />{label}</p>
       <p className="mt-1 truncate font-semibold">{value}</p>
     </div>
@@ -461,10 +485,17 @@ function formatEventDate(value: string) {
   return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" }).format(new Date(`${value}T12:00:00`));
 }
 
+function customerEventDescription(description?: string | null) {
+  const value = description?.trim();
+  if (!value) return "";
+  if (/confirm manually|recurring after party pattern|programming changes/i.test(value)) return "";
+  return value.length > 72 ? `${value.slice(0, 69)}...` : value;
+}
+
 function Field({ label, error, children }: Readonly<{ label: string; error?: string; children: React.ReactNode }>) {
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <div className="space-y-1.5">
+      <Label className="text-[13px] text-champagne-50/88">{label}</Label>
       {children}
       {error && <p className="text-sm text-red-200">{error}</p>}
     </div>
@@ -477,7 +508,7 @@ function QuickPick({ label, active, onClick }: Readonly<{ label: string; active?
       type="button"
       onClick={onClick}
       className={cn(
-        "min-h-10 rounded-md border border-champagne-700/35 bg-ink-900/60 px-2 text-sm font-medium text-muted-foreground transition active:scale-[0.98]",
+        "min-h-10 rounded-xl border border-champagne-700/30 bg-white/[0.045] px-2 text-sm font-medium text-muted-foreground transition active:scale-[0.98]",
         active && "border-champagne-300 bg-champagne-300/10 text-champagne-100"
       )}
     >

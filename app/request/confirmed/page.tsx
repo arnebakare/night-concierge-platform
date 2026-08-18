@@ -1,45 +1,37 @@
 import Link from "next/link";
-import { CheckCircle2, FileCheck2, MessageCircle, Sparkles } from "lucide-react";
+import { CheckCircle2, MessageCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LuxuryCard } from "@/components/ui/luxury-card";
 
 export default async function ConfirmedPage({ searchParams }: Readonly<{ searchParams: Promise<{ id?: string }> }>) {
   const { id } = await searchParams;
   return (
     <main className="request-marina-bg relative min-h-screen overflow-hidden">
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,5,6,0.18)_0%,rgba(5,5,6,0.72)_45%,rgba(5,5,6,0.98)_100%)]" />
-      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-4 py-10">
-      <LuxuryCard className="border-champagne-300/40 bg-ink-900/86 text-center shadow-[0_24px_90px_rgba(0,0,0,0.48)]">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-champagne-400/50 bg-champagne-300/10">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,5,6,0.18)_0%,rgba(5,5,6,0.68)_42%,rgba(5,5,6,0.98)_100%)]" />
+      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-3.5 py-10">
+      <section className="overflow-hidden rounded-[1.35rem] border border-champagne-300/28 bg-ink-950/78 p-5 text-center shadow-[0_24px_90px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-champagne-400/40 bg-champagne-300/10 shadow-glow">
           <CheckCircle2 className="size-8 text-champagne-300" />
         </div>
-        <p className="mt-5 text-xs uppercase tracking-[0.24em] text-champagne-300">Request sent</p>
-        <h1 className="mt-2 font-serif text-4xl">We have your details.</h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          A host will check availability and reply on WhatsApp. Nothing is confirmed until the team gets back to you.
+        <p className="mt-5 text-[11px] uppercase tracking-[0.24em] text-champagne-300">Request sent</p>
+        <h1 className="mt-2 font-serif text-[2.55rem] leading-[0.95]">We have your details.</h1>
+        <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
+          A host will check availability and reply personally on WhatsApp.
         </p>
-        <div className="mt-5 grid grid-cols-3 gap-2 text-left text-xs text-muted-foreground">
-          <div className="rounded-md border border-champagne-700/35 bg-ink-950/45 p-3">
-            <MessageCircle className="mb-2 size-4 text-champagne-300" />
-            WhatsApp reply
+        <div className="mt-5 space-y-2 text-left text-sm text-muted-foreground">
+          <div className="flex items-start gap-3 rounded-xl border border-champagne-700/24 bg-white/[0.045] p-3">
+            <MessageCircle className="mt-0.5 size-4 shrink-0 text-champagne-300" />
+            <span>The team will confirm the venue, date, timing, and any spend or door conditions.</span>
           </div>
-          <div className="rounded-md border border-champagne-700/35 bg-ink-950/45 p-3">
-            <FileCheck2 className="mb-2 size-4 text-champagne-300" />
-            Written details
-          </div>
-          <div className="rounded-md border border-champagne-700/35 bg-ink-950/45 p-3">
-            <Sparkles className="mb-2 size-4 text-champagne-300" />
-            Personal host
+          <div className="flex items-start gap-3 rounded-xl border border-champagne-700/24 bg-white/[0.045] p-3">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-champagne-300" />
+            <span>Nothing is final until a host replies and confirms it with you.</span>
           </div>
         </div>
-        <p className="mt-4 rounded-md border border-champagne-700/35 bg-ink-950/45 p-3 text-xs leading-5 text-muted-foreground">
-          Your host will confirm the venue, date, arrival details, and any minimum spend or door conditions before anything is final.
-        </p>
         {id && <p className="mt-5 text-xs uppercase tracking-[0.18em] text-champagne-300">Reference {id.slice(0, 8).toUpperCase()}</p>}
-        <Button asChild className="mt-6 w-full" size="lg">
+        <Button asChild className="mt-6 w-full rounded-xl" size="lg">
           <Link href="/request">Create another request</Link>
         </Button>
-      </LuxuryCard>
+      </section>
       </div>
     </main>
   );
