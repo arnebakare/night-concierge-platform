@@ -20,8 +20,8 @@ export default async function SchedulePlansPage() {
       <div className="compact-list grid gap-2">
         {plans.map((plan) => (
           <Link href={`/schedule/plans/${plan.id}`} key={plan.id} className="block">
-            <LuxuryCard className="client-row transition hover:border-champagne-300/60">
-              <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_auto] sm:items-center">
+              <LuxuryCard className="client-row transition hover:border-champagne-300/60">
+              <div className="grid gap-1.5 sm:grid-cols-[minmax(180px,1fr)_auto] sm:items-center">
                 <div className="min-w-0">
                   <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">{plan.source} · {plan.spend_profile === "HIGH_SPEND" ? "High spend" : "Normal"}</p>
                   <h2 className="mt-1 truncate text-base font-semibold">{plan.title}</h2>
@@ -35,7 +35,7 @@ export default async function SchedulePlansPage() {
         ))}
         {!plans.length && (
           <LuxuryCard className="text-center md:col-span-2">
-            <p className="font-serif text-2xl">No saved trails yet</p>
+            <p className="text-lg font-semibold">No saved trails yet</p>
             <p className="mt-2 text-sm text-muted-foreground">Create one from the schedule builder or send a WhatsApp command.</p>
           </LuxuryCard>
         )}

@@ -28,7 +28,7 @@ export function RequestLeadRow({
 
   return (
     <div className="lead-row rounded-lg border border-champagne-700/35 bg-card shadow-sm transition hover:border-champagne-300/60">
-      <div className="grid gap-2 p-2.5 md:grid-cols-[minmax(180px,1.15fr)_minmax(220px,1fr)_auto] md:items-center md:p-3">
+      <div className="grid gap-2 p-2 md:grid-cols-[minmax(180px,1.15fr)_minmax(220px,1fr)_auto] md:items-center md:px-3 md:py-2.5">
         <Link href={href} className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="h-8 w-1 rounded-full bg-champagne-300" />
@@ -50,7 +50,7 @@ export function RequestLeadRow({
           <span>{request.arrival_time ?? "TBC"}</span>
         </Link>
 
-        <Link href={href} className="hidden grid-cols-3 gap-1.5 text-xs text-muted-foreground md:grid">
+        <Link href={href} className="hidden grid-cols-3 gap-1 text-xs text-muted-foreground md:grid">
           <Fact icon={CalendarDays} label="Date" value={request.requested_date.slice(5)} />
           <Fact icon={Users} label="Guests" value={String(request.guest_count)} />
           <Fact icon={Clock} label="Arrival" value={request.arrival_time ?? "TBC"} />
@@ -80,9 +80,9 @@ function Fact({
   value
 }: Readonly<{ icon: typeof CalendarDays; label: string; value: string }>) {
   return (
-    <div className="min-w-0 rounded-md bg-secondary px-2 py-1.5">
+    <div className="min-w-0 border-l border-border px-2 first:border-l-0">
       <p className="flex items-center gap-1 text-[11px]"><Icon className="size-3 text-champagne-300" />{label}</p>
-      <p className="truncate font-semibold text-foreground">{value}</p>
+      <p className="truncate text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }

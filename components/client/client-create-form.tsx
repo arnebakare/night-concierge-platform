@@ -13,16 +13,16 @@ export function ClientCreateForm({ role }: Readonly<{ role: Role }>) {
   const canSetRiskStatus = role === "PROMOTER_MANAGER" || role === "SUPER_ADMIN";
 
   return (
-    <details className="group rounded-lg border border-champagne-700/40 bg-card/80 p-3 shadow-panel">
-      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3">
+    <details className="group rounded-lg border border-champagne-700/40 bg-card/80 p-2.5 shadow-panel">
+      <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3">
         <span className="flex items-center gap-2 font-semibold">
-          <span className="flex size-9 items-center justify-center rounded-md bg-champagne-500/10 text-champagne-300"><UserPlus className="size-5" /></span>
+          <span className="flex size-8 items-center justify-center rounded-md bg-champagne-500/10 text-champagne-300"><UserPlus className="size-4" /></span>
           Add client
         </span>
-        <ChevronDown className="size-5 text-champagne-300 transition group-open:rotate-180" />
+        <ChevronDown className="size-4 text-champagne-300 transition group-open:rotate-180" />
       </summary>
-      <div className="mt-3 rounded-md border border-champagne-700/20 bg-background/35 p-3">
-        <form action={createClientRecord} className="space-y-3">
+      <div className="mt-2 rounded-md border border-champagne-700/20 bg-background/35 p-2.5">
+        <form action={createClientRecord} className="space-y-2.5">
         <div className="grid gap-2 md:grid-cols-2">
           <Field label="Name">
             <Input name="name" placeholder="Daniel" required />
@@ -37,7 +37,7 @@ export function ClientCreateForm({ role }: Readonly<{ role: Role }>) {
             <Input name="instagram" placeholder="@handle" />
           </Field>
           <Field label="VIP level">
-            <select name="vipLevel" defaultValue="STANDARD" className="h-12 w-full rounded-md border bg-input px-3 text-sm text-foreground">
+            <select name="vipLevel" defaultValue="STANDARD" className="h-10 w-full rounded-md border bg-input px-3 text-sm text-foreground">
               {vipLevels.map((level) => <option key={level} value={level}>{formatEnum(level)}</option>)}
             </select>
           </Field>
@@ -46,7 +46,7 @@ export function ClientCreateForm({ role }: Readonly<{ role: Role }>) {
               name="status"
               defaultValue="NORMAL"
               disabled={!canSetRiskStatus}
-              className="h-12 w-full rounded-md border bg-input px-3 text-sm text-foreground disabled:opacity-60"
+              className="h-10 w-full rounded-md border bg-input px-3 text-sm text-foreground disabled:opacity-60"
             >
               {clientStatuses.map((status) => <option key={status} value={status}>{formatEnum(status)}</option>)}
             </select>

@@ -42,7 +42,7 @@ export function RequestListSummary({
         <Metric icon={UserRoundPlus} label="Missing contact" value={String(missingContact)} muted={missingContact === 0} />
       </div>
 
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 text-sm">
+      <div className="ops-tabs flex gap-2 overflow-x-auto pb-1 text-sm">
         <QuickLink href={baseHref} label="Live" />
         <QuickLink href={`${baseHref}?date=${today}`} label="Today" />
         <QuickLink href={`${baseHref}?date=${tomorrow}`} label="Tomorrow" />

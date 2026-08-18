@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
-import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Button } from "@/components/ui/button";
 import { RequestLeadRow } from "@/components/request/request-lead-row";
 import { ActionTile } from "@/components/ui/action-tile";
@@ -20,12 +19,12 @@ export default async function ManagerPage() {
   return (
     <AppShell profile={profile} title="Manager overview" eyebrow="Team command">
       <div className="easy-only space-y-5">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-border bg-card divide-x divide-border">
           <Metric label="Need a reply" value={String(needsAttention.length)} />
           <Metric label="Confirmed" value={String(confirmed)} />
         </div>
         <section>
-          <h2 className="mb-3 font-serif text-2xl">What do you need?</h2>
+          <h2 className="mb-3 text-base font-semibold">What do you need?</h2>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <ActionTile href="/manager/requests" label="Handle requests" icon={Inbox} />
             <ActionTile href="/manager/clients" label="Find a client" icon={UserRoundSearch} />
@@ -37,7 +36,7 @@ export default async function ManagerPage() {
           </div>
         </section>
       </div>
-      <div className="advanced-only grid gap-4 md:grid-cols-3">
+      <div className="advanced-only grid overflow-hidden rounded-lg border border-border bg-card md:grid-cols-3 md:divide-x md:divide-border">
         <Metric label="New requests" value={String(newRequests)} />
         <Metric label="Team confirmed" value={String(confirmed)} />
         <Metric label="Completed" value={String(completed)} />
@@ -53,7 +52,7 @@ export default async function ManagerPage() {
         <Button asChild variant="secondary"><Link href="/notifications">WhatsApp delivery</Link></Button>
       </div>
       <section className="mt-5 space-y-3">
-        <h2 className="font-serif text-2xl">Needs attention</h2>
+        <h2 className="text-base font-semibold">Needs attention</h2>
         <div className="compact-list grid gap-2">
           {visibleRequests.length ? visibleRequests.map((request) => (
             <RequestLeadRow key={request.id} request={request} href={`/manager/requests/${request.id}`} returnTo="/manager" showActions={false} />
@@ -65,5 +64,10 @@ export default async function ManagerPage() {
 }
 
 function Metric({ label, value }: Readonly<{ label: string; value: string }>) {
-  return <LuxuryCard><p className="text-sm text-muted-foreground">{label}</p><p className="mt-2 font-serif text-4xl">{value}</p></LuxuryCard>;
+  return (
+    <div className="metric-cell p-3">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="mt-1 text-2xl font-semibold leading-none tracking-tight">{value}</p>
+    </div>
+  );
 }

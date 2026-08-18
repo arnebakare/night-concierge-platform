@@ -44,7 +44,7 @@ export default async function SchedulePage() {
               </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <SpendOption value="NORMAL" label="Normal" description="Polished party flow" defaultChecked />
               <SpendOption value="HIGH_SPEND" label="High spend" description="Best tables and bigger nights" />
             </div>
@@ -63,7 +63,7 @@ export default async function SchedulePage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm text-muted-foreground">Saved trails</p>
-            <h2 className="font-serif text-2xl">Latest plans</h2>
+            <h2 className="text-base font-semibold">Latest plans</h2>
           </div>
           <Button asChild variant="secondary">
             <Link href="/schedule/plans">View all</Link>
@@ -104,7 +104,7 @@ function SpendOption({
   defaultChecked
 }: Readonly<{ value: string; label: string; description: string; defaultChecked?: boolean }>) {
   return (
-    <label className="flex min-h-20 cursor-pointer flex-col justify-between rounded-lg border border-champagne-700/35 bg-ink-800/80 p-3 has-[:checked]:border-champagne-300 has-[:checked]:bg-champagne-300/10">
+    <label className="flex min-h-16 cursor-pointer flex-col justify-between rounded-lg border border-champagne-700/35 bg-ink-800/80 p-3 has-[:checked]:border-champagne-300 has-[:checked]:bg-champagne-300/10">
       <input type="radio" name="spendProfile" value={value} defaultChecked={defaultChecked} className="sr-only" />
       <span className="font-semibold">{label}</span>
       <span className="text-sm text-muted-foreground">{description}</span>

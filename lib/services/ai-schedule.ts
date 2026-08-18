@@ -117,6 +117,7 @@ export async function generateSchedulePlan(input: ScheduleInput): Promise<Schedu
     for (const date of dateRange(input.dateFrom, input.dateTo)) {
       days.push(await requestScheduleDay(apiKey, model, input, date, plannerRules, days));
     }
+    validateMultiDayVariety(days);
     const title = `${input.city ?? "Marbella"} Party Itinerary: ${formatEnglishRange(input.dateFrom, input.dateTo)}`;
     return { title, days, whatsappMessage: buildConciergeMessage(days, input.spendProfile), modelUsed: model, generatedBy: "OPENAI" };
   } catch (error) {
@@ -183,6 +184,7 @@ function buildPrompt(input: ScheduleInput, date: string, plannerRules: AiVenueRu
     clientContext: input.clientContext || "",
     previousDays: previousDayContext,
     alreadyUsedVenueNames: [...new Set(previousDayContext.flatMap((day) => day.venues))],
+    recentlyUsedByCategory: recentlyUsedByCategory(previousDays),
     rules: [
       "Return exactly one day object in the days array.",
       "The only day.date must exactly equal the requested date.",
@@ -202,6 +204,8 @@ function buildPrompt(input: ScheduleInput, date: string, plannerRules: AiVenueRu
       "Do not repeat a specific DJ name on multiple days unless a current source clearly shows that DJ plays each of those exact dates.",
       "Use previousDays and alreadyUsedVenueNames to make the full trip feel varied. Avoid repeating the same base venue on consecutive days.",
       "Across a multi-day range, do not repeat the same base venue more than once unless there is a confirmed big DJ, artist, or named event on that exact date. If repeating, explain the event reason in why.",
+      "If the previous day already used a beach club, dinner venue, or nightclub, choose a different base venue in that same category unless a clearly named DJ or event makes the repeat worth it.",
+      "Do not use La Plage Casanis, Mamzel, or Le Jade on consecutive days unless a named DJ/artist is written in that specific stop. Secret Guest is not enough reason to repeat.",
       "Vary the beach club, dinner, and late-night options across the date range. If yesterday used La Plage Casanis, Mamzel, and Le Jade, today should normally use different venues.",
       "Use localPlannerRules as the Marbella taste layer. Higher weight means the venue should be preferred when the date and client fit, not that it should be repeated daily. Priority days mean the venue is especially relevant on those weekdays.",
       "Respect avoidAfterVenueNames to avoid over-heavy or locally awkward sequences. For example, if one venue says to avoid another after it, do not put both in the same day unless there is a major DJ/event reason.",
@@ -289,6 +293,42 @@ function toPreviousDayContext(day: ScheduleDay): PreviousDayContext {
     categories: day.stops.map((stop) => stop.category),
     note: day.note
   };
+}
+
+function recentlyUsedByCategory(days: ScheduleDay[]) {
+  const latest = days.slice(-3);
+  return {
+    beachClub: uniqueBaseVenues(latest, "Beach club"),
+    restaurant: uniqueBaseVenues(latest, "Restaurant"),
+    nightclub: uniqueBaseVenues(latest, "Nightclub").concat(uniqueBaseVenues(latest, "After-party"))
+  };
+}
+
+function uniqueBaseVenues(days: ScheduleDay[], category: ScheduleStop["category"]) {
+  return [...new Set(days.flatMap((day) => day.stops.filter((stop) => stop.category === category).map((stop) => baseVenueName(stop.venue))))];
+}
+
+function validateMultiDayVariety(days: ScheduleDay[]) {
+  if (days.length < 3) return;
+  const warnings: string[] = [];
+  for (let index = 1; index < days.length; index += 1) {
+    const todayStops = days[index].stops;
+    const yesterdayStops = days[index - 1].stops;
+    for (const todayStop of todayStops) {
+      const repeated = yesterdayStops.find((stop) => stop.category === todayStop.category && baseVenueName(stop.venue) === baseVenueName(todayStop.venue));
+      if (repeated && !hasSpecificEventReason(todayStop)) warnings.push(`${todayStop.category}: ${todayStop.venue} repeated on ${days[index].date}`);
+    }
+  }
+  if (warnings.length >= 3) {
+    throw new Error(`OpenAI returned a repetitive itinerary without enough DJ/event reasons. ${warnings.slice(0, 5).join("; ")}.`);
+  }
+}
+
+function hasSpecificEventReason(stop: ScheduleStop) {
+  const combined = `${stop.venue} ${stop.why}`.toLowerCase();
+  if (combined.includes("secret guest")) return false;
+  if (combined.includes("programming to confirm")) return false;
+  return /\s[-–]\s[A-Za-z0-9][A-Za-z0-9 '&.]{2,}/.test(stop.venue) || /\b(dj|artist|headline|live|event|party|playing|set)\b/.test(combined);
 }
 
 function baseVenueName(venue: string) {

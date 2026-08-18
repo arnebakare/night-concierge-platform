@@ -9,11 +9,11 @@ export function ClientSearchForm({
   placeholder = "Search clients"
 }: Readonly<{ action: string; value?: string; placeholder?: string }>) {
   return (
-    <form action={action} className="rounded-lg border border-champagne-700/40 bg-card/80 p-3">
+    <form action={action} className="rounded-lg border border-champagne-700/40 bg-card/80 p-2.5">
       <div className="grid gap-2 md:grid-cols-[1fr_auto]">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-champagne-300" />
-          <Input name="q" defaultValue={value ?? ""} className="pl-10" placeholder={placeholder} />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-champagne-300" />
+          <Input name="q" defaultValue={value ?? ""} className="pl-9" placeholder={placeholder} />
         </div>
         <div className="grid grid-cols-2 gap-2 md:flex">
           <Button type="submit">Search</Button>

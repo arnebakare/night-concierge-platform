@@ -17,11 +17,11 @@ export function SchedulePlanView({
 
   return (
     <div className="space-y-4">
-      <LuxuryCard className="planner-panel space-y-4 border-champagne-300/35 bg-[radial-gradient(circle_at_top_right,rgba(216,183,100,0.14),transparent_36%),rgba(17,17,19,0.94)]">
+      <LuxuryCard className="planner-panel space-y-3 border-champagne-300/35 bg-[radial-gradient(circle_at_top_right,rgba(216,183,100,0.14),transparent_36%),rgba(17,17,19,0.94)]">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">{plan.city} · {plan.spend_profile === "HIGH_SPEND" ? "High spend" : "Normal"}</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight">{plan.title}</h2>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight">{plan.title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{formatDate(plan.date_from)}{plan.date_from === plan.date_to ? "" : ` to ${formatDate(plan.date_to)}`} · {plan.source === "WHATSAPP" ? "Created from WhatsApp" : "Created in app"} · {aiStatus}</p>
           </div>
           <div className="flex gap-2">
@@ -34,7 +34,7 @@ export function SchedulePlanView({
           </div>
         </div>
 
-        <form action={attachSchedulePlanClient} className="grid gap-2 rounded-md border border-champagne-700/30 bg-ink-900/60 p-3 md:grid-cols-[1fr_auto]">
+        <form action={attachSchedulePlanClient} className="grid gap-2 rounded-md border border-champagne-700/30 bg-ink-900/60 p-2.5 md:grid-cols-[1fr_auto]">
           <input type="hidden" name="planId" value={plan.id} />
           <select name="clientId" defaultValue={plan.client_id ?? ""} className="h-11 rounded-md border bg-input px-3 text-sm">
             <option value="">No customer attached</option>
@@ -61,17 +61,17 @@ export function SchedulePlanView({
       <div className="compact-list grid gap-2">
         {days.map((day) => (
           <LuxuryCard key={day.date} className="schedule-day-card">
-            <div className="mb-3 flex items-start justify-between gap-3 border-b border-border/70 pb-3">
+            <div className="mb-2 flex items-start justify-between gap-3 border-b border-border/70 pb-2">
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">{formatWeekday(day.date)}</p>
-                <h3 className="mt-1 text-lg font-semibold">{day.headline}</h3>
+                <h3 className="mt-1 text-base font-semibold">{day.headline}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{formatDate(day.date)}</p>
               </div>
               <CalendarDays className="size-5 text-champagne-300" />
             </div>
             <div className="grid gap-2">
               {day.stops.map((stop, index) => (
-                <div key={`${day.date}-${stop.venue}-${index}`} className="schedule-stop rounded-md border border-champagne-700/30 bg-background/45 p-3">
+                <div key={`${day.date}-${stop.venue}-${index}`} className="schedule-stop rounded-md border border-champagne-700/30 bg-background/45 p-2.5">
                   <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
                     <div className="min-w-0">
                       <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">{stop.category}</p>

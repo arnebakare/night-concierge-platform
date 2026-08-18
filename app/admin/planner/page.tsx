@@ -28,7 +28,7 @@ export default async function AdminPlannerPage() {
               <BrainCircuit className="size-5" />
             </div>
             <div>
-              <p className="text-lg font-semibold text-champagne-50">Teach the planner Marbella taste</p>
+              <p className="text-base font-semibold text-champagne-50">Teach the planner Marbella taste</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 These rules tell the AI how venues are actually used locally. Big confirmed DJ names still have priority, but weights and avoid-pairings steer the normal recommendations.
               </p>
@@ -47,7 +47,10 @@ export default async function AdminPlannerPage() {
 
       <LuxuryCard className="mb-4">
         <details>
-          <summary className="cursor-pointer text-sm font-semibold text-champagne-100">Add venue rule</summary>
+          <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm font-semibold text-champagne-100">
+            Add planner rule
+            <span className="text-xs font-normal text-muted-foreground">Venue, use, priority</span>
+          </summary>
           <VenueRuleForm action={createScheduleVenueRule} submitLabel="Add rule" />
         </details>
       </LuxuryCard>
@@ -77,7 +80,7 @@ export default async function AdminPlannerPage() {
 function VenueRuleCard({ rule }: Readonly<{ rule: ScheduleVenueRule }>) {
   return (
     <LuxuryCard className={`client-row ${!rule.active ? "opacity-70" : ""}`}>
-      <div className="mb-3 grid gap-3 md:grid-cols-[minmax(180px,1fr)_minmax(140px,0.45fr)_auto] md:items-center">
+      <div className="grid gap-3 md:grid-cols-[minmax(180px,1fr)_minmax(140px,0.45fr)_auto] md:items-center">
         <div className="min-w-0">
           <p className="font-semibold text-champagne-50">{rule.venue_name}</p>
           <p className="mt-1 text-xs text-muted-foreground">{rule.area || "Marbella"} · {rule.priority_days.length ? rule.priority_days.map((day) => day.slice(0, 3)).join(", ") : "No priority day"}</p>
@@ -92,7 +95,10 @@ function VenueRuleCard({ rule }: Readonly<{ rule: ScheduleVenueRule }>) {
           <Button type="submit" variant="outline" size="sm">{rule.active ? "Archive" : "Reactivate"}</Button>
         </form>
       </div>
-      <VenueRuleForm rule={rule} action={updateScheduleVenueRule} submitLabel="Save rule" />
+      <details className="mt-3 rounded-md border border-champagne-700/30 bg-background/35 p-3">
+        <summary className="cursor-pointer text-sm font-semibold text-champagne-200">Edit rule</summary>
+        <VenueRuleForm rule={rule} action={updateScheduleVenueRule} submitLabel="Save rule" />
+      </details>
     </LuxuryCard>
   );
 }

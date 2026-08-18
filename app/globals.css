@@ -122,7 +122,7 @@ body {
   border-color: #e2e8f0 !important;
   background: #ffffff !important;
   color: #0f172a !important;
-  padding: 0.8rem !important;
+  padding: 0.75rem !important;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
   --tw-ring-color: transparent !important;
 }
@@ -146,11 +146,12 @@ body {
 }
 
 .cms-shell .action-tile {
-  min-height: 5.1rem;
+  min-height: 4.4rem;
   border-color: #e2e8f0 !important;
   background: #ffffff !important;
   color: #0f172a !important;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.055) !important;
+  padding: 0.85rem !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
 }
 
 .cms-shell .action-tile:hover {
@@ -166,6 +167,72 @@ body {
 .cms-shell .lead-row {
   background: #ffffff !important;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
+}
+
+.cms-shell .compact-list {
+  gap: 0.45rem !important;
+}
+
+.cms-shell .client-row,
+.cms-shell .lead-row,
+.cms-shell .schedule-stop {
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  border-radius: 0.55rem !important;
+}
+
+.cms-shell .client-row {
+  padding: 0.72rem !important;
+}
+
+.cms-shell .ops-summary {
+  padding: 0 !important;
+}
+
+.cms-shell .ops-summary > div:first-child {
+  padding: 0.85rem 0.9rem 0.75rem;
+}
+
+.cms-shell .ops-summary .ops-metrics {
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-radius: 0 !important;
+}
+
+.cms-shell .metric-cell {
+  background: #ffffff !important;
+  padding: 0.72rem 0.85rem !important;
+}
+
+.cms-shell .metric-cell p:last-child {
+  color: #0f172a !important;
+  font-size: 1.25rem !important;
+}
+
+.cms-shell .ops-tabs {
+  padding: 0.72rem 0.9rem 0.85rem;
+}
+
+.cms-shell .ops-tabs a {
+  min-height: 2rem;
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #475569 !important;
+  box-shadow: 0 1px 1px rgba(15, 23, 42, 0.03);
+}
+
+.cms-shell .ops-tabs a:hover {
+  border-color: #cbd5e1 !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.cms-shell details {
+  box-shadow: none !important;
+}
+
+.cms-shell details[open] summary {
+  border-bottom-color: #e2e8f0 !important;
 }
 
 .cms-shell .lead-row .bg-secondary {
@@ -197,7 +264,7 @@ body {
 .cms-shell input,
 .cms-shell textarea,
 .cms-shell select {
-  min-height: 2.5rem;
+  min-height: 2.35rem;
   border-color: #d9e1ea !important;
   background: #ffffff !important;
   color: #0f172a !important;
@@ -230,6 +297,25 @@ body {
 .cms-shell button,
 .cms-shell a {
   letter-spacing: 0;
+}
+
+.cms-shell button {
+  min-height: 2.35rem;
+}
+
+.cms-shell .planner-panel {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.cms-shell .planner-panel p {
+  color: #475569;
+}
+
+.cms-shell .planner-panel h2,
+.cms-shell .planner-panel h3 {
+  color: #0f172a;
 }
 
 .cms-shell .text-champagne-50,
