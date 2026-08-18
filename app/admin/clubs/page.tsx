@@ -14,7 +14,7 @@ export default async function AdminClubsPage() {
   const clubs = await getClubsForAdmin();
   return (
     <AppShell profile={profile} title="Clubs" eyebrow="Admin">
-      <LuxuryCard className="mb-4">
+      <LuxuryCard className="mb-4 bg-white text-ink-950">
         <details>
           <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm font-semibold">
             Add venue
@@ -32,7 +32,7 @@ export default async function AdminClubsPage() {
       </LuxuryCard>
       <div className="compact-list grid gap-2">
         {clubs.map((club) => (
-          <LuxuryCard key={club.id} className={`client-row ${!club.active ? "opacity-70" : ""}`}>
+          <LuxuryCard key={club.id} className={`client-row bg-white text-ink-950 ${!club.active ? "opacity-70" : ""}`}>
             {(() => {
               const experience = getClubVenueExperience(club);
               return (
@@ -41,19 +41,19 @@ export default async function AdminClubsPage() {
               <div className="flex min-w-0 items-start gap-3">
                 <ClubLogoPreview logoUrl={club.image_url} name={club.name} monogram={experience.monogram} />
                 <div className="min-w-0">
-                <p className="truncate font-semibold">{club.name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{club.city} · /{club.slug}</p>
-                <p className="mt-1 text-xs text-champagne-300">{experience.tagline}</p>
+                <p className="truncate font-semibold text-ink-950">{club.name}</p>
+                <p className="mt-1 text-sm text-slate-500">{club.city} · /{club.slug}</p>
+                <p className="mt-1 text-xs text-champagne-700">{experience.tagline}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 md:justify-end">
-                <span className={club.active ? "rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700" : "rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-muted-foreground"}>
+                <span className={club.active ? "rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700" : "rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500"}>
                   {club.active ? "Active" : "Archived"}
                 </span>
               </div>
             </div>
-            <details className="mt-3 rounded-md border border-champagne-700/30 bg-background/35 p-3">
-              <summary className="cursor-pointer text-sm font-semibold text-champagne-200">Edit venue details</summary>
+            <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+              <summary className="cursor-pointer text-sm font-semibold text-ink-950">Edit details and logo</summary>
               <form action={updateClub} className="mt-3 grid gap-2 sm:grid-cols-2">
                 <input type="hidden" name="clubId" value={club.id} />
                 <Input name="name" defaultValue={club.name} aria-label="Club name" required />
@@ -64,8 +64,8 @@ export default async function AdminClubsPage() {
                 <Button type="submit" variant="secondary" className="sm:col-span-2">Save details</Button>
               </form>
             </details>
-            <details className="mt-2 rounded-md border border-champagne-700/30 bg-background/35 p-3">
-              <summary className="cursor-pointer text-sm font-semibold text-champagne-200">Booking page services</summary>
+            <details className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-3">
+              <summary className="cursor-pointer text-sm font-semibold text-ink-950">Booking page services</summary>
               <ClubExperienceForm
                 clubId={club.id}
                 monogram={experience.monogram}
@@ -93,7 +93,7 @@ export default async function AdminClubsPage() {
 
 function ClubLogoPreview({ logoUrl, name, monogram }: Readonly<{ logoUrl: string | null; name: string; monogram: string }>) {
   return (
-    <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-champagne-500/50 bg-ink-950/80 font-serif text-champagne-100">
+    <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 font-serif text-champagne-800">
       {logoUrl ? (
         <img src={logoUrl} alt={`${name} logo`} className="h-full w-full object-contain p-1" />
       ) : (

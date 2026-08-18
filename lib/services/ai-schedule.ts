@@ -319,6 +319,7 @@ function uniqueBaseVenues(days: ScheduleDay[], category: ScheduleStop["category"
 function validateMultiDayVariety(days: ScheduleDay[]) {
   if (days.length < 3) return;
   const warnings: string[] = [];
+  const dayPatterns = new Map<string, number>();
   for (let index = 1; index < days.length; index += 1) {
     const todayStops = days[index].stops;
     const yesterdayStops = days[index - 1].stops;
@@ -326,6 +327,13 @@ function validateMultiDayVariety(days: ScheduleDay[]) {
       const repeated = yesterdayStops.find((stop) => stop.category === todayStop.category && baseVenueName(stop.venue) === baseVenueName(todayStop.venue));
       if (repeated && !hasSpecificEventReason(todayStop)) warnings.push(`${todayStop.category}: ${todayStop.venue} repeated on ${days[index].date}`);
     }
+  }
+  for (const day of days) {
+    const pattern = day.stops.map((stop) => `${stop.category}:${baseVenueName(stop.venue)}`).join("|");
+    dayPatterns.set(pattern, (dayPatterns.get(pattern) ?? 0) + 1);
+  }
+  for (const [pattern, count] of dayPatterns.entries()) {
+    if (count > 1) warnings.push(`Repeated full-day pattern ${count} times: ${pattern}`);
   }
   if (warnings.length >= 3) {
     throw new Error(`OpenAI returned a repetitive itinerary without enough DJ/event reasons. ${warnings.slice(0, 5).join("; ")}.`);

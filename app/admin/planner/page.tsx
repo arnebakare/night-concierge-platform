@@ -22,32 +22,32 @@ export default async function AdminPlannerPage() {
   return (
     <AppShell profile={profile} title="Planner rules" eyebrow="Admin">
       <div className="mb-4 grid gap-3 md:grid-cols-[1.1fr_0.9fr]">
-        <LuxuryCard>
+        <LuxuryCard className="bg-white text-ink-950">
           <div className="flex items-start gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-md border border-champagne-500/40 bg-champagne-300/10 text-champagne-100">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-md border border-champagne-500/40 bg-champagne-300/10 text-champagne-800">
               <BrainCircuit className="size-5" />
             </div>
             <div>
-              <p className="text-base font-semibold text-champagne-50">Teach the planner Marbella taste</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              <p className="text-base font-semibold text-ink-950">Teach the planner Marbella taste</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
                 These rules tell the AI how venues are actually used locally. Big confirmed DJ names still have priority, but weights and avoid-pairings steer the normal recommendations.
               </p>
             </div>
           </div>
         </LuxuryCard>
-        <LuxuryCard>
-          <p className="text-sm font-semibold text-champagne-100">How weights work</p>
-          <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <p><span className="text-champagne-200">1.0</span> is normal priority.</p>
-            <p><span className="text-champagne-200">2.0+</span> should show up more often when the date fits.</p>
-            <p><span className="text-champagne-200">Below 1.0</span> is a fallback or lower-priority venue.</p>
+        <LuxuryCard className="bg-white text-ink-950">
+          <p className="text-sm font-semibold text-ink-950">How weights work</p>
+          <div className="mt-3 space-y-2 text-sm text-slate-600">
+            <p><span className="font-semibold text-champagne-700">1.0</span> is normal priority.</p>
+            <p><span className="font-semibold text-champagne-700">2.0+</span> should show up more often when the date fits.</p>
+            <p><span className="font-semibold text-champagne-700">Below 1.0</span> is a fallback or lower-priority venue.</p>
           </div>
         </LuxuryCard>
       </div>
 
-      <LuxuryCard className="mb-4">
+      <LuxuryCard className="mb-4 bg-white text-ink-950">
         <details>
-          <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm font-semibold text-champagne-100">
+          <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm font-semibold text-ink-950">
             Add planner rule
             <span className="text-xs font-normal text-muted-foreground">Venue, use, priority</span>
           </summary>
@@ -79,15 +79,15 @@ export default async function AdminPlannerPage() {
 
 function VenueRuleCard({ rule }: Readonly<{ rule: ScheduleVenueRule }>) {
   return (
-    <LuxuryCard className={`client-row ${!rule.active ? "opacity-70" : ""}`}>
+    <LuxuryCard className={`client-row bg-white text-ink-950 ${!rule.active ? "opacity-70" : ""}`}>
       <div className="grid gap-3 md:grid-cols-[minmax(180px,1fr)_minmax(140px,0.45fr)_auto] md:items-center">
         <div className="min-w-0">
-          <p className="font-semibold text-champagne-50">{rule.venue_name}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{rule.area || "Marbella"} · {rule.priority_days.length ? rule.priority_days.map((day) => day.slice(0, 3)).join(", ") : "No priority day"}</p>
+          <p className="font-semibold text-ink-950">{rule.venue_name}</p>
+          <p className="mt-1 text-xs text-slate-500">{rule.area || "Marbella"} · {rule.priority_days.length ? rule.priority_days.map((day) => day.slice(0, 3)).join(", ") : "No priority day"}</p>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Use / weight</p>
-          <p className="mt-1 text-sm font-semibold">{formatType(rule.venue_type)} · {rule.weight}</p>
+          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Use / weight</p>
+          <p className="mt-1 text-sm font-semibold text-ink-950">{formatType(rule.venue_type)} · {rule.weight}</p>
         </div>
         <form action={setScheduleVenueRuleActive}>
           <input type="hidden" name="ruleId" value={rule.id} />
@@ -95,8 +95,8 @@ function VenueRuleCard({ rule }: Readonly<{ rule: ScheduleVenueRule }>) {
           <Button type="submit" variant="outline" size="sm">{rule.active ? "Archive" : "Reactivate"}</Button>
         </form>
       </div>
-      <details className="mt-3 rounded-md border border-champagne-700/30 bg-background/35 p-3">
-        <summary className="cursor-pointer text-sm font-semibold text-champagne-200">Edit rule</summary>
+      <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+        <summary className="cursor-pointer text-sm font-semibold text-ink-950">Edit rule</summary>
         <VenueRuleForm rule={rule} action={updateScheduleVenueRule} submitLabel="Save rule" />
       </details>
     </LuxuryCard>

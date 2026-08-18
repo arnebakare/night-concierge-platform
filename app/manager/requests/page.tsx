@@ -15,20 +15,23 @@ export default async function ManagerRequestsPage({
 }: Readonly<{ searchParams: Promise<{ status?: string; type?: string; date?: string; q?: string; club?: string; promoter?: string; archived?: string }> }>) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const filters = await searchParams;
-  const [requests, clubs, promoters] = await Promise.all([getRequestsForProfile(profile, {
+  const archiveMode = filters.archived === "1";
+  const [rawRequests, clubs, promoters] = await Promise.all([getRequestsForProfile(profile, {
     status: parseStatus(filters.status),
     type: parseType(filters.type),
     date: filters.date || undefined,
     q: filters.q || undefined,
     clubId: filters.club || undefined,
-    promoterId: filters.promoter || undefined
+    promoterId: filters.promoter || undefined,
+    includeArchived: archiveMode
   }), getActiveClubsForApp(), profile.role === "SUPER_ADMIN" ? getUsersForAdmin({ role: "PROMOTER", active: "active" }) : getTeamPromoters(profile.id)]);
+  const requests = archiveMode && !filters.status ? rawRequests.filter((request) => isArchivedStatus(request.status)) : rawRequests;
 
   return (
     <AppShell profile={profile} title="Request inbox" eyebrow="Manager">
-      {filters.archived === "1" && (
-        <div className="mb-4 rounded-md border border-champagne-700/40 bg-champagne-300/10 p-3 text-sm text-champagne-100">
-          Completed and moved out of the active inbox.
+      {archiveMode && (
+        <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+          Showing completed and archived requests. <Link href="/manager/requests" className="font-semibold underline">Back to active inbox</Link>
         </div>
       )}
       <RequestListSummary requests={requests} baseHref="/manager/requests" />
@@ -82,6 +85,10 @@ function parseStatus(value?: string): RequestStatus | undefined {
 function parseType(value?: string): RequestType | undefined {
   const allowed: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"];
   return allowed.includes(value as RequestType) ? value as RequestType : undefined;
+}
+
+function isArchivedStatus(status: RequestStatus) {
+  return ["ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"].includes(status);
 }
 
 function EmptyState() {

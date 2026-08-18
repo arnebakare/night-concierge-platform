@@ -60,12 +60,15 @@ export function ClubExperienceForm({
 
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <Label>Services</Label>
+          <div>
+            <Label>Services shown to customers</Label>
+            <p className="mt-1 text-xs text-slate-500">{activeItems.length} active service{activeItems.length === 1 ? "" : "s"}</p>
+          </div>
           <Button type="button" variant="outline" size="sm" onClick={addService}><Plus className="size-4" /> Add service</Button>
         </div>
         {items.map((service, index) => service.active && (
-          <div key={service.id} className="rounded-md border border-champagne-700/30 bg-background/35 p-3">
-            <div className="grid gap-2 sm:grid-cols-2">
+          <div key={service.id} className="rounded-md border border-slate-200 bg-white p-2.5">
+            <div className="grid gap-2 sm:grid-cols-[1fr_160px_140px_auto]">
               <Input value={service.label} onChange={(event) => updateService(index, { label: event.target.value })} aria-label="Service label" placeholder="VIP table" />
               <select value={service.requestType} onChange={(event) => updateService(index, { requestType: event.target.value as RequestType })} className="h-12 rounded-md border bg-input px-3 text-sm">
                 {requestTypes.map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}
@@ -74,7 +77,7 @@ export function ClubExperienceForm({
                 {icons.map((icon) => <option key={icon} value={icon}>{icon}</option>)}
               </select>
               <Button type="button" variant="outline" onClick={() => updateService(index, { active: false })}><Trash2 className="size-4" /> Remove</Button>
-              <Input className="sm:col-span-2" value={service.description} onChange={(event) => updateService(index, { description: event.target.value })} aria-label="Service description" placeholder="Short description shown on the request form" />
+              <Input className="sm:col-span-4" value={service.description} onChange={(event) => updateService(index, { description: event.target.value })} aria-label="Service description" placeholder="Short description shown on the request form" />
             </div>
           </div>
         ))}

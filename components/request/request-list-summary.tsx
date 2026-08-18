@@ -43,12 +43,12 @@ export function RequestListSummary({
       </div>
 
       <div className="ops-tabs flex gap-2 overflow-x-auto pb-1 text-sm">
-        <QuickLink href={baseHref} label="Live" />
+        <QuickLink href={baseHref} label="Active" />
         <QuickLink href={`${baseHref}?date=${today}`} label="Today" />
         <QuickLink href={`${baseHref}?date=${tomorrow}`} label="Tomorrow" />
         <QuickLink href={`${baseHref}?status=NEW`} label="New" />
         <QuickLink href={`${baseHref}?status=CONFIRMED`} label="Confirmed" />
-        <QuickLink href={`${baseHref}?status=ARRIVED`} label="Archive" />
+        <QuickLink href={`${baseHref}?archived=1`} label="Completed" />
       </div>
     </LuxuryCard>
   );

@@ -15,18 +15,21 @@ export default async function RequestsPage({
 }: Readonly<{ searchParams: Promise<{ status?: string; type?: string; date?: string; q?: string; archived?: string }> }>) {
   const profile = await requireProfile(["PROMOTER", "SUPER_ADMIN"]);
   const filters = await searchParams;
-  const requests = await getRequestsForProfile(profile, {
+  const archiveMode = filters.archived === "1";
+  const rawRequests = await getRequestsForProfile(profile, {
     status: parseStatus(filters.status),
     type: parseType(filters.type),
     date: filters.date || undefined,
-    q: filters.q || undefined
+    q: filters.q || undefined,
+    includeArchived: archiveMode
   });
+  const requests = archiveMode && !filters.status ? rawRequests.filter((request) => isArchivedStatus(request.status)) : rawRequests;
 
   return (
     <AppShell profile={profile} title="My requests" eyebrow="Guestlist">
-      {filters.archived === "1" && (
-        <div className="mb-4 rounded-md border border-champagne-700/40 bg-champagne-300/10 p-3 text-sm text-champagne-100">
-          Completed and moved out of your active requests.
+      {archiveMode && (
+        <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+          Showing completed and archived requests. <Link href="/requests" className="font-semibold underline">Back to active requests</Link>
         </div>
       )}
       <RequestListSummary requests={requests} baseHref="/requests" />
@@ -54,6 +57,10 @@ function parseStatus(value?: string): RequestStatus | undefined {
 function parseType(value?: string): RequestType | undefined {
   const allowed: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"];
   return allowed.includes(value as RequestType) ? value as RequestType : undefined;
+}
+
+function isArchivedStatus(status: RequestStatus) {
+  return ["ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"].includes(status);
 }
 
 function EmptyState() {
