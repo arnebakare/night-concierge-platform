@@ -27,7 +27,7 @@ export const demoRequests: ConciergeRequest[] = [
     message: "Birthday table, prefers premium vodka.",
     internal_summary: null,
     created_at: new Date().toISOString(),
-    clients: { name: "Daniel", phone: "+34 611 222 333", vip_level: "GOLD", status: "NORMAL" },
+    clients: { name: "Daniel", phone: "+34 611 222 333", country: "Sweden", preferred_language: "sv", vip_level: "GOLD", status: "NORMAL" },
     clubs: { name: "La Plage Casanis", city: "Marbella", slug: "la-plage-casanis" }
   },
   {
@@ -46,13 +46,13 @@ export const demoRequests: ConciergeRequest[] = [
     message: "Needs confirmation before midnight.",
     internal_summary: null,
     created_at: new Date().toISOString(),
-    clients: { name: "Olivia", phone: "+34 622 333 444", vip_level: "SILVER", status: "NORMAL" },
+    clients: { name: "Olivia", phone: "+34 622 333 444", country: "United Kingdom", preferred_language: "en", vip_level: "SILVER", status: "NORMAL" },
     clubs: { name: "Le Jade", city: "Marbella", slug: "le-jade" }
   }
 ];
 
 export const demoClients: Client[] = [
-  { id: "c1", name: "Daniel", phone: "+34 611 222 333", email: "daniel@example.com", instagram: "@daniel", vip_level: "GOLD", status: "NORMAL" },
-  { id: "c2", name: "Olivia", phone: "+34 622 333 444", email: null, instagram: "@olivia", vip_level: "SILVER", status: "NORMAL" },
-  { id: "c3", name: "Daniel", phone: "+34 633 444 555", email: "daniel.vip@example.com", instagram: "@danielvip", vip_level: "PLATINUM", status: "MANAGER_APPROVAL_REQUIRED" }
+  { id: "c1", name: "Daniel", phone: "+34 611 222 333", email: "daniel@example.com", instagram: "@daniel", country: "Sweden", preferred_language: "sv", vip_level: "GOLD", status: "NORMAL" },
+  { id: "c2", name: "Olivia", phone: "+34 622 333 444", email: null, instagram: "@olivia", country: "United Kingdom", preferred_language: "en", vip_level: "SILVER", status: "NORMAL" },
+  { id: "c3", name: "Daniel", phone: "+34 633 444 555", email: "daniel.vip@example.com", instagram: "@danielvip", country: "Spain", preferred_language: "es", vip_level: "PLATINUM", status: "MANAGER_APPROVAL_REQUIRED" }
 ];

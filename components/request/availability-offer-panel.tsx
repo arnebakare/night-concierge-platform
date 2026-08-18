@@ -6,6 +6,7 @@ import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Textarea } from "@/components/ui/textarea";
 import { CopyMessageButton } from "@/components/request/copy-message-button";
 import { OfferComposer } from "@/components/request/offer-composer";
+import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { createAvailabilitySlot, updateRequestOfferStatus } from "@/lib/actions/management-actions";
 import type { AvailabilitySlot, ConciergeRequest, RequestOffer } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
@@ -109,7 +110,7 @@ export function AvailabilityOfferPanel({
                   <form key={status} action={updateRequestOfferStatus}>
                     <input type="hidden" name="offerId" value={offer.id} />
                     <input type="hidden" name="requestId" value={request.id} />
-                    <Button type="submit" name="status" value={status} variant="secondary" size="sm">{statusLabel(status)}</Button>
+                    <StatusSubmitButton value={status} label={statusLabel(status)} pendingLabel="Saving" variant="secondary" size="sm" />
                   </form>
                 ))}
               </div>

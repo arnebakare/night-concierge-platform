@@ -8,6 +8,11 @@ import { formatEnum } from "@/lib/utils";
 
 const vipLevels = ["STANDARD", "SILVER", "GOLD", "PLATINUM"];
 const clientStatuses = ["NORMAL", "WATCHLIST", "MANAGER_APPROVAL_REQUIRED", "BLOCKED"];
+const languages = [
+  ["en", "English"],
+  ["es", "Spanish"],
+  ["sv", "Swedish"]
+] as const;
 
 export function ClientCreateForm({ role }: Readonly<{ role: Role }>) {
   const canSetRiskStatus = role === "PROMOTER_MANAGER" || role === "SUPER_ADMIN";
@@ -35,6 +40,14 @@ export function ClientCreateForm({ role }: Readonly<{ role: Role }>) {
           </Field>
           <Field label="Instagram optional">
             <Input name="instagram" placeholder="@handle" />
+          </Field>
+          <Field label="Country optional">
+            <Input name="country" placeholder="Sweden, Spain, UK..." />
+          </Field>
+          <Field label="Message language">
+            <select name="preferredLanguage" defaultValue="en" className="h-10 w-full rounded-md border bg-input px-3 text-sm text-foreground">
+              {languages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
           </Field>
           <Field label="VIP level">
             <select name="vipLevel" defaultValue="STANDARD" className="h-10 w-full rounded-md border bg-input px-3 text-sm text-foreground">

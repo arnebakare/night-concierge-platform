@@ -1,14 +1,15 @@
-import { CheckCircle2, ClipboardList, MessageCircle, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { CheckCircle2, Sparkles } from "lucide-react";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { CopyMessageButton } from "@/components/request/copy-message-button";
+import { StatusSubmitButton } from "@/components/request/status-submit-button";
+import { EditableMessageCard } from "@/components/request/editable-message-card";
 import { updateRequestStatus } from "@/lib/actions/management-actions";
 import type { ConciergeRequest } from "@/lib/types";
-import { buildAvailabilityMessage, buildClientReply, buildUpsellIdeas, nextSalesAction, whatsAppHref } from "@/lib/sales/funnel";
+import { buildAvailabilityMessage, buildClientReply, buildUpsellIdeas, inferLanguageFromCountry, nextSalesAction } from "@/lib/sales/funnel";
 
 export function SalesAssistantPanel({ request, returnTo }: Readonly<{ request: ConciergeRequest; returnTo?: string }>) {
   const availabilityMessage = buildAvailabilityMessage(request);
-  const clientReply = buildClientReply(request);
+  const clientReply = buildClientReply(request, inferLanguageFromCountry(request.clients?.country));
   const upsells = buildUpsellIdeas(request);
 
   return (
@@ -25,26 +26,8 @@ export function SalesAssistantPanel({ request, returnTo }: Readonly<{ request: C
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="message-panel rounded-md border border-champagne-700/30 bg-ink-900/60 p-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="flex items-center gap-2 text-sm font-semibold"><ClipboardList className="size-4 text-champagne-300" /> Ask venue</p>
-            <CopyMessageButton text={availabilityMessage} label="Copy" />
-          </div>
-          <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{availabilityMessage}</p>
-        </div>
-
-        <div className="message-panel rounded-md border border-champagne-700/30 bg-ink-900/60 p-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="flex items-center gap-2 text-sm font-semibold"><MessageCircle className="size-4 text-champagne-300" /> Reply client</p>
-            <div className="flex gap-2">
-              <CopyMessageButton text={clientReply} label="Copy" />
-              <Button asChild variant="secondary" size="sm">
-                <a href={whatsAppHref(request.clients?.phone, clientReply)} target="_blank" rel="noreferrer">Open</a>
-              </Button>
-            </div>
-          </div>
-          <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{clientReply}</p>
-        </div>
+        <EditableMessageCard title="Ask venue" text={availabilityMessage} />
+        <EditableMessageCard title="Reply client" text={clientReply} phone={request.clients?.phone} />
       </div>
 
       <div className="space-y-2 rounded-md bg-secondary/70 p-3">
@@ -80,9 +63,7 @@ function StatusButton({
     <form action={updateRequestStatus}>
       <input type="hidden" name="requestId" value={requestId} />
       {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
-      <Button className="w-full" type="submit" name="status" value={status} variant={primary ? "default" : "secondary"}>
-        {label}
-      </Button>
+      <StatusSubmitButton className="w-full" value={status} label={label} pendingLabel="Saving" variant={primary ? "default" : "secondary"} />
     </form>
   );
 }

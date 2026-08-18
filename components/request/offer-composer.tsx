@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { CheckCircle2, Copy, ExternalLink, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,9 +50,7 @@ export function OfferComposer({ draft }: Readonly<{ draft: OfferDraft }>) {
         className="min-h-40 resize-none leading-relaxed"
       />
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        <Button formAction={createRequestOffer} type="submit" variant="secondary">
-          <CheckCircle2 className="size-4" /> Save
-        </Button>
+        <OfferActionButton action={createRequestOffer} icon="save" label="Save" pendingLabel="Saving" variant="secondary" />
         <Button type="button" variant="secondary" onClick={copyMessage}>
           <Copy className="size-4" /> {copied ? "Copied" : "Copy"}
         </Button>
@@ -60,12 +59,33 @@ export function OfferComposer({ draft }: Readonly<{ draft: OfferDraft }>) {
             <ExternalLink className="size-4" /> Open
           </a>
         </Button>
-        <Button formAction={sendRequestOffer} type="submit">
-          <Send className="size-4" /> Send
-        </Button>
+        <OfferActionButton action={sendRequestOffer} icon="send" label="Send" pendingLabel="Sending" />
       </div>
       {!draft.destination && <p className="text-xs text-amber-700">Add the client WhatsApp number before using Send or Open.</p>}
     </form>
+  );
+}
+
+function OfferActionButton({
+  action,
+  icon,
+  label,
+  pendingLabel,
+  variant = "default"
+}: Readonly<{
+  action: (formData: FormData) => void | Promise<void>;
+  icon: "save" | "send";
+  label: string;
+  pendingLabel: string;
+  variant?: "default" | "secondary";
+}>) {
+  const { pending } = useFormStatus();
+  const Icon = icon === "save" ? CheckCircle2 : Send;
+
+  return (
+    <Button formAction={action} type="submit" variant={variant} disabled={pending}>
+      <Icon className="size-4" /> {pending ? pendingLabel : label}
+    </Button>
   );
 }
 

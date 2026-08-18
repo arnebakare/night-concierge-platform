@@ -2,6 +2,7 @@ import { CalendarDays, Clock, Users } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
+import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { updateRequestStatus } from "@/lib/actions/management-actions";
 import { nextSalesAction } from "@/lib/sales/funnel";
 import type { ConciergeRequest, RequestStatus } from "@/lib/types";
@@ -64,9 +65,7 @@ export function RequestLeadRow({
             <form action={updateRequestStatus} key={action.status}>
               <input type="hidden" name="requestId" value={request.id} />
               {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
-              <Button type="submit" name="status" value={action.status} variant={action.variant ?? "default"} size="sm">
-                {action.label}
-              </Button>
+              <StatusSubmitButton value={action.status} label={action.label} pendingLabel="Saving" variant={action.variant ?? "default"} size="sm" />
             </form>
           ))}
         </div>

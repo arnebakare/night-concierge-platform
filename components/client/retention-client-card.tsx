@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { sendClientRetentionMessage } from "@/lib/actions/management-actions";
 import type { RetentionClient } from "@/lib/data/app";
+import { inferLanguageFromCountry } from "@/lib/sales/funnel";
 
 export function RetentionClientCard({ client }: Readonly<{ client: RetentionClient }>) {
-  const message = buildRetentionMessage(client.name);
+  const language = client.preferred_language ?? inferLanguageFromCountry(client.country);
+  const message = buildRetentionMessage(client.name, language);
   const dormantLabel = client.days_since_booking === null ? "No bookings yet" : `${client.days_since_booking} days since last booking`;
   const mailtoHref = client.email
     ? `mailto:${client.email}?subject=${encodeURIComponent("A note from your Marbella concierge")}&body=${encodeURIComponent(message)}`
@@ -57,7 +59,9 @@ export function RetentionClientCard({ client }: Readonly<{ client: RetentionClie
   );
 }
 
-export function buildRetentionMessage(name: string) {
+export function buildRetentionMessage(name: string, language: "en" | "es" | "sv" = "en") {
   const firstName = name.split(" ").filter(Boolean)[0] || name;
+  if (language === "es") return `Hola ${firstName}, espero que estés bien. Si vuelves pronto a Marbella, escríbeme por aquí y te ayudo con mesa, lista o un buen plan para la noche.`;
+  if (language === "sv") return `Hej ${firstName}, hoppas allt är bra. Om du kommer till Marbella snart igen, skriv här så hjälper jag med bord, gästlista eller en bra plan för kvällen.`;
   return `Hi ${firstName}, hope you are well. If you are coming to Marbella again soon, message me here and I can help with tables, guestlist, or a good plan for the night.`;
 }

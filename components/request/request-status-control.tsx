@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { updateRequestStatus } from "@/lib/actions/management-actions";
 import type { RequestStatus } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
@@ -30,9 +30,7 @@ export function RequestStatusControl({
             <form action={updateRequestStatus} key={action.status}>
               <input type="hidden" name="requestId" value={requestId} />
               {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
-              <Button className="w-full" type="submit" name="status" value={action.status} variant={action.variant ?? "default"}>
-                {action.label}
-              </Button>
+              <StatusSubmitButton className="w-full" value={action.status} label={action.label} pendingLabel="Saving" variant={action.variant ?? "default"} />
             </form>
           ))}
         </div>
@@ -51,9 +49,7 @@ export function RequestStatusControl({
             </option>
           ))}
         </select>
-        <Button type="submit" variant="secondary">
-          Update
-        </Button>
+        <StatusSubmitButton label="Update" pendingLabel="Saving" variant="secondary" />
       </form>
     </>
   );

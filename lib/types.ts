@@ -53,6 +53,8 @@ export type Client = {
   phone: string;
   email: string | null;
   instagram: string | null;
+  country?: string | null;
+  preferred_language?: "en" | "es" | "sv" | null;
   vip_level: "STANDARD" | "SILVER" | "GOLD" | "PLATINUM";
   status: "NORMAL" | "WATCHLIST" | "MANAGER_APPROVAL_REQUIRED" | "BLOCKED";
 };
@@ -73,7 +75,7 @@ export type ConciergeRequest = {
   message: string | null;
   internal_summary: string | null;
   created_at: string;
-  clients?: Pick<Client, "name" | "phone" | "vip_level" | "status"> | null;
+  clients?: Pick<Client, "name" | "phone" | "country" | "preferred_language" | "vip_level" | "status"> | null;
   clubs?: Pick<Club, "name" | "city" | "slug"> | null;
   promoter?: Pick<Profile, "name" | "email"> | null;
 };

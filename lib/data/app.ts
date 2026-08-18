@@ -4,7 +4,7 @@ import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
 const requestSelect =
-  "id, client_id, club_id, promoter_id, assigned_manager_id, source, request_type, status, requested_date, arrival_time, guest_count, budget, message, internal_summary, created_at, clients(name, phone, vip_level, status), clubs(name, city, slug), promoter:profiles!requests_promoter_id_fkey(name, email)";
+  "id, client_id, club_id, promoter_id, assigned_manager_id, source, request_type, status, requested_date, arrival_time, guest_count, budget, message, internal_summary, created_at, clients(name, phone, country, preferred_language, vip_level, status), clubs(name, city, slug), promoter:profiles!requests_promoter_id_fkey(name, email)";
 
 export type RequestFilters = {
   status?: RequestStatus;
@@ -157,7 +157,7 @@ export async function getClientsForProfile(profile: Profile, filters?: ClientFil
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("clients")
-      .select("id, name, phone, email, instagram, vip_level, status")
+      .select("id, name, phone, email, instagram, country, preferred_language, vip_level, status")
       .order("updated_at", { ascending: false })
       .limit(80);
     if (error) throw error;
@@ -174,7 +174,7 @@ export async function getRetentionClientsForProfile(profile: Profile, days = 45)
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("clients")
-      .select("id, name, phone, email, instagram, vip_level, status, requests(requested_date, created_at), retention_outreach(created_at)")
+      .select("id, name, phone, email, instagram, country, preferred_language, vip_level, status, requests(requested_date, created_at), retention_outreach(created_at)")
       .neq("status", "BLOCKED")
       .limit(120);
     if (error) throw error;
@@ -200,7 +200,7 @@ export async function getClientProfile(clientId: string, filters?: NoteFilters) 
     const [{ data: client, error: clientError }, { data: notes, error: notesError }] = await Promise.all([
       supabase
         .from("clients")
-        .select("id, name, phone, email, instagram, vip_level, status")
+        .select("id, name, phone, email, instagram, country, preferred_language, vip_level, status")
         .eq("id", clientId)
         .single(),
       supabase
@@ -432,7 +432,7 @@ export async function getProfileById(profileId: string) {
 export async function getClientForAccount(profileId: string) {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.from("clients").select("id, name, phone, email, instagram, vip_level, status").eq("profile_id", profileId).maybeSingle();
+    const { data, error } = await supabase.from("clients").select("id, name, phone, email, instagram, country, preferred_language, vip_level, status").eq("profile_id", profileId).maybeSingle();
     if (error) throw error;
     return data as Client | null;
   } catch (error) {
@@ -697,6 +697,8 @@ function buildRetentionClients(data: unknown, days: number, today: Date): Retent
         phone: client.phone,
         email: client.email,
         instagram: client.instagram,
+        country: client.country,
+        preferred_language: client.preferred_language,
         vip_level: client.vip_level,
         status: client.status,
         last_request_date: lastRequestDate,

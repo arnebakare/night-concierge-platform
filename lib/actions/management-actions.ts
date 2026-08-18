@@ -67,7 +67,9 @@ const requestClientContactSchema = z.object({
   requestId: z.string().min(1),
   clientId: z.string().min(1),
   name: z.string().trim().min(2).max(100),
-  phone: z.string().trim().min(2).max(40)
+  phone: z.string().trim().min(2).max(40),
+  country: z.string().trim().max(80).optional().or(z.literal("")),
+  preferredLanguage: z.enum(["en", "es", "sv"]).default("en")
 });
 
 export async function updateRequestClientContact(formData: FormData) {
@@ -76,7 +78,9 @@ export async function updateRequestClientContact(formData: FormData) {
     requestId: formData.get("requestId"),
     clientId: formData.get("clientId"),
     name: formData.get("name"),
-    phone: formData.get("phone")
+    phone: formData.get("phone"),
+    country: formData.get("country") || "",
+    preferredLanguage: formData.get("preferredLanguage") || "en"
   });
   if (!parsed.success) return;
 
@@ -87,10 +91,15 @@ export async function updateRequestClientContact(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { data: previous } = await supabase.from("clients").select("name, phone").eq("id", parsed.data.clientId).maybeSingle();
+  const { data: previous } = await supabase.from("clients").select("name, phone, country, preferred_language").eq("id", parsed.data.clientId).maybeSingle();
   const { error } = await supabase
     .from("clients")
-    .update({ name: parsed.data.name, phone: parsed.data.phone })
+    .update({
+      name: parsed.data.name,
+      phone: parsed.data.phone,
+      country: parsed.data.country || null,
+      preferred_language: parsed.data.preferredLanguage
+    })
     .eq("id", parsed.data.clientId);
   if (error) throw new Error(error.message);
 
@@ -99,7 +108,16 @@ export async function updateRequestClientContact(formData: FormData) {
     action: "REQUEST_CLIENT_CONTACT_UPDATED",
     entityType: "clients",
     entityId: parsed.data.clientId,
-    metadata: { requestId: parsed.data.requestId, from: previous ?? null, to: { name: parsed.data.name, phone: parsed.data.phone } }
+    metadata: {
+      requestId: parsed.data.requestId,
+      from: previous ?? null,
+      to: {
+        name: parsed.data.name,
+        phone: parsed.data.phone,
+        country: parsed.data.country || null,
+        preferredLanguage: parsed.data.preferredLanguage
+      }
+    }
   });
 
   revalidatePath(`/requests/${parsed.data.requestId}`);
@@ -969,6 +987,8 @@ const clientSchema = z.object({
   phone: z.string().min(6),
   email: z.string().email().optional().or(z.literal("")),
   instagram: z.string().optional().or(z.literal("")),
+  country: z.string().trim().max(80).optional().or(z.literal("")),
+  preferredLanguage: z.enum(["en", "es", "sv"]).default("en"),
   vipLevel: z.enum(["STANDARD", "SILVER", "GOLD", "PLATINUM"]),
   status: z.enum(["NORMAL", "WATCHLIST", "MANAGER_APPROVAL_REQUIRED", "BLOCKED"])
 });
@@ -980,6 +1000,8 @@ export async function createClientRecord(formData: FormData) {
     phone: formData.get("phone"),
     email: formData.get("email") || "",
     instagram: formData.get("instagram") || "",
+    country: formData.get("country") || "",
+    preferredLanguage: formData.get("preferredLanguage") || "en",
     vipLevel: formData.get("vipLevel") || "STANDARD",
     status: formData.get("status") || "NORMAL"
   });
@@ -999,6 +1021,8 @@ export async function createClientRecord(formData: FormData) {
       phone: parsed.data.phone,
       email: parsed.data.email || null,
       instagram: parsed.data.instagram || null,
+      country: parsed.data.country || null,
+      preferred_language: parsed.data.preferredLanguage,
       vip_level: parsed.data.vipLevel,
       status: parsed.data.status,
       created_by_user_id: profile.id
@@ -1032,6 +1056,8 @@ export async function updateClientRecord(formData: FormData) {
     phone: formData.get("phone"),
     email: formData.get("email") || "",
     instagram: formData.get("instagram") || "",
+    country: formData.get("country") || "",
+    preferredLanguage: formData.get("preferredLanguage") || "en",
     vipLevel: formData.get("vipLevel") || "STANDARD",
     status: formData.get("status") || "NORMAL"
   });
@@ -1053,6 +1079,8 @@ export async function updateClientRecord(formData: FormData) {
       phone: parsed.data.phone,
       email: parsed.data.email || null,
       instagram: parsed.data.instagram || null,
+      country: parsed.data.country || null,
+      preferred_language: parsed.data.preferredLanguage,
       vip_level: parsed.data.vipLevel
   };
   if (profile.role !== "PROMOTER") updates.status = status;
@@ -1068,7 +1096,7 @@ export async function updateClientRecord(formData: FormData) {
     action: "CLIENT_UPDATED",
     entityType: "clients",
     entityId: parsed.data.clientId,
-    metadata: { vipLevel: parsed.data.vipLevel, status }
+    metadata: { vipLevel: parsed.data.vipLevel, status, country: parsed.data.country || null, preferredLanguage: parsed.data.preferredLanguage }
   });
 
   revalidatePath(`/clients/${parsed.data.clientId}`);

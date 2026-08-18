@@ -14,6 +14,7 @@ export function ClientCard({ client, href }: Readonly<{ client: Client; href: st
             <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-slate-500">
               <Phone className="size-3.5 shrink-0" />{client.phone}
             </p>
+            {client.country && <p className="mt-0.5 truncate text-xs text-slate-500">{client.country} · {(client.preferred_language ?? "en").toUpperCase()}</p>}
           </div>
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             <ShieldAlert className="size-3.5" />{formatEnum(client.status)}

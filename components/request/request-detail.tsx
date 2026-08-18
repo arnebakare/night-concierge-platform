@@ -78,7 +78,7 @@ export function RequestDetail({
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          Profile {formatEnum(request.clients?.vip_level ?? "STANDARD")} · {formatEnum(request.clients?.status ?? "NORMAL")}
+          Profile {formatEnum(request.clients?.vip_level ?? "STANDARD")} · {formatEnum(request.clients?.status ?? "NORMAL")} · {request.clients?.country || "Country not set"} · {(request.clients?.preferred_language ?? "en").toUpperCase()}
         </p>
         <details className="rounded-md border border-champagne-700/30 bg-ink-900/50 p-3">
           <summary className="cursor-pointer text-sm font-semibold text-champagne-100">Add or fix contact details</summary>
@@ -92,6 +92,22 @@ export function RequestDetail({
             <div className="space-y-2">
               <Label>WhatsApp</Label>
               <Input name="phone" defaultValue={visiblePhone(request.clients?.phone)} placeholder="+34..." required />
+            </div>
+            <div className="space-y-2">
+              <Label>Country</Label>
+              <Input name="country" defaultValue={request.clients?.country ?? ""} placeholder="Sweden, Spain..." />
+            </div>
+            <div className="space-y-2">
+              <Label>Message language</Label>
+              <select
+                name="preferredLanguage"
+                defaultValue={request.clients?.preferred_language ?? "en"}
+                className="h-11 w-full rounded-md border border-champagne-700/40 bg-input px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="sv">Swedish</option>
+              </select>
             </div>
             <Button type="submit" className="sm:col-span-2">Save contact</Button>
           </form>

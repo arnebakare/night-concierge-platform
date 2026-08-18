@@ -18,7 +18,7 @@ type SalesRequest = Pick<
   ConciergeRequest,
   "request_type" | "requested_date" | "arrival_time" | "guest_count" | "budget" | "message" | "status"
 > & {
-  clients?: { name?: string | null; phone?: string | null } | null;
+  clients?: { name?: string | null; phone?: string | null; country?: string | null; preferred_language?: LeadDraft["language"] | null } | null;
   clubs?: { name?: string | null; city?: string | null } | null;
 };
 
@@ -73,16 +73,17 @@ export function buildAvailabilityMessage(request: SalesRequest) {
   ].join("\n").replace(/\n{3,}/g, "\n\n");
 }
 
-export function buildClientReply(request: SalesRequest, language: LeadDraft["language"] = "en") {
+export function buildClientReply(request: SalesRequest, language?: LeadDraft["language"]) {
+  const selectedLanguage = request.clients?.preferred_language ?? language ?? inferLanguageFromCountry(request.clients?.country);
   const clientName = request.clients?.name?.split(" ")[0] ?? "";
   const clubName = request.clubs?.name ?? "the venue";
   const intro = clientName ? `Hi ${clientName}` : "Hi";
 
-  if (language === "es") {
+  if (selectedLanguage === "es") {
     return `${intro}, perfecto. Lo miro con ${clubName} para el ${request.requested_date} para ${request.guest_count} personas y te digo enseguida. Si quieres alguna hora o zona específica, mándamelo por aquí.`;
   }
 
-  if (language === "sv") {
+  if (selectedLanguage === "sv") {
     return `${intro}, absolut. Jag kollar med ${clubName} den ${request.requested_date} för ${request.guest_count} personer och återkommer snart. Om du vill ha en särskild tid eller plats, skriv det här.`;
   }
 
@@ -118,6 +119,14 @@ export function whatsAppHref(phone?: string | null, message?: string) {
   if (!digits) return "#";
   const text = message ? `?text=${encodeURIComponent(message)}` : "";
   return `https://wa.me/${digits}${text}`;
+}
+
+export function inferLanguageFromCountry(country?: string | null): LeadDraft["language"] {
+  const value = country?.trim().toLowerCase() ?? "";
+  if (!value) return "en";
+  if (/\b(spain|españa|espana|spanien|mexico|méxico|argentina|colombia|chile|peru|perú|uruguay|venezuela)\b/.test(value)) return "es";
+  if (/\b(sweden|sverige|suecia|svensk|swedish)\b/.test(value)) return "sv";
+  return "en";
 }
 
 export function isTemporaryPhone(phone?: string | null) {
