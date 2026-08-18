@@ -18,9 +18,9 @@ export function SalesAssistantPanel({ request, returnTo }: Readonly<{ request: C
           <Sparkles className="size-5" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Next best action</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Next step</p>
           <h3 className="mt-1 text-lg font-semibold">{nextSalesAction(request.status)}</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Copy the right message, then move the request forward.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Use a short message, then move the request forward.</p>
         </div>
       </div>
 
@@ -48,7 +48,7 @@ export function SalesAssistantPanel({ request, returnTo }: Readonly<{ request: C
       </div>
 
       <div className="space-y-2 rounded-md bg-secondary/70 p-3">
-        <p className="flex items-center gap-2 text-sm font-semibold"><CheckCircle2 className="size-4 text-champagne-300" /> Easy follow-up ideas</p>
+        <p className="flex items-center gap-2 text-sm font-semibold"><CheckCircle2 className="size-4 text-champagne-300" /> Follow-up ideas</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {upsells.map((idea) => (
             <div key={idea} className="flex items-center justify-between gap-2 rounded-md bg-background/60 px-3 py-2 text-sm text-muted-foreground">

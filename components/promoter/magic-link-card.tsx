@@ -20,14 +20,14 @@ export function MagicLinkCard({ id, url, clubName, active, useCount, maxUses, ex
   const expired = Boolean(expiresAt && new Date(expiresAt).getTime() < Date.now());
   const promoterWhatsApp = whatsAppHref(promoterPhone);
   return (
-    <LuxuryCard className={`client-row link-row ${!active || expired ? "opacity-70" : ""}`}>
+    <LuxuryCard className={`client-row link-row bg-white text-ink-950 ${!active || expired ? "opacity-70" : ""}`}>
       <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
         <div className="min-w-0">
-          <p className="truncate font-semibold">{clubName}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{useCount}{maxUses ? ` of ${maxUses}` : ""} uses · {expiresAt ? `Expires ${new Date(expiresAt).toLocaleDateString()}` : "No expiry"}</p>
-          <p className="mt-1 truncate text-xs text-muted-foreground">{url}</p>
+          <p className="truncate font-semibold text-ink-950">{clubName}</p>
+          <p className="mt-1 text-xs text-slate-500">{useCount}{maxUses ? ` of ${maxUses}` : ""} uses · {expiresAt ? `Expires ${new Date(expiresAt).toLocaleDateString()}` : "No expiry"}</p>
+          <p className="mt-1 truncate text-xs text-slate-500">{url}</p>
         </div>
-        <span className={active && !expired ? "text-xs font-semibold text-emerald-400" : "text-xs font-semibold text-muted-foreground"}>{expired ? "EXPIRED" : active ? "ACTIVE" : "REVOKED"}</span>
+        <span className={active && !expired ? "rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700" : "rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500"}>{expired ? "EXPIRED" : active ? "ACTIVE" : "REVOKED"}</span>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Button type="button" variant="secondary" size="sm" onClick={() => navigator.clipboard.writeText(url)}><Copy className="size-4" /> Copy</Button>
@@ -45,7 +45,7 @@ export function MagicLinkCard({ id, url, clubName, active, useCount, maxUses, ex
           </a>
         </Button>
       ) : (
-        <p className="mt-2 rounded-md border border-champagne-700/30 bg-ink-950/50 p-2 text-xs text-muted-foreground">Add a phone number to the promoter profile to show WhatsApp on this magic link.</p>
+        <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2 text-xs text-slate-500">Add a phone number to the promoter profile to show WhatsApp on this magic link.</p>
       )}
     </LuxuryCard>
   );

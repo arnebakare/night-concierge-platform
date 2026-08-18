@@ -46,9 +46,9 @@ export function SchedulePlanView({
         </form>
       </LuxuryCard>
 
-      <LuxuryCard>
+      <LuxuryCard className="bg-white text-ink-950">
         <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Customer message</p>
-        <p className="mt-3 whitespace-pre-line rounded-md bg-secondary/70 p-3 text-sm leading-relaxed text-muted-foreground">{plan.message}</p>
+        <p className="mt-3 whitespace-pre-line rounded-md bg-slate-50 p-3 text-sm leading-relaxed text-slate-700">{plan.message}</p>
       </LuxuryCard>
 
       {failureReason && (
@@ -60,35 +60,35 @@ export function SchedulePlanView({
 
       <div className="compact-list grid gap-2">
         {days.map((day) => (
-          <LuxuryCard key={day.date} className="schedule-day-card">
-            <div className="mb-2 flex items-start justify-between gap-3 border-b border-border/70 pb-2">
+          <LuxuryCard key={day.date} className="schedule-day-card bg-white text-ink-950">
+            <div className="mb-2 flex items-start justify-between gap-3 border-b border-slate-200 pb-2">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">{formatWeekday(day.date)}</p>
-                <h3 className="mt-1 text-base font-semibold">{day.headline}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{formatDate(day.date)}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-champagne-700">{formatWeekday(day.date)}</p>
+                <h3 className="mt-1 text-base font-semibold text-ink-950">{day.headline}</h3>
+                <p className="mt-1 text-sm text-slate-500">{formatDate(day.date)}</p>
               </div>
-              <CalendarDays className="size-5 text-champagne-300" />
+              <CalendarDays className="size-5 text-champagne-700" />
             </div>
             <div className="grid gap-2">
               {day.stops.map((stop, index) => (
-                <div key={`${day.date}-${stop.venue}-${index}`} className="schedule-stop rounded-md border border-champagne-700/30 bg-background/45 p-2.5">
+                <div key={`${day.date}-${stop.venue}-${index}`} className="schedule-stop rounded-md border border-slate-200 bg-slate-50 p-2.5">
                   <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
                     <div className="min-w-0">
-                      <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">{stop.category}</p>
-                      <h4 className="mt-1 text-base font-semibold">{stop.venue}</h4>
+                      <p className="text-xs uppercase tracking-[0.18em] text-champagne-700">{stop.category}</p>
+                      <h4 className="mt-1 text-base font-semibold text-ink-950">{stop.venue}</h4>
                     </div>
-                    <span className="rounded-md border border-champagne-700/40 px-2 py-1 text-xs text-champagne-200">{index + 1}</span>
+                    <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600">{index + 1}</span>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1"><Clock className="size-4 text-champagne-300" />{stop.time}</span>
-                    <span className="inline-flex items-center gap-1"><MapPin className="size-4 text-champagne-300" />{stop.area}</span>
+                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
+                    <span className="inline-flex items-center gap-1"><Clock className="size-4 text-champagne-700" />{stop.time}</span>
+                    <span className="inline-flex items-center gap-1"><MapPin className="size-4 text-champagne-700" />{stop.area}</span>
                   </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{stop.why}</p>
-                  <p className="mt-2 text-sm font-medium text-champagne-100">{stop.bookingAngle}</p>
+                  <p className="mt-2 text-sm text-slate-600">{stop.why}</p>
+                  <p className="mt-2 text-sm font-medium text-ink-950">{stop.bookingAngle}</p>
                 </div>
               ))}
             </div>
-            {day.note && <p className="mt-4 rounded-md bg-secondary/60 p-3 text-sm text-muted-foreground">{day.note}</p>}
+            {day.note && <p className="mt-4 rounded-md bg-slate-50 p-3 text-sm text-slate-600">{day.note}</p>}
           </LuxuryCard>
         ))}
       </div>

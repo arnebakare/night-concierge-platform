@@ -154,6 +154,10 @@ body {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
 }
 
+.cms-shell .action-tile svg {
+  color: #8a6d22 !important;
+}
+
 .cms-shell .action-tile:hover {
   border-color: #cbd5e1 !important;
   background: #f8fafc !important;
@@ -167,6 +171,15 @@ body {
 .cms-shell .lead-row {
   background: #ffffff !important;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
+}
+
+.cms-shell .lead-row p,
+.cms-shell .lead-row span,
+.cms-shell .client-row p,
+.cms-shell .client-row span,
+.cms-shell .link-row p,
+.cms-shell .link-row span {
+  color: inherit;
 }
 
 .cms-shell .compact-list {
@@ -229,6 +242,17 @@ body {
 
 .cms-shell details {
   box-shadow: none !important;
+}
+
+.cms-shell details.rounded-lg,
+.cms-shell details.rounded-md {
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.cms-shell summary {
+  color: #0f172a !important;
 }
 
 .cms-shell details[open] summary {
@@ -316,6 +340,72 @@ body {
 .cms-shell .planner-panel h2,
 .cms-shell .planner-panel h3 {
   color: #0f172a;
+}
+
+.cms-shell .sales-assistant,
+.cms-shell .request-command,
+.cms-shell .offer-panel {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.cms-shell .message-panel {
+  border-color: #e2e8f0 !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.cms-shell .message-panel p {
+  color: #0f172a !important;
+}
+
+.cms-shell .message-panel .text-muted-foreground {
+  color: #475569 !important;
+}
+
+.cms-shell .planner-panel label {
+  border-color: #e2e8f0 !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.cms-shell .planner-panel label:has(input:checked) {
+  border-color: #8a6d22 !important;
+  background: #fff8e7 !important;
+}
+
+.cms-shell .text-muted-foreground {
+  color: #64748b !important;
+}
+
+.cms-shell .text-champagne-100,
+.cms-shell .text-champagne-200,
+.cms-shell .text-champagne-300 {
+  color: #8a6d22 !important;
+}
+
+.cms-shell .border-champagne-700\/40,
+.cms-shell .border-champagne-700\/35,
+.cms-shell .border-champagne-700\/30,
+.cms-shell .border-champagne-700\/25,
+.cms-shell .border-champagne-700\/20 {
+  border-color: #e2e8f0 !important;
+}
+
+.cms-shell .bg-card,
+.cms-shell .bg-card\/80,
+.cms-shell .bg-card\/75,
+.cms-shell .bg-card\/70 {
+  background: #ffffff !important;
+}
+
+.cms-shell .bg-secondary,
+.cms-shell .bg-secondary\/80,
+.cms-shell .bg-secondary\/70,
+.cms-shell .bg-secondary\/60,
+.cms-shell .bg-secondary\/50,
+.cms-shell .bg-secondary\/40 {
+  background: #f8fafc !important;
 }
 
 .cms-shell .text-champagne-50,

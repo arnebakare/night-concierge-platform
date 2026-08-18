@@ -7,18 +7,18 @@ import { formatEnum } from "@/lib/utils";
 export function ClientCard({ client, href }: Readonly<{ client: Client; href: string }>) {
   return (
     <Link href={href} className="client-card block">
-      <LuxuryCard className="client-row transition hover:border-champagne-300/60">
+      <LuxuryCard className="client-row bg-white text-ink-950 transition hover:border-champagne-600/70">
         <div className="grid gap-1.5 sm:grid-cols-[minmax(180px,1.2fr)_minmax(140px,0.75fr)_auto] sm:items-center">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold leading-tight md:text-base">{client.name}</p>
-            <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+            <p className="truncate text-sm font-semibold leading-tight text-ink-950 md:text-base">{client.name}</p>
+            <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-slate-500">
               <Phone className="size-3.5 shrink-0" />{client.phone}
             </p>
           </div>
-          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <p className="flex items-center gap-1.5 text-xs text-slate-500">
             <ShieldAlert className="size-3.5" />{formatEnum(client.status)}
           </p>
-          <span className="w-fit rounded-full border border-champagne-700/50 px-2 py-0.5 text-[11px] font-semibold text-champagne-100">
+          <span className="w-fit rounded-full border border-champagne-600/35 bg-champagne-300/15 px-2 py-0.5 text-[11px] font-semibold text-champagne-800">
             <Crown className="mr-1 inline size-3" />{client.vip_level}
           </span>
         </div>

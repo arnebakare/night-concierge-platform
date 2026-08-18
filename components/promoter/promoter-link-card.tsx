@@ -8,12 +8,12 @@ import { setPromoterLinkActive } from "@/lib/actions/management-actions";
 
 export function PromoterLinkCard({ id, title, subtitle, url, active = true }: Readonly<{ id: string; title: string; subtitle?: string; url: string; active?: boolean }>) {
   return (
-    <LuxuryCard className={`client-row link-row ${active ? "" : "opacity-70"}`}>
+    <LuxuryCard className={`client-row link-row bg-white text-ink-950 ${active ? "" : "opacity-70"}`}>
       <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold md:text-base">{title} <span className="ml-1 text-xs text-muted-foreground">{active ? "ACTIVE" : "ARCHIVED"}</span></p>
-          {subtitle && <p className="text-sm text-champagne-300">{subtitle}</p>}
-          <p className="truncate text-sm text-muted-foreground">{url}</p>
+          <p className="truncate text-sm font-semibold text-ink-950 md:text-base">{title} <span className="ml-1 text-xs text-slate-500">{active ? "ACTIVE" : "ARCHIVED"}</span></p>
+          {subtitle && <p className="text-sm text-champagne-700">{subtitle}</p>}
+          <p className="truncate text-sm text-slate-500">{url}</p>
         </div>
         <div className="grid grid-cols-2 gap-2 md:flex">
           <Button className="w-full" size="sm" onClick={() => navigator.clipboard.writeText(url)}>
@@ -29,9 +29,9 @@ export function PromoterLinkCard({ id, title, subtitle, url, active = true }: Re
           </form>
         </div>
       </div>
-      <details className="mt-3 rounded-md border border-champagne-700/30 bg-secondary/60 p-3">
-        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-champagne-100">
-          <QrCode className="size-4 text-champagne-300" /> Show QR code
+      <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink-950">
+          <QrCode className="size-4 text-champagne-700" /> Show QR code
         </summary>
         <div className="mt-3 rounded-lg bg-white p-3">
           <QRCodeSVG value={url} className="h-auto w-full max-w-56" />

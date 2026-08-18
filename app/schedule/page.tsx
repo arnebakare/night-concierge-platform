@@ -25,9 +25,9 @@ export default async function SchedulePage() {
               <Sparkles className="size-5" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold">Build a customer-ready party trail</h2>
+              <h2 className="text-xl font-semibold">Build a customer-ready party plan</h2>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                Choose dates and spend level. AI suggests beach-club parties, DJs, dinner only where it helps the night, and clubs per day, with La Plage and Le Jade prioritized on Wednesdays and Sundays.
+                Choose dates and spend level. The plan should rotate venues, prioritize real DJ programming, and keep La Plage into Le Jade strong on Wednesdays and Sundays.
               </p>
             </div>
           </div>
@@ -45,13 +45,13 @@ export default async function SchedulePage() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <SpendOption value="NORMAL" label="Normal" description="Polished party flow" defaultChecked />
-              <SpendOption value="HIGH_SPEND" label="High spend" description="Best tables and bigger nights" />
+              <SpendOption value="NORMAL" label="Normal" description="Good venues, sensible flow" defaultChecked />
+              <SpendOption value="HIGH_SPEND" label="High spend" description="Best rooms, bigger DJs" />
             </div>
 
             <label className="space-y-2">
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-champagne-300">Client preference optional</span>
-              <Textarea name="clientContext" placeholder="Example: group of 6, wants DJs/party beach club, big-name acts if available, one late club option..." />
+              <Textarea name="clientContext" placeholder="Example: 6 people, wants beach clubs and good DJs, no same late club twice unless it is a big act..." />
             </label>
 
             <Button type="submit" size="lg" className="w-full">
@@ -73,14 +73,14 @@ export default async function SchedulePage() {
         <div className="compact-list grid gap-2">
           {plans.slice(0, 4).map((plan) => (
             <Link key={plan.id} href={`/schedule/plans/${plan.id}`} className="block">
-              <LuxuryCard className="client-row transition hover:border-champagne-300/60">
+      <LuxuryCard className="client-row bg-white text-ink-950 transition hover:border-champagne-600/70">
                 <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_auto] sm:items-center">
                   <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">{plan.source} · {plan.spend_profile === "HIGH_SPEND" ? "High spend" : "Normal"}</p>
-                    <h3 className="mt-1 truncate text-base font-semibold">{plan.title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{formatDate(plan.date_from)}{plan.date_from === plan.date_to ? "" : ` to ${formatDate(plan.date_to)}`}</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-champagne-700">{plan.source} · {plan.spend_profile === "HIGH_SPEND" ? "High spend" : "Normal"}</p>
+                    <h3 className="mt-1 truncate text-base font-semibold text-ink-950">{plan.title}</h3>
+                    <p className="mt-1 text-sm text-slate-500">{formatDate(plan.date_from)}{plan.date_from === plan.date_to ? "" : ` to ${formatDate(plan.date_to)}`}</p>
                   </div>
-                  <CalendarDays className="size-5 text-champagne-300" />
+                  <CalendarDays className="size-5 text-champagne-700" />
                 </div>
               </LuxuryCard>
             </Link>

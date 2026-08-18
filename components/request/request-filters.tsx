@@ -17,8 +17,8 @@ export function RequestFilters({
   return (
     <details className="mb-4 rounded-lg border border-champagne-700/35 bg-card/75 p-2.5 ring-1 ring-white/[0.025] backdrop-blur">
       <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-champagne-100">
-        <span className="flex items-center gap-2"><Search className="size-4 text-champagne-300" /> Refine requests</span>
-        <span className="text-xs font-normal text-muted-foreground">Filters</span>
+        <span className="flex items-center gap-2"><Search className="size-4 text-champagne-300" /> Search and filter</span>
+        <span className="text-xs font-normal text-muted-foreground">{compactFilterLabel(values)}</span>
       </summary>
       <form action={action} className="mt-3">
         <div className="request-filter-grid grid gap-3 md:grid-cols-3 xl:grid-cols-[1.4fr_repeat(5,1fr)_auto]">
@@ -61,4 +61,9 @@ function statusLabel(status: RequestStatus) {
   if (status === "ARRIVED") return "Completed";
   if (status === "CANCELLED") return "Archived";
   return formatEnum(status);
+}
+
+function compactFilterLabel(values: { status?: string; type?: string; date?: string; q?: string; club?: string; promoter?: string }) {
+  const count = [values.status, values.type, values.date, values.q, values.club, values.promoter].filter(Boolean).length;
+  return count ? `${count} active` : "Quick filters";
 }

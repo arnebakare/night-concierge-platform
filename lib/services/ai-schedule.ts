@@ -185,6 +185,11 @@ function buildPrompt(input: ScheduleInput, date: string, plannerRules: AiVenueRu
     previousDays: previousDayContext,
     alreadyUsedVenueNames: [...new Set(previousDayContext.flatMap((day) => day.venues))],
     recentlyUsedByCategory: recentlyUsedByCategory(previousDays),
+    rotationPools: {
+      beachClub: ["La Plage Casanis", "Playa Padre", "La Cabane", "Nikki Beach Marbella", "Sublim Beach & Pool Club", "Ocean Club Marbella", "Nao Pool Club"],
+      restaurant: ["Mamzel", "Motel Particulier", "Nobu Marbella", "Cipriani Marbella", "Nota Blu", "GAIA Marbella", "Coya Marbella", "Puente Romano restaurants"],
+      nightclub: ["Le Jade", "Momento", "Bonbonniere", "Pangea", "Olivia Valere", "Motel Particulier late lounge"]
+    },
     rules: [
       "Return exactly one day object in the days array.",
       "The only day.date must exactly equal the requested date.",
@@ -202,10 +207,13 @@ function buildPrompt(input: ScheduleInput, date: string, plannerRules: AiVenueRu
       "Prioritize big DJ names or clearly DJ-led events over generic restaurant stops when they happen during the selected dates.",
       "Do not invent specific DJ names. If no DJ is known for the exact venue and date, say DJ/programming to confirm rather than naming one.",
       "Do not repeat a specific DJ name on multiple days unless a current source clearly shows that DJ plays each of those exact dates.",
-      "Use previousDays and alreadyUsedVenueNames to make the full trip feel varied. Avoid repeating the same base venue on consecutive days.",
-      "Across a multi-day range, do not repeat the same base venue more than once unless there is a confirmed big DJ, artist, or named event on that exact date. If repeating, explain the event reason in why.",
+      "Use rotationPools, previousDays, alreadyUsedVenueNames, and recentlyUsedByCategory to make the full trip feel varied. Pick from different venues before repeating.",
+      "Across a multi-day range, do not repeat the same base venue more than once unless there is a confirmed big DJ, artist, or named event on that exact date. If repeating, explain the event reason in why and include the DJ/event name in stop.venue.",
       "If the previous day already used a beach club, dinner venue, or nightclub, choose a different base venue in that same category unless a clearly named DJ or event makes the repeat worth it.",
       "Do not use La Plage Casanis, Mamzel, or Le Jade on consecutive days unless a named DJ/artist is written in that specific stop. Secret Guest is not enough reason to repeat.",
+      "Do not pair the exact same three-stop pattern on two different days. A human promoter should feel that every day has its own purpose.",
+      "For normal spend, prioritize variety and approachable good taste over always choosing the most famous or expensive room.",
+      "For high spend, include premium options but still rotate rooms and only repeat when there is a strong named event reason.",
       "Vary the beach club, dinner, and late-night options across the date range. If yesterday used La Plage Casanis, Mamzel, and Le Jade, today should normally use different venues.",
       "Use localPlannerRules as the Marbella taste layer. Higher weight means the venue should be preferred when the date and client fit, not that it should be repeated daily. Priority days mean the venue is especially relevant on those weekdays.",
       "Respect avoidAfterVenueNames to avoid over-heavy or locally awkward sequences. For example, if one venue says to avoid another after it, do not put both in the same day unless there is a major DJ/event reason.",
