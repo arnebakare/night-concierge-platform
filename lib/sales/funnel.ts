@@ -35,19 +35,19 @@ export function parseWhatsAppLead(raw: string, clubs: Club[]): LeadDraft {
   const club = clubs.find((item) => lower.includes(item.name.toLowerCase()) || lower.includes(item.slug.replaceAll("-", " "))) ?? clubs[0];
   const requestType = inferRequestType(lower);
   const phone = text.match(/(\+?\d[\d\s().-]{6,}\d)/)?.[1]?.trim() ?? "";
-  const guests = lower.match(/(\d{1,3})\s*(pax|people|persons|guests|guest|personer|pers|personas|personas?)/)?.[1];
-  const budget = text.match(/(?:€|eur|budget|max|min|spend|gasto|presupuesto|pris|budget)\s*[:\-]?\s*(€?\s?\d{2,6}(?:\s?€)?)/i)?.[1] ?? "";
+  const guests = inferGuestCount(lower);
+  const budget = inferBudget(text);
   const arrival = inferArrivalTime(text);
   const language = inferLanguage(lower);
 
   return {
-    clientName: "",
+    clientName: inferClientName(text),
     phone,
     clubId: club?.id ?? "",
     requestType,
     requestedDate: inferDate(text),
     arrivalTime: arrival,
-    guestCount: guests ? Number(guests) : requestType === "TABLE" ? 4 : 2,
+    guestCount: guests ?? (requestType === "TABLE" ? 4 : 2),
     budget,
     message: text,
     language
@@ -129,6 +129,34 @@ function inferRequestType(lower: string): RequestType {
   if (/\b(vip|bottle|botella|service)\b/.test(lower)) return "VIP_SERVICE";
   if (/\b(guestlist|guest list|lista|gästlista)\b/.test(lower)) return "GUESTLIST";
   return "GENERAL";
+}
+
+function inferClientName(text: string) {
+  const patterns = [
+    /\b(?:i am|i'm|im|this is|my name is|name is)\s+([A-ZÅÄÖÁÉÍÓÚÑ][\p{L}'-]{1,}(?:\s+[A-ZÅÄÖÁÉÍÓÚÑ][\p{L}'-]{1,})?)/u,
+    /\b(?:soy|me llamo|mi nombre es)\s+([A-ZÁÉÍÓÚÑ][\p{L}'-]{1,}(?:\s+[A-ZÁÉÍÓÚÑ][\p{L}'-]{1,})?)/u,
+    /\b(?:jag heter|det är|mitt namn är)\s+([A-ZÅÄÖ][\p{L}'-]{1,}(?:\s+[A-ZÅÄÖ][\p{L}'-]{1,})?)/u
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match?.[1]) return match[1].trim();
+  }
+  return "";
+}
+
+function inferGuestCount(lower: string) {
+  const direct = lower.match(/\b(\d{1,3})\s*(pax|people|persons|guests|guest|personer|pers|personas|personas?|friends|girls|guys|people total)\b/)?.[1];
+  if (direct) return Number(direct);
+  const forNumber = lower.match(/\b(?:for|för|para|table for|bord för|mesa para)\s+(\d{1,3})\b/)?.[1];
+  if (forNumber) return Number(forNumber);
+  return null;
+}
+
+function inferBudget(text: string) {
+  const explicit = text.match(/(?:€|eur|budget|max|min|spend|minimum|gasto|presupuesto|pris|budget)\s*[:\-]?\s*(€?\s?\d{2,6}(?:[.,]\d{3})?\s?(?:€|eur|k)?)/i)?.[1];
+  if (explicit) return explicit.trim();
+  const shorthand = text.match(/\b(\d+(?:[.,]\d)?\s?k)\b/i)?.[1];
+  return shorthand?.trim() ?? "";
 }
 
 function inferDate(lower: string) {

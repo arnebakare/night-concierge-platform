@@ -8,7 +8,7 @@ import { SalesAssistantPanel } from "@/components/request/sales-assistant-panel"
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
 import { RequestStatusControl } from "@/components/request/request-status-control";
 import { updateRequestClientContact } from "@/lib/actions/management-actions";
-import type { ConciergeRequest } from "@/lib/types";
+import type { ConciergeRequest, RequestStatus } from "@/lib/types";
 import { isTemporaryPhone, whatsAppHref } from "@/lib/sales/funnel";
 import { formatEnum } from "@/lib/utils";
 
@@ -41,6 +41,8 @@ export function RequestDetail({
           <Fact icon={Users} label="Guests" value={String(request.guest_count)} />
           <Fact icon={MessageCircle} label="Budget" value={request.budget ?? "Not set"} />
         </div>
+
+        <WorkflowStrip status={request.status} />
 
         <RequestStatusControl requestId={request.id} status={request.status} returnTo={backHref} />
       </LuxuryCard>
@@ -76,7 +78,7 @@ export function RequestDetail({
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          VIP {request.clients?.vip_level ?? "STANDARD"} · {formatEnum(request.clients?.status ?? "NORMAL")}
+          Profile {formatEnum(request.clients?.vip_level ?? "STANDARD")} · {formatEnum(request.clients?.status ?? "NORMAL")}
         </p>
         <details className="rounded-md border border-champagne-700/30 bg-ink-900/50 p-3">
           <summary className="cursor-pointer text-sm font-semibold text-champagne-100">Add or fix contact details</summary>
@@ -129,6 +131,30 @@ function Fact({
         <Icon className="size-4 text-champagne-300" />
       </div>
       <p className="mt-2 truncate text-sm font-semibold">{value}</p>
+    </div>
+  );
+}
+
+const workflow: { status: RequestStatus; label: string }[] = [
+  { status: "NEW", label: "Received" },
+  { status: "CONTACTED", label: "Replied" },
+  { status: "PENDING", label: "Checking" },
+  { status: "CONFIRMED", label: "Confirmed" },
+  { status: "ARRIVED", label: "Done" }
+];
+
+function WorkflowStrip({ status }: Readonly<{ status: RequestStatus }>) {
+  const currentIndex = Math.max(0, workflow.findIndex((step) => step.status === status));
+  return (
+    <div className="grid grid-cols-5 gap-1.5">
+      {workflow.map((step, index) => {
+        const active = index <= currentIndex && !["DECLINED", "CANCELLED", "NO_SHOW"].includes(status);
+        return (
+          <div key={step.status} className={active ? "rounded-md bg-champagne-300/20 px-2 py-2 text-center text-[11px] font-semibold text-champagne-100" : "rounded-md bg-secondary px-2 py-2 text-center text-[11px] text-muted-foreground"}>
+            {step.label}
+          </div>
+        );
+      })}
     </div>
   );
 }

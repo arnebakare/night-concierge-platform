@@ -16,13 +16,13 @@ export default async function ManagerPromotersPage({ searchParams }: Readonly<{ 
       <div className="compact-list grid gap-2">
         {promoters.map((promoter) => (
           <Link key={promoter.id} href={`/manager/promoters/${promoter.id}`}>
-            <LuxuryCard className="client-row transition hover:border-champagne-300/60">
+            <LuxuryCard className="client-row bg-white text-ink-950 transition hover:border-champagne-600/70">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold md:text-base">{promoter.name}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{promoter.request_count} requests</p>
+                  <p className="truncate text-sm font-semibold text-ink-950 md:text-base">{promoter.name}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{promoter.request_count} requests</p>
                 </div>
-                <span className={promoter.active ? "text-xs font-semibold text-emerald-400" : "text-xs font-semibold text-muted-foreground"}>
+                <span className={promoter.active ? "rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700" : "rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500"}>
                   {promoter.active ? "Active" : "Suspended"}
                 </span>
               </div>

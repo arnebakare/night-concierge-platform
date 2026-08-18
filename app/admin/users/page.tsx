@@ -43,16 +43,16 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
         </form>
         </details>
       </LuxuryCard>
-      <form action="/admin/users" className="mb-4 grid gap-2 rounded-lg border border-champagne-700/40 bg-card p-2.5 md:grid-cols-[1fr_180px_180px_auto]"><Input name="q" defaultValue={filters.q ?? ""} placeholder="Search name, email or phone" /><select name="role" defaultValue={filters.role ?? ""} className="h-10 rounded-md border bg-input px-3 text-sm"><option value="">All roles</option>{["PROMOTER", "PROMOTER_MANAGER", "CLIENT", "SUPER_ADMIN"].map((role) => <option key={role} value={role}>{formatEnum(role)}</option>)}</select><select name="active" defaultValue={filters.active ?? ""} className="h-10 rounded-md border bg-input px-3 text-sm"><option value="">Any access</option><option value="active">Active</option><option value="suspended">Suspended</option></select><Button type="submit">Filter</Button></form>
+      <form action="/admin/users" className="mb-4 grid gap-2 rounded-lg border border-slate-200 bg-white p-2.5 md:grid-cols-[1fr_180px_180px_auto]"><Input name="q" defaultValue={filters.q ?? ""} placeholder="Search name, email or phone" /><select name="role" defaultValue={filters.role ?? ""} className="h-10 rounded-md border bg-input px-3 text-sm"><option value="">All roles</option>{["PROMOTER", "PROMOTER_MANAGER", "CLIENT", "SUPER_ADMIN"].map((role) => <option key={role} value={role}>{formatEnum(role)}</option>)}</select><select name="active" defaultValue={filters.active ?? ""} className="h-10 rounded-md border bg-input px-3 text-sm"><option value="">Any access</option><option value="active">Active</option><option value="suspended">Suspended</option></select><Button type="submit">Filter</Button></form>
       <div className="compact-list grid gap-2">
         {users.map((user) => (
-          <LuxuryCard key={`${user.id}-${user.role}`} className={`client-row ${!user.active ? "opacity-70" : ""}`}>
+          <LuxuryCard key={`${user.id}-${user.role}`} className={`client-row bg-white text-ink-950 ${!user.active ? "opacity-70" : ""}`}>
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <p className="truncate font-semibold">{user.name ?? user.email}</p>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground md:text-sm">{user.email} · {formatEnum(user.role)}</p>
+                <p className="truncate font-semibold text-ink-950">{user.name ?? user.email}</p>
+                <p className="mt-0.5 truncate text-xs text-slate-500 md:text-sm">{user.email} · {formatEnum(user.role)}</p>
               </div>
-              <span className={user.active ? "rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700" : "rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-muted-foreground"}>
+              <span className={user.active ? "rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700" : "rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500"}>
                 {user.active ? "Active" : "Suspended"}
               </span>
             </div>

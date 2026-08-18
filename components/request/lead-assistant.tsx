@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition, type Dispatch, type SetStateAction } from "react";
-import { MessageCircle, Send, Wand2 } from "lucide-react";
+import { CalendarDays, MessageCircle, Send, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,12 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
   };
   const availabilityMessage = buildAvailabilityMessage(salesRequest);
   const clientReply = buildClientReply(salesRequest, draft.language);
+  const missingFields = [
+    !draft.clientName ? "name" : null,
+    !draft.phone ? "phone" : null,
+    !draft.requestedDate ? "date" : null,
+    !draft.clubId ? "venue" : null
+  ].filter(Boolean);
 
   function readMessage() {
     const next = parseWhatsAppLead(raw, clubs);
@@ -84,11 +90,11 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
 
   return (
     <div className="space-y-4">
-      <LuxuryCard className="space-y-3">
+      <LuxuryCard className="lead-intake-card space-y-3">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Fast intake</p>
           <h2 className="mt-1 text-xl font-semibold">Paste a WhatsApp lead</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Turn a client message into a clean request, venue check, and reply.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Paste the message. We read the useful parts, then you correct anything missing.</p>
         </div>
         <Textarea
           value={raw}
@@ -107,7 +113,7 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
             <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Booking draft</p>
             <h3 className="mt-1 text-lg font-semibold">Check the essentials</h3>
           </div>
-          <span className="rounded-md bg-secondary px-3 py-1 text-xs text-muted-foreground">{draft.language.toUpperCase()}</span>
+          <span className="rounded-md bg-secondary px-3 py-1 text-xs text-muted-foreground">{missingFields.length ? `Missing ${missingFields.join(", ")}` : draft.language.toUpperCase()}</span>
         </div>
 
         {matchingClients.length > 0 && (
@@ -155,6 +161,16 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
           <Field label="Budget">
             <Input value={draft.budget} onChange={(event) => setDraftField("budget", event.target.value, setDraft)} placeholder="Optional" />
           </Field>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <QuickValue icon={CalendarDays} label="Today" onClick={() => setDraftField("requestedDate", dateString(0), setDraft)} />
+          <QuickValue icon={CalendarDays} label="Tomorrow" onClick={() => setDraftField("requestedDate", dateString(1), setDraft)} />
+          <QuickValue icon={CalendarDays} label="Weekend" onClick={() => setDraftField("requestedDate", nextWeekendDate(), setDraft)} />
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {["21:00", "23:00", "01:00", "TBC"].map((time) => (
+            <QuickValue key={time} label={time} active={draft.arrivalTime === time} onClick={() => setDraftField("arrivalTime", time, setDraft)} />
+          ))}
         </div>
         <Field label="Client message">
           <Textarea value={draft.message} onChange={(event) => setDraftField("message", event.target.value, setDraft)} />
@@ -212,4 +228,33 @@ function Field({ label, children }: Readonly<{ label: string; children: React.Re
       {children}
     </div>
   );
+}
+
+function QuickValue({ label, icon: Icon, active, onClick }: Readonly<{ label: string; icon?: typeof CalendarDays; active?: boolean; onClick: () => void }>) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={active ? "flex min-h-10 items-center justify-center gap-1 rounded-md border border-champagne-600 bg-champagne-300/15 px-2 text-sm font-semibold text-champagne-800" : "flex min-h-10 items-center justify-center gap-1 rounded-md border border-champagne-700/35 bg-secondary px-2 text-sm text-muted-foreground"}
+    >
+      {Icon && <Icon className="size-3.5" />}
+      {label}
+    </button>
+  );
+}
+
+function dateString(offset: number) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + offset);
+  return date.toISOString().slice(0, 10);
+}
+
+function nextWeekendDate() {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  const day = date.getDay();
+  const daysUntilSaturday = (6 - day + 7) % 7 || 7;
+  date.setDate(date.getDate() + daysUntilSaturday);
+  return date.toISOString().slice(0, 10);
 }

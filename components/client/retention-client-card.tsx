@@ -12,15 +12,15 @@ export function RetentionClientCard({ client }: Readonly<{ client: RetentionClie
     : "";
 
   return (
-    <LuxuryCard className="retention-card client-row">
+    <LuxuryCard className="retention-card client-row bg-white text-ink-950">
       <div className="grid gap-3 lg:grid-cols-[minmax(180px,0.8fr)_minmax(260px,1.2fr)_auto] lg:items-center">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold leading-tight md:text-base">{client.name}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{dormantLabel}</p>
-          {client.last_outreach_at && <p className="mt-1 text-xs text-champagne-300">Last contacted {new Date(client.last_outreach_at).toLocaleDateString()}</p>}
+          <p className="truncate text-sm font-semibold leading-tight text-ink-950 md:text-base">{client.name}</p>
+          <p className="mt-0.5 text-xs text-slate-500">{dormantLabel}</p>
+          {client.last_outreach_at && <p className="mt-1 text-xs text-champagne-700">Last contacted {new Date(client.last_outreach_at).toLocaleDateString()}</p>}
         </div>
 
-        <div className="rounded-md border border-champagne-700/30 bg-ink-950/50 p-2.5 text-xs leading-relaxed text-muted-foreground">
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5 text-xs leading-relaxed text-slate-600">
           {message}
         </div>
 
@@ -59,5 +59,5 @@ export function RetentionClientCard({ client }: Readonly<{ client: RetentionClie
 
 export function buildRetentionMessage(name: string) {
   const firstName = name.split(" ").filter(Boolean)[0] || name;
-  return `Hi ${firstName}, we would love to host you again in Marbella. If you are planning a night out, a table, guestlist, or something more private, message us here and we will arrange it personally.`;
+  return `Hi ${firstName}, hope you are well. If you are coming to Marbella again soon, message me here and I can help with tables, guestlist, or a good plan for the night.`;
 }
