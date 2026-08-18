@@ -12,6 +12,7 @@ type EditableService = {
   id: string;
   label: string;
   description: string;
+  priceHint?: string;
   requestType: RequestType;
   icon: string;
   active: boolean;
@@ -41,6 +42,7 @@ export function ClubExperienceForm({
         id: `service-${Date.now()}`,
         label: "New service",
         description: "",
+        priceHint: "",
         requestType: "VIP_SERVICE",
         icon: "Sparkles",
         active: true
@@ -77,7 +79,8 @@ export function ClubExperienceForm({
                 {icons.map((icon) => <option key={icon} value={icon}>{icon}</option>)}
               </select>
               <Button type="button" variant="outline" onClick={() => updateService(index, { active: false })}><Trash2 className="size-4" /> Remove</Button>
-              <Input className="sm:col-span-4" value={service.description} onChange={(event) => updateService(index, { description: event.target.value })} aria-label="Service description" placeholder="Short description shown on the request form" />
+              <Input className="sm:col-span-2" value={service.description} onChange={(event) => updateService(index, { description: event.target.value })} aria-label="Service description" placeholder="Short description shown on the request form" />
+              <Input className="sm:col-span-2" value={service.priceHint ?? ""} onChange={(event) => updateService(index, { priceHint: event.target.value })} aria-label="Service price hint" placeholder="Example: Minimum spend confirmed first" />
             </div>
           </div>
         ))}

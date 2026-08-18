@@ -38,6 +38,7 @@ export function RequestLeadRow({
                 <div className="shrink-0 md:hidden"><RequestStatusBadge status={request.status} /></div>
               </div>
               <p className="truncate text-xs text-slate-500">{request.clubs?.name ?? "Club"} · {service ?? formatEnum(request.request_type)}</p>
+              <p className="mt-0.5 truncate text-[11px] text-slate-400">{request.promoter?.name ?? "Unassigned"} · {formatEnum(request.source)}</p>
             </div>
           </div>
         </Link>

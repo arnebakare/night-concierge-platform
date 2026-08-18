@@ -252,6 +252,7 @@ export function RequestFormSteps({
                 <span>
                   <span className="block font-semibold">{service.label}</span>
                   <span className="mt-1 block text-xs leading-snug text-muted-foreground">{service.description}</span>
+                  {service.priceHint && <span className="mt-2 inline-flex rounded-full border border-champagne-700/35 px-2 py-0.5 text-[11px] text-champagne-200">{service.priceHint}</span>}
                 </span>
                 {active && <Check className="absolute right-3 top-3 size-4 text-champagne-300" />}
               </button>
@@ -380,6 +381,9 @@ export function RequestFormSteps({
               <div>
                 <p className="text-lg font-semibold">{selectedExperience.wordmark}</p>
                 <p className="text-muted-foreground">{values.serviceLabel || formatEnum(values.requestType)}</p>
+                {selectedServiceHint(selectedExperience.services, values.serviceLabel) && (
+                  <p className="text-champagne-300">{selectedServiceHint(selectedExperience.services, values.serviceLabel)}</p>
+                )}
                 {selectedOccasion && <p className="text-champagne-300">{selectedOccasion.name} · {formatEventDate(selectedOccasion.event_date)}</p>}
               </div>
             </div>
@@ -420,6 +424,10 @@ export function RequestFormSteps({
       </div>
     </LuxuryCard>
   );
+}
+
+function selectedServiceHint(services: ReturnType<typeof getClubVenueExperience>["services"], serviceLabel?: string) {
+  return services.find((service) => service.label === serviceLabel)?.priceHint ?? "";
 }
 
 function VenueLogo({ club, monogram, size = "md" }: Readonly<{ club?: Club | null; monogram: string; size?: "md" | "lg" | "xl" }>) {

@@ -5,6 +5,7 @@ export type VenueService = {
   id: string;
   label: string;
   description: string;
+  priceHint?: string;
   requestType: RequestType;
   icon: typeof Crown;
   iconName?: string;
@@ -20,9 +21,9 @@ export type VenueExperience = {
 };
 
 const defaultServices: VenueService[] = [
-  { id: "guestlist", label: "Guestlist", description: "Names on the list with quick confirmation.", requestType: "GUESTLIST", icon: Users },
-  { id: "vip-table", label: "VIP table", description: "Table request with spend and group details.", requestType: "TABLE", icon: Crown },
-  { id: "concierge", label: "Concierge request", description: "Ask for help planning the night.", requestType: "GENERAL", icon: Sparkles }
+  { id: "guestlist", label: "Guestlist", description: "Names on the list with quick confirmation.", priceHint: "Host confirms entry details", requestType: "GUESTLIST", icon: Users },
+  { id: "vip-table", label: "VIP table", description: "Table request with spend and group details.", priceHint: "Minimum spend confirmed by host", requestType: "TABLE", icon: Crown },
+  { id: "concierge", label: "Concierge request", description: "Ask for help planning the night.", priceHint: "Personal reply on WhatsApp", requestType: "GENERAL", icon: Sparkles }
 ];
 
 export const venueExperiences: Record<string, VenueExperience> = {
@@ -33,11 +34,11 @@ export const venueExperiences: Record<string, VenueExperience> = {
     tagline: "Beachfront lunch, sunset, VIP hosting",
     mood: "Golden hour beach club",
     services: [
-      { id: "beach-bed", label: "Beach bed", description: "Daytime sunbed or beach setup.", requestType: "VIP_SERVICE", icon: Sun },
-      { id: "lunch-table", label: "Lunch table", description: "Restaurant table for lunch or sunset.", requestType: "TABLE", icon: Utensils },
-      { id: "vip-table", label: "VIP table", description: "Premium table for a hosted group.", requestType: "TABLE", icon: Crown },
-      { id: "guestlist", label: "Guestlist", description: "Names for evening access.", requestType: "GUESTLIST", icon: Users },
-      { id: "celebration", label: "Celebration setup", description: "Birthday, hen group, or special moment.", requestType: "VIP_SERVICE", icon: Sparkles }
+      { id: "beach-bed", label: "Beach bed", description: "Daytime sunbed or beach setup.", priceHint: "Availability checked by host", requestType: "VIP_SERVICE", icon: Sun },
+      { id: "lunch-table", label: "Lunch table", description: "Restaurant table for lunch or sunset.", priceHint: "Final time confirmed by venue", requestType: "TABLE", icon: Utensils },
+      { id: "vip-table", label: "VIP table", description: "Premium table for a hosted group.", priceHint: "Minimum spend confirmed first", requestType: "TABLE", icon: Crown },
+      { id: "guestlist", label: "Guestlist", description: "Names for evening access.", priceHint: "Host confirms conditions", requestType: "GUESTLIST", icon: Users },
+      { id: "celebration", label: "Celebration setup", description: "Birthday, hen group, or special moment.", priceHint: "Tell us the occasion", requestType: "VIP_SERVICE", icon: Sparkles }
     ]
   },
   "le-jade": {
@@ -47,10 +48,10 @@ export const venueExperiences: Record<string, VenueExperience> = {
     tagline: "Late-night after-party energy",
     mood: "After dark",
     services: [
-      { id: "after-party", label: "After-party guestlist", description: "Guestlist for the late move.", requestType: "GUESTLIST", icon: Music2 },
-      { id: "vip-table", label: "VIP table", description: "Late table with bottle service.", requestType: "TABLE", icon: Crown },
-      { id: "bottle-service", label: "Bottle service", description: "Bottle request for a group.", requestType: "VIP_SERVICE", icon: GlassWater },
-      { id: "group-entry", label: "Group entry", description: "Fast access for larger groups.", requestType: "GUESTLIST", icon: Users }
+      { id: "after-party", label: "After-party guestlist", description: "Guestlist for the late move.", priceHint: "Door conditions confirmed", requestType: "GUESTLIST", icon: Music2 },
+      { id: "vip-table", label: "VIP table", description: "Late table with bottle service.", priceHint: "Minimum spend confirmed first", requestType: "TABLE", icon: Crown },
+      { id: "bottle-service", label: "Bottle service", description: "Bottle request for a group.", priceHint: "Bottle options by WhatsApp", requestType: "VIP_SERVICE", icon: GlassWater },
+      { id: "group-entry", label: "Group entry", description: "Fast access for larger groups.", priceHint: "Best route confirmed by host", requestType: "GUESTLIST", icon: Users }
     ]
   },
   mamzel: {
@@ -60,10 +61,10 @@ export const venueExperiences: Record<string, VenueExperience> = {
     tagline: "Dinner show, tables, celebration groups",
     mood: "Show dinner",
     services: [
-      { id: "dinner-show", label: "Dinner show", description: "Dinner reservation with show atmosphere.", requestType: "TABLE", icon: Utensils },
-      { id: "vip-dinner", label: "VIP dinner table", description: "Premium dinner table for a group.", requestType: "TABLE", icon: Crown },
-      { id: "late-table", label: "Late table", description: "Late-night table request.", requestType: "TABLE", icon: Music2 },
-      { id: "celebration", label: "Celebration package", description: "Birthday, hen group, or special occasion.", requestType: "VIP_SERVICE", icon: Sparkles }
+      { id: "dinner-show", label: "Dinner show", description: "Dinner reservation with show atmosphere.", priceHint: "Seating and show time confirmed", requestType: "TABLE", icon: Utensils },
+      { id: "vip-dinner", label: "VIP dinner table", description: "Premium dinner table for a group.", priceHint: "Best table checked by host", requestType: "TABLE", icon: Crown },
+      { id: "late-table", label: "Late table", description: "Late-night table request.", priceHint: "Minimum spend confirmed first", requestType: "TABLE", icon: Music2 },
+      { id: "celebration", label: "Celebration package", description: "Birthday, hen group, or special occasion.", priceHint: "Tell us what you need", requestType: "VIP_SERVICE", icon: Sparkles }
     ]
   },
   "playa-padre": {
@@ -73,9 +74,9 @@ export const venueExperiences: Record<string, VenueExperience> = {
     tagline: "Beach club, lunch, music programming",
     mood: "Boho beach",
     services: [
-      { id: "beach-club", label: "Beach club", description: "Beach club day booking.", requestType: "VIP_SERVICE", icon: Waves },
-      { id: "lunch-table", label: "Lunch table", description: "Lunch reservation for a group.", requestType: "TABLE", icon: Utensils },
-      { id: "event-table", label: "Event table", description: "Table for music programming.", requestType: "TABLE", icon: Music2 }
+      { id: "beach-club", label: "Beach club", description: "Beach club day booking.", priceHint: "Day setup confirmed by host", requestType: "VIP_SERVICE", icon: Waves },
+      { id: "lunch-table", label: "Lunch table", description: "Lunch reservation for a group.", priceHint: "Availability checked first", requestType: "TABLE", icon: Utensils },
+      { id: "event-table", label: "Event table", description: "Table for music programming.", priceHint: "DJ/event details confirmed", requestType: "TABLE", icon: Music2 }
     ]
   },
   momento: {
@@ -85,9 +86,9 @@ export const venueExperiences: Record<string, VenueExperience> = {
     tagline: "Club nights, DJs, tables",
     mood: "Prime club",
     services: [
-      { id: "guestlist", label: "Guestlist", description: "Club guestlist request.", requestType: "GUESTLIST", icon: Users },
-      { id: "vip-table", label: "VIP table", description: "Table with spend and group details.", requestType: "TABLE", icon: Crown },
-      { id: "dj-night", label: "DJ night", description: "Request for a specific event or DJ.", requestType: "VIP_SERVICE", icon: Music2 }
+      { id: "guestlist", label: "Guestlist", description: "Club guestlist request.", priceHint: "Door conditions confirmed", requestType: "GUESTLIST", icon: Users },
+      { id: "vip-table", label: "VIP table", description: "Table with spend and group details.", priceHint: "Minimum spend confirmed first", requestType: "TABLE", icon: Crown },
+      { id: "dj-night", label: "DJ night", description: "Request for a specific event or DJ.", priceHint: "Artist programming checked", requestType: "VIP_SERVICE", icon: Music2 }
     ]
   }
 };
@@ -124,10 +125,11 @@ export function getClubVenueExperience(club?: Club | null): VenueExperience {
 }
 
 export function serializeServicesForAdmin(club?: Club | null) {
-  return getClubVenueExperience(club).services.map(({ id, label, description, requestType, iconName }) => ({
+  return getClubVenueExperience(club).services.map(({ id, label, description, priceHint, requestType, iconName }) => ({
     id,
     label,
     description,
+    priceHint: priceHint ?? "",
     requestType,
     icon: iconName ?? "Sparkles",
     active: true
@@ -158,6 +160,7 @@ function parseServiceConfig(value: Club["service_config"]) {
       id: stringValue(service.id) || `${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${index}`,
       label,
       description: stringValue(service.description) || "Concierge service request.",
+      priceHint: stringValue(service.priceHint),
       requestType: requestType as RequestType,
       icon: iconByName[iconName as keyof typeof iconByName] ?? Sparkles,
       iconName

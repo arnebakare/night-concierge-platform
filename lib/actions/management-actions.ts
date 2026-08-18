@@ -724,6 +724,7 @@ const clubExperienceSchema = z.object({
     id: z.string().trim().min(1).max(80),
     label: z.string().trim().min(2).max(80),
     description: z.string().trim().max(180).optional().default(""),
+    priceHint: z.string().trim().max(120).optional().default(""),
     requestType: z.enum(requestTypesForServices),
     icon: z.enum(serviceIconNames).optional().default("Sparkles"),
     active: z.boolean().optional().default(true)
