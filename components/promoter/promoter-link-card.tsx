@@ -8,22 +8,35 @@ import { setPromoterLinkActive } from "@/lib/actions/management-actions";
 
 export function PromoterLinkCard({ id, title, subtitle, url, active = true }: Readonly<{ id: string; title: string; subtitle?: string; url: string; active?: boolean }>) {
   return (
-    <LuxuryCard className={`space-y-4 ${active ? "" : "opacity-70"}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-lg font-semibold">{title} <span className="ml-1 text-xs text-muted-foreground">{active ? "ACTIVE" : "ARCHIVED"}</span></p>
+    <LuxuryCard className={`client-row link-row ${active ? "" : "opacity-70"}`}>
+      <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold md:text-base">{title} <span className="ml-1 text-xs text-muted-foreground">{active ? "ACTIVE" : "ARCHIVED"}</span></p>
           {subtitle && <p className="text-sm text-champagne-300">{subtitle}</p>}
-          <p className="break-all text-sm text-muted-foreground">{url}</p>
+          <p className="truncate text-sm text-muted-foreground">{url}</p>
         </div>
-        <QrCode className="size-6 text-champagne-300" />
+        <div className="grid grid-cols-2 gap-2 md:flex">
+          <Button className="w-full" size="sm" onClick={() => navigator.clipboard.writeText(url)}>
+            <Copy className="size-4" /> Copy
+          </Button>
+          <form action={setPromoterLinkActive}>
+            <input type="hidden" name="promoterLinkId" value={id} />
+            <input type="hidden" name="active" value={String(!active)} />
+            <Button type="submit" variant="outline" size="sm" className="w-full">
+              {active ? <ShieldOff className="size-4" /> : <Link2 className="size-4" />}
+              {active ? "Archive" : "Restore"}
+            </Button>
+          </form>
+        </div>
       </div>
-      <div className="rounded-lg bg-white p-3">
-        <QRCodeSVG value={url} className="h-auto w-full" />
-      </div>
-      <Button className="w-full" size="lg" onClick={() => navigator.clipboard.writeText(url)}>
-        <Copy className="size-5" /> Copy promoter link
-      </Button>
-      <form action={setPromoterLinkActive}><input type="hidden" name="promoterLinkId" value={id} /><input type="hidden" name="active" value={String(!active)} /><Button type="submit" variant="outline" className="w-full">{active ? <ShieldOff className="size-4" /> : <Link2 className="size-4" />}{active ? "Archive link" : "Restore link"}</Button></form>
+      <details className="mt-3 rounded-md border border-champagne-700/30 bg-secondary/60 p-3">
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-champagne-100">
+          <QrCode className="size-4 text-champagne-300" /> Show QR code
+        </summary>
+        <div className="mt-3 rounded-lg bg-white p-3">
+          <QRCodeSVG value={url} className="h-auto w-full max-w-56" />
+        </div>
+      </details>
     </LuxuryCard>
   );
 }

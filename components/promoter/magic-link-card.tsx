@@ -20,22 +20,25 @@ export function MagicLinkCard({ id, url, clubName, active, useCount, maxUses, ex
   const expired = Boolean(expiresAt && new Date(expiresAt).getTime() < Date.now());
   const promoterWhatsApp = whatsAppHref(promoterPhone);
   return (
-    <LuxuryCard className={!active || expired ? "opacity-70" : undefined}>
-      <div className="flex items-start justify-between gap-3">
-        <div><p className="font-semibold">{clubName}</p><p className="mt-1 text-xs text-muted-foreground">{useCount}{maxUses ? ` of ${maxUses}` : ""} uses · {expiresAt ? `Expires ${new Date(expiresAt).toLocaleDateString()}` : "No expiry"}</p></div>
+    <LuxuryCard className={`client-row link-row ${!active || expired ? "opacity-70" : ""}`}>
+      <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="min-w-0">
+          <p className="truncate font-semibold">{clubName}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{useCount}{maxUses ? ` of ${maxUses}` : ""} uses · {expiresAt ? `Expires ${new Date(expiresAt).toLocaleDateString()}` : "No expiry"}</p>
+          <p className="mt-1 truncate text-xs text-muted-foreground">{url}</p>
+        </div>
         <span className={active && !expired ? "text-xs font-semibold text-emerald-400" : "text-xs font-semibold text-muted-foreground"}>{expired ? "EXPIRED" : active ? "ACTIVE" : "REVOKED"}</span>
       </div>
-      <p className="mt-3 break-all rounded-md bg-secondary p-3 text-xs text-muted-foreground">{url}</p>
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <Button type="button" variant="secondary" onClick={() => navigator.clipboard.writeText(url)}><Copy className="size-4" /> Copy</Button>
+        <Button type="button" variant="secondary" size="sm" onClick={() => navigator.clipboard.writeText(url)}><Copy className="size-4" /> Copy</Button>
         <form action={setMagicLinkActive}>
           <input type="hidden" name="magicLinkId" value={id} />
           <input type="hidden" name="active" value={String(!active)} />
-          <Button type="submit" variant="outline" className="w-full">{active ? <ShieldOff className="size-4" /> : <Link2 className="size-4" />}{active ? "Revoke" : "Restore"}</Button>
+          <Button type="submit" variant="outline" size="sm" className="w-full">{active ? <ShieldOff className="size-4" /> : <Link2 className="size-4" />}{active ? "Revoke" : "Restore"}</Button>
         </form>
       </div>
       {promoterWhatsApp ? (
-        <Button asChild variant="ghost" className="mt-2 w-full">
+        <Button asChild variant="ghost" size="sm" className="mt-2 w-full">
           <a href={promoterWhatsApp} target="_blank" rel="noreferrer">
             <MessageCircle className="size-4" />
             Test promoter WhatsApp

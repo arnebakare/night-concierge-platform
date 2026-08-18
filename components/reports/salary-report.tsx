@@ -54,7 +54,7 @@ export function SalaryReport({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-champagne-300">Salary report</p>
-          <h2 className="mt-1 font-serif text-2xl">Printable table-cost sheet</h2>
+          <h2 className="mt-1 text-xl font-semibold">Printable table-cost sheet</h2>
           <p className="mt-1 text-sm text-muted-foreground">Use the date filters above, adjust dates or table costs, then print or save as PDF.</p>
         </div>
         <Button type="button" variant="secondary" className="print:hidden" onClick={() => window.print()}>
@@ -63,7 +63,7 @@ export function SalaryReport({
         </Button>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-4 grid grid-cols-3 divide-x divide-border overflow-hidden rounded-md border border-border">
         <ReportMetric label="Period" value={rangeLabel} />
         <ReportMetric label="Guests" value={String(totalGuests)} />
         <ReportMetric label="Table cost" value={formatCurrency(totalCost)} />
@@ -136,7 +136,7 @@ export function SalaryReport({
           <Calculator className="size-4 text-champagne-300" />
           Salary report total
         </span>
-        <span className="font-serif text-2xl text-champagne-100">{formatCurrency(totalCost)}</span>
+        <span className="text-2xl font-semibold text-champagne-100">{formatCurrency(totalCost)}</span>
       </div>
     </LuxuryCard>
   );
@@ -144,7 +144,7 @@ export function SalaryReport({
 
 function ReportMetric({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
-    <div className="rounded-lg border border-champagne-700/30 bg-ink-950/50 p-3">
+    <div className="min-w-0 p-3">
       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
       <p className="mt-1 truncate font-semibold text-champagne-100">{value}</p>
     </div>

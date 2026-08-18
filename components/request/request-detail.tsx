@@ -25,17 +25,17 @@ export function RequestDetail({
         </Link>
       </Button>
 
-      <LuxuryCard className="space-y-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-champagne-300">{formatEnum(request.source)}</p>
-            <h2 className="mt-2 font-serif text-3xl">{request.clients?.name ?? "Guest"}</h2>
-            <p className="mt-1 text-muted-foreground">{request.clubs?.name ?? "Club"} · {formatEnum(request.request_type)}</p>
+      <LuxuryCard className="request-command space-y-4">
+        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-start">
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">{formatEnum(request.source)}</p>
+            <h2 className="mt-1 truncate text-2xl font-semibold tracking-tight md:text-3xl">{request.clients?.name ?? "Guest"}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{request.clubs?.name ?? "Club"} · {formatEnum(request.request_type)}</p>
           </div>
           <RequestStatusBadge status={request.status} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 divide-x divide-y divide-border overflow-hidden rounded-md border border-border md:grid-cols-4 md:divide-y-0">
           <Fact icon={CalendarDays} label="Date" value={request.requested_date} />
           <Fact icon={Clock} label="Arrival" value={request.arrival_time ?? "TBC"} />
           <Fact icon={Users} label="Guests" value={String(request.guest_count)} />
@@ -48,10 +48,10 @@ export function RequestDetail({
       <SalesAssistantPanel request={request} returnTo={backHref} />
 
       <LuxuryCard className="space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-champagne-300">Client</p>
-            <h3 className="mt-2 text-xl font-semibold">{request.clients?.name ?? "Guest"}</h3>
+        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-start">
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Client</p>
+            <h3 className="mt-1 truncate text-lg font-semibold">{request.clients?.name ?? "Guest"}</h3>
             <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
               <Phone className="size-4 text-champagne-300" />
               {visiblePhone(request.clients?.phone) || "No phone yet"}
@@ -97,8 +97,8 @@ export function RequestDetail({
       </LuxuryCard>
 
       <LuxuryCard>
-        <p className="text-sm uppercase tracking-[0.24em] text-champagne-300">Message</p>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{request.message ?? "No client message added."}</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Message</p>
+        <p className="mt-3 whitespace-pre-line rounded-md bg-secondary/70 p-3 text-sm leading-relaxed text-muted-foreground">{request.message ?? "No client message added."}</p>
         {request.internal_summary && (
           <p className="mt-3 rounded-md bg-secondary p-3 text-sm text-muted-foreground">{request.internal_summary}</p>
         )}
@@ -123,10 +123,12 @@ function Fact({
   value
 }: Readonly<{ icon: typeof CalendarDays; label: string; value: string }>) {
   return (
-    <div className="rounded-md bg-ink-900/60 p-3">
-      <Icon className="size-4 text-champagne-300" />
-      <p className="mt-2 text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm font-semibold">{value}</p>
+    <div className="bg-card p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <Icon className="size-4 text-champagne-300" />
+      </div>
+      <p className="mt-2 truncate text-sm font-semibold">{value}</p>
     </div>
   );
 }

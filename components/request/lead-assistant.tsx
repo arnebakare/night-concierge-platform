@@ -84,10 +84,10 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
 
   return (
     <div className="space-y-4">
-      <LuxuryCard className="space-y-4">
+      <LuxuryCard className="space-y-3">
         <div>
-          <p className="text-sm uppercase tracking-[0.24em] text-champagne-300">Fast intake</p>
-          <h2 className="mt-2 font-serif text-3xl">Paste a WhatsApp lead</h2>
+          <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Fast intake</p>
+          <h2 className="mt-1 text-xl font-semibold">Paste a WhatsApp lead</h2>
           <p className="mt-2 text-sm text-muted-foreground">Turn a client message into a clean request, venue check, and reply.</p>
         </div>
         <Textarea
@@ -101,11 +101,11 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
         </Button>
       </LuxuryCard>
 
-      <LuxuryCard className="space-y-4">
+      <LuxuryCard className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-champagne-300">Booking draft</p>
-            <h3 className="mt-1 text-xl font-semibold">Check the essentials</h3>
+            <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Booking draft</p>
+            <h3 className="mt-1 text-lg font-semibold">Check the essentials</h3>
           </div>
           <span className="rounded-md bg-secondary px-3 py-1 text-xs text-muted-foreground">{draft.language.toUpperCase()}</span>
         </div>
@@ -126,7 +126,7 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           <Field label="Client">
             <Input value={draft.clientName} onChange={(event) => setDraftField("clientName", event.target.value, setDraft)} placeholder="Name" />
           </Field>

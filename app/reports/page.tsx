@@ -23,15 +23,22 @@ export default async function ReportsPage({ searchParams }: Readonly<{ searchPar
 
   return <AppShell profile={profile} title="Performance" eyebrow="Live reporting">
     <form action="/reports" className="mb-4 grid gap-2 rounded-lg border border-champagne-700/40 bg-card p-3 md:grid-cols-[1fr_1fr_1.4fr_auto]"><Input name="from" type="date" defaultValue={filters.from ?? ""} aria-label="From date" /><Input name="to" type="date" defaultValue={filters.to ?? ""} aria-label="To date" /><select name="club" defaultValue={filters.club ?? ""} className="h-12 rounded-md border bg-input px-3 text-sm"><option value="">All clubs</option>{clubs.map((club) => <option key={club.id} value={club.id}>{club.name}</option>)}</select><Button type="submit">Apply</Button></form>
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-4"><Metric label="Requests" value={String(requests.length)} /><Metric label="Guests" value={String(guests)} /><Metric label="Conversion" value={`${conversion}%`} /><Metric label="Completion" value={`${completionRate}%`} /></div>
-    <div className="mt-4 grid gap-4 md:grid-cols-2"><LuxuryCard><h2 className="font-serif text-2xl">Sources</h2><div className="mt-4 space-y-3 text-sm">{breakdown(requests, "source").map((row) => <Row key={row.label} {...row} />)}</div></LuxuryCard><LuxuryCard><h2 className="font-serif text-2xl">Request types</h2><div className="mt-4 space-y-3 text-sm">{breakdown(requests, "request_type").map((row) => <Row key={row.label} {...row} />)}</div></LuxuryCard></div>
-    <LuxuryCard className="mt-4"><h2 className="font-serif text-2xl">Status health</h2><div className="mt-4 space-y-3 text-sm"><Row label="Confirmed" value={String(confirmed)} /><Row label="Completed" value={String(completed)} /><Row label="Archived" value={String(archived)} /><Row label="Pending attention" value={String(requests.filter((request) => ["NEW", "PENDING"].includes(request.status)).length)} /></div></LuxuryCard>
+    <div className="ops-summary overflow-hidden rounded-lg border border-border bg-card">
+      <div className="grid grid-cols-2 divide-x divide-y divide-border md:grid-cols-4 md:divide-y-0">
+        <Metric label="Requests" value={String(requests.length)} />
+        <Metric label="Guests" value={String(guests)} />
+        <Metric label="Conversion" value={`${conversion}%`} />
+        <Metric label="Completion" value={`${completionRate}%`} />
+      </div>
+    </div>
+    <div className="mt-4 grid gap-3 md:grid-cols-2"><LuxuryCard><h2 className="text-lg font-semibold">Sources</h2><div className="mt-3 space-y-2 text-sm">{breakdown(requests, "source").map((row) => <Row key={row.label} {...row} />)}</div></LuxuryCard><LuxuryCard><h2 className="text-lg font-semibold">Request types</h2><div className="mt-3 space-y-2 text-sm">{breakdown(requests, "request_type").map((row) => <Row key={row.label} {...row} />)}</div></LuxuryCard></div>
+    <LuxuryCard className="mt-4"><h2 className="text-lg font-semibold">Status health</h2><div className="mt-3 space-y-2 text-sm"><Row label="Confirmed" value={String(confirmed)} /><Row label="Completed" value={String(completed)} /><Row label="Archived" value={String(archived)} /><Row label="Pending attention" value={String(requests.filter((request) => ["NEW", "PENDING"].includes(request.status)).length)} /></div></LuxuryCard>
     <SalaryReport requests={requests} from={filters.from} to={filters.to} />
     <Button asChild variant="secondary" className="mt-4 w-full md:w-auto"><Link href={`/api/reports/export${exportQuery ? `?${exportQuery}` : ""}`}><Download className="size-4" /> Export CSV</Link></Button>
   </AppShell>;
 }
 
-function Metric({ label, value }: Readonly<{ label: string; value: string }>) { return <LuxuryCard><p className="text-sm text-muted-foreground">{label}</p><p className="mt-2 font-serif text-3xl md:text-4xl">{value}</p></LuxuryCard>; }
+function Metric({ label, value }: Readonly<{ label: string; value: string }>) { return <div className="p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-semibold tracking-tight">{value}</p></div>; }
 function Row({ label, value }: Readonly<{ label: string; value: string }>) { return <div className="flex justify-between border-b border-champagne-700/30 pb-2"><span>{label}</span><span className="text-champagne-300">{value}</span></div>; }
 function breakdown(requests: Awaited<ReturnType<typeof getRequestsForProfile>>, key: "source" | "request_type") {
   if (!requests.length) return [{ label: "No data yet", value: "0%" }];

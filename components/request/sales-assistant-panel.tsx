@@ -12,20 +12,20 @@ export function SalesAssistantPanel({ request, returnTo }: Readonly<{ request: C
   const upsells = buildUpsellIdeas(request);
 
   return (
-    <LuxuryCard className="space-y-4">
-      <div className="flex items-start gap-3">
+    <LuxuryCard className="sales-assistant space-y-4">
+      <div className="flex items-start gap-3 border-b border-border/70 pb-3">
         <div className="rounded-md bg-champagne-300/15 p-2 text-champagne-200">
           <Sparkles className="size-5" />
         </div>
-        <div>
-          <p className="text-sm uppercase tracking-[0.24em] text-champagne-300">Next best action</p>
-          <h3 className="mt-1 text-xl font-semibold">{nextSalesAction(request.status)}</h3>
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Next best action</p>
+          <h3 className="mt-1 text-lg font-semibold">{nextSalesAction(request.status)}</h3>
           <p className="mt-1 text-sm text-muted-foreground">Copy the right message, then move the request forward.</p>
         </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-md border border-champagne-700/30 bg-ink-900/60 p-3">
+        <div className="message-panel rounded-md border border-champagne-700/30 bg-ink-900/60 p-3">
           <div className="flex items-center justify-between gap-2">
             <p className="flex items-center gap-2 text-sm font-semibold"><ClipboardList className="size-4 text-champagne-300" /> Ask venue</p>
             <CopyMessageButton text={availabilityMessage} label="Copy" />
@@ -33,7 +33,7 @@ export function SalesAssistantPanel({ request, returnTo }: Readonly<{ request: C
           <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{availabilityMessage}</p>
         </div>
 
-        <div className="rounded-md border border-champagne-700/30 bg-ink-900/60 p-3">
+        <div className="message-panel rounded-md border border-champagne-700/30 bg-ink-900/60 p-3">
           <div className="flex items-center justify-between gap-2">
             <p className="flex items-center gap-2 text-sm font-semibold"><MessageCircle className="size-4 text-champagne-300" /> Reply client</p>
             <div className="flex gap-2">

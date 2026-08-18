@@ -331,8 +331,27 @@ body {
   color: #475569 !important;
 }
 
+.cms-shell .request-command,
+.cms-shell .sales-assistant,
+.cms-shell .message-panel,
+.cms-shell .link-row {
+  background: #ffffff !important;
+}
+
+.cms-shell .message-panel {
+  border-color: #e2e8f0 !important;
+}
+
 .cms-shell .ops-summary {
   padding: 0.85rem !important;
+}
+
+.cms-shell .salary-report thead {
+  background: #f8fafc !important;
+}
+
+.cms-shell .salary-report input {
+  min-height: 2.25rem;
 }
 
 .cms-shell .ops-summary .metric-cell {

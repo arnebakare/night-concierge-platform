@@ -18,15 +18,15 @@ export default async function LinksPage() {
   return (
     <AppShell profile={profile} title="My links" eyebrow="QR and sharing">
       <div className="sticky top-0 z-10 mb-4 grid grid-cols-2 gap-2 bg-background/80 py-2 backdrop-blur md:static md:bg-transparent md:py-0">
-        <a href="#permanent-links" className="rounded-md border border-champagne-700/40 bg-card px-3 py-3 text-center text-sm font-semibold text-champagne-100">Permanent links</a>
-        <a href="#magic-links" className="rounded-md border border-champagne-700/40 bg-card px-3 py-3 text-center text-sm font-semibold text-champagne-100">Magic links</a>
+        <a href="#permanent-links" className="rounded-md border border-champagne-700/40 bg-card px-3 py-2.5 text-center text-sm font-semibold text-champagne-100">Permanent</a>
+        <a href="#magic-links" className="rounded-md border border-champagne-700/40 bg-card px-3 py-2.5 text-center text-sm font-semibold text-champagne-100">Magic</a>
       </div>
 
       <details id="permanent-links" open className="scroll-mt-20 rounded-lg border border-champagne-700/40 bg-card/70 p-3">
         <summary className="cursor-pointer list-none rounded-md px-1 py-2">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="font-serif text-2xl">Permanent links</h2>
+              <h2 className="text-xl font-semibold">Permanent links</h2>
               <p className="mt-1 text-sm text-muted-foreground">Always-on promoter links and QR destinations.</p>
             </div>
             <span className="rounded-full border border-champagne-700/50 px-2 py-1 text-xs text-champagne-100">{activeLinks.length}</span>
@@ -34,7 +34,7 @@ export default async function LinksPage() {
         </summary>
         <div className="mt-3 space-y-4">
           <PromoterLinkForm clubs={clubs} promoters={promoters} />
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="compact-list grid gap-2">
             {activeLinks.map((link) => <PromoterLinkCard key={link.id} id={link.id} title={link.title} subtitle={(link.profiles as { name?: string } | null)?.name} url={`${appUrl}/p/${link.slug}`} active={link.active} />)}
             {!activeLinks.length && <LuxuryCard className="text-center text-sm text-muted-foreground md:col-span-2">No active permanent promoter links.</LuxuryCard>}
           </div>
@@ -45,7 +45,7 @@ export default async function LinksPage() {
         <summary className="cursor-pointer list-none rounded-md px-1 py-2">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="font-serif text-2xl">Magic links</h2>
+              <h2 className="text-xl font-semibold">Magic links</h2>
               <p className="mt-1 text-sm text-muted-foreground">Private VIP links for specific guests or occasions.</p>
             </div>
             <span className="rounded-full border border-champagne-700/50 px-2 py-1 text-xs text-champagne-100">{activeMagicLinks.length}</span>
@@ -53,7 +53,7 @@ export default async function LinksPage() {
         </summary>
         <div className="mt-3 space-y-4">
           <MagicLinkForm clubs={clubs} promoters={promoters} clients={clients} />
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="compact-list grid gap-2">
             {activeMagicLinks.map((link) => {
               const promoter = link.profiles as { name?: string; phone?: string } | null;
               return (
