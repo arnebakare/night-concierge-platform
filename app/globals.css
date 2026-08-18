@@ -313,6 +313,24 @@ body {
   background: #f8fafc !important;
 }
 
+.cms-shell .planner-panel {
+  background: #ffffff !important;
+}
+
+.cms-shell .schedule-day-card,
+.cms-shell .schedule-stop {
+  background: #ffffff !important;
+}
+
+.cms-shell .schedule-stop {
+  border-color: #e2e8f0 !important;
+}
+
+.cms-shell .audit-metadata {
+  background: #f8fafc !important;
+  color: #475569 !important;
+}
+
 .cms-shell .ops-summary {
   padding: 0.85rem !important;
 }

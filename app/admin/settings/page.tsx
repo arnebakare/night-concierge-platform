@@ -14,7 +14,7 @@ export default async function AdminSettingsPage() {
   return (
     <AppShell profile={profile} title="Platform settings" eyebrow="Admin">
       <LuxuryCard>
-        <form action={savePlatformSetting} className="space-y-4">
+        <form action={savePlatformSetting} className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
           <input type="hidden" name="key" value="whatsapp_destination_number" />
           <div className="space-y-2"><Label>WhatsApp destination</Label><Input name="value" type="tel" inputMode="tel" pattern="(whatsapp:)?\+[1-9][0-9]{7,14}" placeholder="+34600111222" defaultValue={destination} required /><p className="text-xs text-muted-foreground">Use the international format including + and country code.</p></div>
           <div className="space-y-2"><Label>Public app URL</Label><Input value={process.env.NEXT_PUBLIC_APP_URL ?? "Not configured"} readOnly /></div>

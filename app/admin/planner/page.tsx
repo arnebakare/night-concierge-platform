@@ -28,7 +28,7 @@ export default async function AdminPlannerPage() {
               <BrainCircuit className="size-5" />
             </div>
             <div>
-              <p className="font-serif text-xl text-champagne-50">Teach the planner Marbella taste</p>
+              <p className="text-lg font-semibold text-champagne-50">Teach the planner Marbella taste</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 These rules tell the AI how venues are actually used locally. Big confirmed DJ names still have priority, but weights and avoid-pairings steer the normal recommendations.
               </p>
@@ -52,7 +52,7 @@ export default async function AdminPlannerPage() {
         </details>
       </LuxuryCard>
 
-      <div className="grid gap-3">
+      <div className="compact-list grid gap-2">
         {activeRules.map((rule) => <VenueRuleCard key={rule.id} rule={rule} />)}
         {!activeRules.length && (
           <LuxuryCard>
@@ -76,11 +76,15 @@ export default async function AdminPlannerPage() {
 
 function VenueRuleCard({ rule }: Readonly<{ rule: ScheduleVenueRule }>) {
   return (
-    <LuxuryCard className={!rule.active ? "opacity-70" : undefined}>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div>
+    <LuxuryCard className={`client-row ${!rule.active ? "opacity-70" : ""}`}>
+      <div className="mb-3 grid gap-3 md:grid-cols-[minmax(180px,1fr)_minmax(140px,0.45fr)_auto] md:items-center">
+        <div className="min-w-0">
           <p className="font-semibold text-champagne-50">{rule.venue_name}</p>
-          <p className="mt-1 text-xs uppercase text-muted-foreground">{formatType(rule.venue_type)} · weight {rule.weight}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{rule.area || "Marbella"} · {rule.priority_days.length ? rule.priority_days.map((day) => day.slice(0, 3)).join(", ") : "No priority day"}</p>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Use / weight</p>
+          <p className="mt-1 text-sm font-semibold">{formatType(rule.venue_type)} · {rule.weight}</p>
         </div>
         <form action={setScheduleVenueRuleActive}>
           <input type="hidden" name="ruleId" value={rule.id} />

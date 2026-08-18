@@ -19,13 +19,13 @@ export default async function SchedulePage() {
   return (
     <AppShell profile={profile} title="AI schedule trail" eyebrow="Marbella planner">
       <div className="space-y-5">
-        <LuxuryCard className="overflow-hidden border-champagne-300/35 bg-[radial-gradient(circle_at_top_right,rgba(216,183,100,0.16),transparent_38%),rgba(17,17,19,0.92)]">
+        <LuxuryCard className="planner-panel overflow-hidden border-champagne-300/35 bg-[radial-gradient(circle_at_top_right,rgba(216,183,100,0.16),transparent_38%),rgba(17,17,19,0.92)]">
           <div className="flex items-start gap-3">
             <div className="rounded-md border border-champagne-700/40 bg-champagne-500/10 p-3 text-champagne-200">
               <Sparkles className="size-5" />
             </div>
             <div>
-              <h2 className="font-serif text-2xl">Build a customer-ready party trail</h2>
+              <h2 className="text-xl font-semibold">Build a customer-ready party trail</h2>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                 Choose dates and spend level. AI suggests beach-club parties, DJs, dinner only where it helps the night, and clubs per day, with La Plage and Le Jade prioritized on Wednesdays and Sundays.
               </p>
@@ -70,14 +70,14 @@ export default async function SchedulePage() {
           </Button>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="compact-list grid gap-2">
           {plans.slice(0, 4).map((plan) => (
             <Link key={plan.id} href={`/schedule/plans/${plan.id}`} className="block">
-              <LuxuryCard className="transition hover:border-champagne-300/60">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+              <LuxuryCard className="client-row transition hover:border-champagne-300/60">
+                <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_auto] sm:items-center">
+                  <div className="min-w-0">
                     <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">{plan.source} · {plan.spend_profile === "HIGH_SPEND" ? "High spend" : "Normal"}</p>
-                    <h3 className="mt-2 text-lg font-semibold">{plan.title}</h3>
+                    <h3 className="mt-1 truncate text-base font-semibold">{plan.title}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">{formatDate(plan.date_from)}{plan.date_from === plan.date_to ? "" : ` to ${formatDate(plan.date_to)}`}</p>
                   </div>
                   <CalendarDays className="size-5 text-champagne-300" />
@@ -104,7 +104,7 @@ function SpendOption({
   defaultChecked
 }: Readonly<{ value: string; label: string; description: string; defaultChecked?: boolean }>) {
   return (
-    <label className="flex min-h-24 cursor-pointer flex-col justify-between rounded-lg border border-champagne-700/35 bg-ink-800/80 p-4 has-[:checked]:border-champagne-300 has-[:checked]:bg-champagne-300/10">
+    <label className="flex min-h-20 cursor-pointer flex-col justify-between rounded-lg border border-champagne-700/35 bg-ink-800/80 p-3 has-[:checked]:border-champagne-300 has-[:checked]:bg-champagne-300/10">
       <input type="radio" name="spendProfile" value={value} defaultChecked={defaultChecked} className="sr-only" />
       <span className="font-semibold">{label}</span>
       <span className="text-sm text-muted-foreground">{description}</span>

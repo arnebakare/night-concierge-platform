@@ -16,9 +16,9 @@ export default async function AdminAuditPage({ searchParams }: Readonly<{ search
       <form action="/admin/audit" className="mb-4 grid gap-2 rounded-lg border border-champagne-700/40 bg-card p-3 md:grid-cols-[1fr_200px_auto]"><Input name="q" defaultValue={filters.q ?? ""} placeholder="Search action or record" /><select name="entity" defaultValue={filters.entity ?? ""} className="h-12 rounded-md border bg-input px-3 text-sm"><option value="">All records</option>{["requests", "clients", "profiles", "clubs", "events", "promoter_links", "magic_links", "platform_settings"].map((entity) => <option key={entity} value={entity}>{formatEnum(entity)}</option>)}</select><Button type="submit">Filter</Button></form>
       <div className="compact-list grid gap-2">
         {logs.map((log) => (
-          <LuxuryCard key={log.id}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
+          <LuxuryCard key={log.id} className="client-row">
+            <div className="grid gap-3 md:grid-cols-[minmax(180px,1fr)_auto] md:items-start">
+              <div className="min-w-0">
                 <p className="font-semibold">{formatEnum(log.action)}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">{log.entity_type} · {log.entity_id}</p>
               </div>
@@ -27,7 +27,7 @@ export default async function AdminAuditPage({ searchParams }: Readonly<{ search
             <p className="mt-2 text-sm text-muted-foreground">
               {(Array.isArray(log.profiles) ? log.profiles[0]?.name : log.profiles?.name) ?? "System"}
             </p>
-            <pre className="mt-2 max-h-36 overflow-auto rounded-md bg-ink-900 p-2.5 text-xs text-muted-foreground">
+            <pre className="audit-metadata mt-2 max-h-36 overflow-auto rounded-md bg-ink-900 p-2.5 text-xs text-muted-foreground">
               {JSON.stringify(log.metadata ?? {}, null, 2)}
             </pre>
           </LuxuryCard>

@@ -17,14 +17,14 @@ export default async function SchedulePlansPage() {
           <Link href="/schedule">New trail</Link>
         </Button>
       </div>
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="compact-list grid gap-2">
         {plans.map((plan) => (
           <Link href={`/schedule/plans/${plan.id}`} key={plan.id} className="block">
-            <LuxuryCard className="h-full transition hover:border-champagne-300/60">
-              <div className="flex items-start justify-between gap-3">
-                <div>
+            <LuxuryCard className="client-row transition hover:border-champagne-300/60">
+              <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_auto] sm:items-center">
+                <div className="min-w-0">
                   <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">{plan.source} · {plan.spend_profile === "HIGH_SPEND" ? "High spend" : "Normal"}</p>
-                  <h2 className="mt-2 text-lg font-semibold">{plan.title}</h2>
+                  <h2 className="mt-1 truncate text-base font-semibold">{plan.title}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">{formatDate(plan.date_from)}{plan.date_from === plan.date_to ? "" : ` to ${formatDate(plan.date_to)}`}</p>
                   <p className="mt-2 text-sm text-muted-foreground">{plan.clients?.name ? `Attached to ${plan.clients.name}` : "No customer attached"}</p>
                 </div>

@@ -14,14 +14,14 @@ export default async function SettingsPage() {
   return (
     <AppShell profile={profile} title="Settings" eyebrow="Notifications">
       <LuxuryCard>
-        <form action={savePlatformSetting} className="space-y-4">
+        <form action={savePlatformSetting} className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
           <input type="hidden" name="key" value="whatsapp_destination_number" />
           <div className="space-y-2">
             <Label>WhatsApp destination number</Label>
             <Input name="value" type="tel" inputMode="tel" pattern="(whatsapp:)?\+[1-9][0-9]{7,14}" placeholder="+34600111222" defaultValue={destination} required />
             <p className="text-xs text-muted-foreground">Use the international format including + and country code.</p>
           </div>
-          <Button type="submit">Save settings</Button>
+          <Button type="submit">Save</Button>
         </form>
       </LuxuryCard>
       <Button asChild variant="secondary" className="mt-4 w-full md:w-auto"><Link href="/notifications">View delivery history</Link></Button>

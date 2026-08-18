@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { LoginForm } from "@/components/auth/login-form";
 import { Suspense } from "react";
@@ -15,6 +16,9 @@ export default function LoginPage() {
           <LoginForm />
         </Suspense>
       </LuxuryCard>
+      <Link href="/install" className="mt-5 text-center text-sm text-muted-foreground underline-offset-4 hover:text-champagne-300 hover:underline">
+        Install on iPhone
+      </Link>
     </main>
   );
 }
