@@ -25,18 +25,19 @@ export default async function MagicLinkPage({ params }: Readonly<{ params: Promi
   return (
     <PublicRequestShell
       eyebrow="Private invitation"
-      title={clientFirstName ? `${clientFirstName}, your night is reserved.` : "Your private night is reserved."}
-      description={`This link was prepared for you by ${hostName}. Choose what you would like arranged and the concierge team will treat it as a priority request.`}
+      title={clientFirstName ? `${clientFirstName}, your link is ready.` : "Your private link is ready."}
+      description={`This was prepared by ${hostName}. Choose what you need and add anything personal before sending.`}
+      hostLine="For anything special, you can message your host directly as well."
     >
       <LuxuryCard className="mb-4 border-champagne-400/50 bg-ink-950/78">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-champagne-300">VIP access</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-champagne-300">Private access</p>
             <h2 className="mt-2 font-serif text-2xl text-champagne-50">
               {client?.name ? `Welcome, ${client.name}` : "Welcome"}
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              If you have a special request, celebration, preferred table, privacy need, or timing question, you can always reach out directly to {hostName}. We will handle the details discreetly.
+              If you have a special request, preferred table, timing question, or want help shaping the night, you can reach {hostName} directly.
             </p>
             {promoterWhatsAppHref && (
               <Button asChild className="mt-4 w-full sm:w-auto">

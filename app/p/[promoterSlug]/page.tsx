@@ -16,7 +16,8 @@ export default async function PromoterLinkPage({ params }: Readonly<{ params: Pr
     <PublicRequestShell
       eyebrow="Private guestlist"
       title={link.title ?? "VIP Request"}
-      description={`Hosted by ${(link.profiles as { name?: string } | null)?.name ?? "your promoter"}. Choose the service and send the request in under a minute.`}
+      description="Send the request here and your promoter will know it came from you."
+      hostLine={`Hosted by ${(link.profiles as { name?: string } | null)?.name ?? "your promoter"}. You can add special requests before sending.`}
     >
       <RequestFormSteps clubs={availableClubs} events={events} promoterSlug={promoterSlug} />
     </PublicRequestShell>

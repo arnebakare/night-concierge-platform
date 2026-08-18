@@ -11,7 +11,8 @@ export default async function PublicRequestPage() {
     <PublicRequestShell
       eyebrow="VIP Request"
       title="Your night, handled."
-      description="Choose the venue, service, and date. The concierge team receives the details instantly."
+      description="Choose a venue, tell us what you need, and the team will come back with the next step on WhatsApp."
+      hostLine="Fast request. Real person follow-up. No account needed."
     >
       <RequestFormSteps clubs={clubs} events={events} />
     </PublicRequestShell>

@@ -73,20 +73,20 @@ export function LoginForm() {
     <form className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="promoter@club.com" />
+        <Input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@email.com" autoComplete="email" />
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <Input id="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" />
+        <Input id="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" autoComplete="current-password" />
       </div>
       {message && <p className="rounded-md border border-champagne-700/40 bg-secondary p-3 text-sm text-muted-foreground">{message}</p>}
       <Button className="w-full" size="lg" type="button" onClick={signIn} disabled={pending}>
-        Sign in
+        {pending ? "Checking" : "Sign in"}
       </Button>
       <Button className="w-full" size="lg" variant="secondary" type="button" onClick={magicLink} disabled={pending || !email}>
         Send magic link
       </Button>
-      <Button className="w-full" variant="ghost" type="button" onClick={resetPassword} disabled={pending || !email}>Forgot password</Button>
+      <Button className="w-full" variant="ghost" type="button" onClick={resetPassword} disabled={pending || !email}>Reset password</Button>
     </form>
   );
 }

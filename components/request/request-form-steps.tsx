@@ -135,7 +135,7 @@ export function RequestFormSteps({
   }
 
   return (
-    <LuxuryCard className="space-y-5 border-champagne-300/35 bg-ink-900/82 shadow-[0_24px_90px_rgba(0,0,0,0.48)]">
+    <LuxuryCard className="request-flow-card space-y-5 border-champagne-300/35 bg-ink-900/82 shadow-[0_24px_90px_rgba(0,0,0,0.48)]">
       {!clubs.length && <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-red-100">Requests are temporarily unavailable because no active clubs are configured.</div>}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -147,13 +147,23 @@ export function RequestFormSteps({
             <span key={item} className={cn("h-1.5 rounded-full bg-secondary transition", item <= step && "bg-champagne-300 shadow-glow")} />
           ))}
         </div>
+        {selectedClub && step > 1 && (
+          <button type="button" onClick={() => setStep(1)} className="flex w-full items-center gap-3 rounded-lg border border-champagne-700/35 bg-ink-950/45 p-2.5 text-left transition hover:border-champagne-300/60">
+            <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="md" />
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-champagne-50">{selectedExperience.wordmark}</span>
+              <span className="block truncate text-xs text-muted-foreground">{values.serviceLabel || "Choose service"}</span>
+            </span>
+            <span className="ml-auto text-xs font-semibold text-champagne-300">Change</span>
+          </button>
+        )}
       </div>
 
       {step === 1 && (
         <div className="space-y-3">
           <div className="rounded-lg border border-champagne-700/30 bg-gradient-to-br from-champagne-300/10 to-transparent p-4">
             <h2 className="font-serif text-2xl">Choose your venue</h2>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Start with the place. We’ll shape the request around that venue’s rhythm.</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Start with the place. The options are tailored to each venue.</p>
           </div>
           <div className="grid gap-3">
             {visibleClubs.map((club) => {
@@ -189,6 +199,11 @@ export function RequestFormSteps({
               Show more venues
             </Button>
           )}
+          {showAllVenues && orderedClubs.length > 3 && (
+            <Button type="button" variant="ghost" className="w-full" onClick={() => setShowAllVenues(false)}>
+              Show main venues
+            </Button>
+          )}
         </div>
       )}
 
@@ -218,7 +233,7 @@ export function RequestFormSteps({
                   form.setValue("serviceLabel", service.label, { shouldValidate: true });
                 }}
                 className={cn(
-                  "group flex min-h-32 flex-col justify-between rounded-lg border bg-ink-700 p-4 text-left transition active:scale-[0.99]",
+                  "group flex min-h-28 flex-col justify-between rounded-lg border bg-ink-700 p-3.5 text-left transition active:scale-[0.99]",
                   active ? "border-champagne-300 bg-champagne-300/10 shadow-glow" : "border-champagne-700/40 hover:border-champagne-300/60"
                 )}
               >
@@ -237,8 +252,8 @@ export function RequestFormSteps({
             <div className="rounded-lg border border-champagne-700/40 bg-ink-950/50 p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Occasions</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Optional. Pick one to request that date.</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">What is on</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Optional. Tap an event to request that date.</p>
                 </div>
                 {values.occasionId && (
                   <button type="button" className="text-xs font-semibold text-champagne-200" onClick={() => selectOccasion(null)}>
@@ -255,7 +270,7 @@ export function RequestFormSteps({
                       type="button"
                       onClick={() => selectOccasion(event)}
                       className={cn(
-                        "flex w-full items-start gap-3 rounded-md border p-3 text-left transition",
+                        "flex w-full items-start gap-3 rounded-md border p-2.5 text-left transition",
                         active ? "border-champagne-300 bg-champagne-500/10" : "border-champagne-700/30 bg-ink-800/70"
                       )}
                     >
@@ -277,7 +292,7 @@ export function RequestFormSteps({
         <div className="space-y-4">
           <div className="rounded-lg border border-champagne-700/30 bg-secondary/50 p-4">
             <h2 className="font-serif text-2xl">Who should we contact?</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Just the essentials. WhatsApp is best for fast confirmation.</p>
+            <p className="mt-1 text-sm text-muted-foreground">WhatsApp is best. Email and Instagram are optional.</p>
           </div>
           <Field label="Name" error={form.formState.errors.name?.message}>
             <Input {...form.register("name")} placeholder="Full name" />
@@ -298,7 +313,7 @@ export function RequestFormSteps({
         <div className="space-y-4">
           <div className="rounded-lg border border-champagne-700/30 bg-secondary/50 p-4">
             <h2 className="font-serif text-2xl">When are you going?</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Approximate times are fine. We’ll confirm the details with you.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Approximate times are fine. Add anything we should know.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Date" error={form.formState.errors.requestedDate?.message}>
@@ -324,7 +339,7 @@ export function RequestFormSteps({
         <div className="space-y-4">
           <div className="rounded-lg border border-champagne-700/30 bg-gradient-to-br from-champagne-300/10 to-transparent p-4">
             <h2 className="font-serif text-2xl">Ready to send</h2>
-            <p className="mt-1 text-sm text-muted-foreground">We’ll send this to the team and come back with the next step.</p>
+            <p className="mt-1 text-sm text-muted-foreground">The team receives this immediately and follows up personally.</p>
           </div>
           <div className="rounded-lg border border-champagne-700/40 bg-ink-800 p-4 text-sm shadow-panel">
             <div className="mb-3 flex items-center gap-3">
@@ -344,6 +359,9 @@ export function RequestFormSteps({
               <p className="font-semibold">{values.name}</p>
               <p className="text-muted-foreground">{values.phone}</p>
             </div>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+              By sending, you ask the team to check availability. Your booking is only confirmed once a host replies.
+            </p>
           </div>
         </div>
       )}
