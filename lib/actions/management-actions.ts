@@ -543,6 +543,48 @@ export async function savePlatformSetting(formData: FormData) {
   revalidatePath("/admin/settings");
 }
 
+const messageTemplateSchema = z.object({
+  templateId: z.string().min(1),
+  body: z.string().trim().min(20).max(2000),
+  active: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
+export async function saveMessageTemplate(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = messageTemplateSchema.safeParse({
+    templateId: formData.get("templateId"),
+    body: formData.get("body"),
+    active: formData.get("active") || "true"
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/settings");
+    revalidatePath("/admin/settings");
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("message_templates")
+    .update({ body: parsed.data.body, active: parsed.data.active })
+    .eq("id", parsed.data.templateId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "MESSAGE_TEMPLATE_UPDATED",
+    entityType: "message_templates",
+    entityId: parsed.data.templateId,
+    metadata: { active: parsed.data.active }
+  });
+
+  revalidatePath("/settings");
+  revalidatePath("/admin/settings");
+  revalidatePath("/requests");
+  revalidatePath("/manager/requests");
+}
+
 const clubSchema = z.object({
   name: z.string().min(2),
   slug: z.string().min(2).regex(/^[a-z0-9-]+$/),

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, Club, ConciergeEvent, ConciergeRequest, Profile, RequestOffer, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, Club, ConciergeEvent, ConciergeRequest, MessageTemplate, Profile, RequestOffer, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -431,6 +431,22 @@ export async function getPlatformSetting(key: string) {
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
     return key === "whatsapp_destination_number" ? process.env.WHATSAPP_DESTINATION_NUMBER ?? "" : "";
+  }
+}
+
+export async function getMessageTemplates() {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("message_templates")
+      .select("id, key, label, channel, language, body, active, updated_at")
+      .order("key")
+      .order("language");
+    if (error) throw error;
+    return (data ?? []) as MessageTemplate[];
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return demoMessageTemplates();
   }
 }
 
@@ -888,6 +904,15 @@ function demoRequestOffers(request: ConciergeRequest): RequestOffer[] {
 
 function buildDemoOfferMessage(request: ConciergeRequest) {
   return `Hi ${request.clients?.name ?? ""}, I checked ${request.clubs?.name ?? "the venue"} for ${request.requested_date}.\n\nThey can do a table for ${request.guest_count} guests${request.arrival_time ? ` around ${request.arrival_time}` : ""}${request.budget ? ` with ${request.budget}` : ""}.\n\nShould I hold this option for you?`;
+}
+
+function demoMessageTemplates(): MessageTemplate[] {
+  const now = new Date().toISOString();
+  return [
+    { id: "template-client-en", key: "client_reply", label: "Reply to client", channel: "WHATSAPP", language: "en", body: "Hi {{client_first_name}}, perfect. I’ll check with {{venue_name}} for {{date}} for {{guest_count}} guests and get back to you shortly.", active: true, updated_at: now },
+    { id: "template-venue-en", key: "venue_check", label: "Ask venue", channel: "WHATSAPP", language: "en", body: "Can you check this for me?\n\n{{venue_name}} · {{request_type}}\nDate: {{date}}{{arrival_line}}\nClient: {{client_name}}\nGuests: {{guest_count}}{{budget_line}}{{notes_line}}", active: true, updated_at: now },
+    { id: "template-offer-en", key: "client_offer", label: "Offer to client", channel: "WHATSAPP", language: "en", body: "Hi {{client_first_name}}, I checked {{venue_name}} for {{date}}.\n\nThey can do {{service_label}} for {{guest_count}} guests{{arrival_offer_line}}{{spend_offer_line}}.\n\nWould you like me to try to hold it for you?", active: true, updated_at: now }
+  ];
 }
 
 function demoScheduleVenueRules(): ScheduleVenueRule[] {

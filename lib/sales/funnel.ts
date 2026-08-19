@@ -1,4 +1,4 @@
-import type { Club, ConciergeRequest, RequestStatus, RequestType } from "@/lib/types";
+import type { Club, ConciergeRequest, MessageTemplate, RequestStatus, RequestType } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
 export type LeadDraft = {
@@ -85,6 +85,10 @@ export function buildAvailabilityMessage(request: SalesRequest) {
   ].join("\n").replace(/\n{3,}/g, "\n\n");
 }
 
+export function buildAvailabilityMessageFromTemplate(request: SalesRequest, template?: MessageTemplate | null) {
+  return template?.active ? renderTemplate(template.body, request) : buildAvailabilityMessage(request);
+}
+
 export function buildClientReply(request: SalesRequest, language?: LeadDraft["language"]) {
   const selectedLanguage = request.clients?.preferred_language ?? language ?? inferLanguageFromCountry(request.clients?.country);
   const clientName = request.clients?.name?.split(" ")[0] ?? "";
@@ -100,6 +104,34 @@ export function buildClientReply(request: SalesRequest, language?: LeadDraft["la
   }
 
   return `${intro}, perfect. I’ll check with ${clubName} for ${formatClientDate(request.requested_date)} for ${request.guest_count} guests and get back to you shortly. If you prefer a specific time or area, just send it here.`;
+}
+
+export function buildClientReplyFromTemplate(request: SalesRequest, templates: MessageTemplate[] = [], language?: LeadDraft["language"]) {
+  const selectedLanguage = request.clients?.preferred_language ?? language ?? inferLanguageFromCountry(request.clients?.country);
+  const template = findTemplate(templates, "client_reply", selectedLanguage);
+  return template ? renderTemplate(template.body, request) : buildClientReply(request, language);
+}
+
+export function buildClientOfferFromTemplate(
+  request: SalesRequest,
+  input: { serviceLabel: string; venueName?: string; offerDate?: string; arrivalTime?: string; minSpend?: string },
+  templates: MessageTemplate[] = []
+) {
+  const template = findTemplate(templates, "client_offer", request.clients?.preferred_language ?? "en");
+  if (!template) return "";
+  return renderTemplate(template.body, request, {
+    service_label: input.serviceLabel,
+    venue_name: input.venueName ?? request.clubs?.name ?? "the venue",
+    date: input.offerDate ? formatClientDate(input.offerDate) : formatClientDate(request.requested_date),
+    arrival_offer_line: input.arrivalTime ? ` around ${input.arrivalTime}` : "",
+    spend_offer_line: input.minSpend ? ` with ${input.minSpend}` : ""
+  });
+}
+
+export function findTemplate(templates: MessageTemplate[], key: string, language: LeadDraft["language"] = "en") {
+  return templates.find((template) => template.active && template.key === key && template.language === language)
+    ?? templates.find((template) => template.active && template.key === key && template.language === "en")
+    ?? null;
 }
 
 export function buildUpsellIdeas(request: SalesRequest) {
@@ -203,6 +235,31 @@ function inferLanguage(lower: string): LeadDraft["language"] {
 
 function cleanContext(message: string) {
   return message.replace(/^Selected (service|occasion):.+$/gm, "").trim();
+}
+
+function renderTemplate(template: string, request: SalesRequest, overrides: Record<string, string | number> = {}) {
+  const clientName = request.clients?.name ?? "Client";
+  const venueName = request.clubs?.name ?? "the venue";
+  const notes = request.message ? cleanContext(request.message) : "";
+  const values: Record<string, string | number> = {
+    client_name: clientName,
+    client_first_name: clientName.split(" ").filter(Boolean)[0] ?? "there",
+    venue_name: venueName,
+    date: formatClientDate(request.requested_date),
+    arrival_time: request.arrival_time ?? "",
+    arrival_line: request.arrival_time ? ` at ${request.arrival_time}` : "",
+    arrival_offer_line: request.arrival_time ? ` around ${request.arrival_time}` : "",
+    guest_count: request.guest_count,
+    request_type: formatEnum(request.request_type),
+    budget: request.budget ?? "",
+    budget_line: request.budget ? `\nBudget/table spend: ${request.budget}` : "",
+    spend_offer_line: request.budget ? ` with ${request.budget}` : "",
+    notes,
+    notes_line: notes ? `\nNotes: ${notes}` : "",
+    service_label: formatEnum(request.request_type),
+    ...overrides
+  };
+  return template.replace(/\{\{([a-z_]+)\}\}/g, (_, key: string) => String(values[key] ?? ""));
 }
 
 function formatClientDate(value: string) {

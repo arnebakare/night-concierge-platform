@@ -79,6 +79,17 @@ export type ClientBookingHistoryItem = {
   promoter?: Pick<Profile, "name" | "email"> | null;
 };
 
+export type MessageTemplate = {
+  id: string;
+  key: string;
+  label: string;
+  channel: "WHATSAPP" | "EMAIL" | "INTERNAL";
+  language: "en" | "es" | "sv";
+  body: string;
+  active: boolean;
+  updated_at?: string | null;
+};
+
 export type ConciergeRequest = {
   id: string;
   client_id: string;

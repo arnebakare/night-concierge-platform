@@ -3,7 +3,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { AvailabilityOfferPanel } from "@/components/request/availability-offer-panel";
 import { RequestDetail } from "@/components/request/request-detail";
 import { requireProfile } from "@/lib/auth";
-import { getRequestCommerce, getRequestDetail } from "@/lib/data/app";
+import { getMessageTemplates, getRequestCommerce, getRequestDetail } from "@/lib/data/app";
 import type { RequestStatus } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
@@ -12,7 +12,7 @@ export default async function RequestDetailPage({
   searchParams
 }: Readonly<{ params: Promise<{ id: string }>; searchParams: Promise<{ updated?: string }> }>) {
   const [profile, { id }, query] = await Promise.all([requireProfile(["PROMOTER", "SUPER_ADMIN"]), params, searchParams]);
-  const request = await getRequestDetail(id);
+  const [request, templates] = await Promise.all([getRequestDetail(id), getMessageTemplates()]);
 
   if (!request) notFound();
   const commerce = await getRequestCommerce(request);
@@ -22,8 +22,8 @@ export default async function RequestDetailPage({
     <AppShell profile={profile} title="Request detail" eyebrow="Guestlist">
       <div className="space-y-4">
         {updated && <StatusNotice status={updated} />}
-        <RequestDetail request={request} backHref="/requests" clientHref={`/clients/${request.client_id}`} statusReturnTo={`/requests/${request.id}`} />
-        <AvailabilityOfferPanel request={request} slots={commerce.slots} offers={commerce.offers} canManageAvailability={profile.role === "SUPER_ADMIN"} />
+        <RequestDetail request={request} backHref="/requests" clientHref={`/clients/${request.client_id}`} statusReturnTo={`/requests/${request.id}`} templates={templates} />
+        <AvailabilityOfferPanel request={request} slots={commerce.slots} offers={commerce.offers} canManageAvailability={profile.role === "SUPER_ADMIN"} templates={templates} />
       </div>
     </AppShell>
   );

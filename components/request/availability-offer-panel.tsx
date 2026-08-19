@@ -8,19 +8,20 @@ import { CopyMessageButton } from "@/components/request/copy-message-button";
 import { OfferComposer } from "@/components/request/offer-composer";
 import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { createAvailabilitySlot, updateRequestOfferStatus } from "@/lib/actions/management-actions";
-import type { AvailabilitySlot, ConciergeRequest, RequestOffer } from "@/lib/types";
+import type { AvailabilitySlot, ConciergeRequest, MessageTemplate, RequestOffer } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
-import { isTemporaryPhone } from "@/lib/sales/funnel";
+import { buildClientOfferFromTemplate, isTemporaryPhone } from "@/lib/sales/funnel";
 
 export function AvailabilityOfferPanel({
   request,
   slots,
   offers,
-  canManageAvailability
-}: Readonly<{ request: ConciergeRequest; slots: AvailabilitySlot[]; offers: RequestOffer[]; canManageAvailability: boolean }>) {
+  canManageAvailability,
+  templates = []
+}: Readonly<{ request: ConciergeRequest; slots: AvailabilitySlot[]; offers: RequestOffer[]; canManageAvailability: boolean; templates?: MessageTemplate[] }>) {
   const bestSlot = slots.find((slot) => slot.status === "AVAILABLE") ?? slots.find((slot) => slot.status === "LIMITED") ?? slots[0];
   const destination = visiblePhone(request.clients?.phone) || "";
-  const draft = buildOfferDraft(request, bestSlot, destination);
+  const draft = buildOfferDraft(request, bestSlot, destination, templates);
 
   return (
     <LuxuryCard className="offer-panel space-y-4">
@@ -122,7 +123,7 @@ export function AvailabilityOfferPanel({
   );
 }
 
-function buildOfferDraft(request: ConciergeRequest, slot?: AvailabilitySlot, destination = "") {
+function buildOfferDraft(request: ConciergeRequest, slot?: AvailabilitySlot, destination = "", templates: MessageTemplate[] = []) {
   const clientName = request.clients?.name?.split(" ")[0] ?? "";
   const venueName = request.clubs?.name ?? slot?.clubs?.name ?? "the venue";
   const serviceLabel = slot?.title ?? request.message?.match(/^Selected service:\s*(.+)$/m)?.[1] ?? formatEnum(request.request_type);
@@ -130,7 +131,8 @@ function buildOfferDraft(request: ConciergeRequest, slot?: AvailabilitySlot, des
   const arrivalTime = request.arrival_time ?? "";
   const guestCount = request.guest_count;
   const minSpend = slot?.min_spend ?? request.budget ?? "";
-  const message = [
+  const templateMessage = buildClientOfferFromTemplate(request, { serviceLabel, venueName, offerDate, arrivalTime, minSpend }, templates);
+  const message = templateMessage || [
     `Hi ${clientName || "there"}, I checked ${venueName} for ${formatDate(offerDate)}.`,
     "",
     `They can do ${serviceLabel.toLowerCase()} for ${guestCount} guests${arrivalTime ? ` around ${arrivalTime}` : ""}${minSpend ? ` with ${minSpend}` : ""}.`,

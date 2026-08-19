@@ -4,12 +4,13 @@ import { CopyMessageButton } from "@/components/request/copy-message-button";
 import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { EditableMessageCard } from "@/components/request/editable-message-card";
 import { updateRequestStatus } from "@/lib/actions/management-actions";
-import type { ConciergeRequest } from "@/lib/types";
-import { buildAvailabilityMessage, buildClientReply, buildUpsellIdeas, inferLanguageFromCountry, nextSalesAction } from "@/lib/sales/funnel";
+import type { ConciergeRequest, MessageTemplate } from "@/lib/types";
+import { buildAvailabilityMessageFromTemplate, buildClientReplyFromTemplate, buildUpsellIdeas, findTemplate, inferLanguageFromCountry, nextSalesAction } from "@/lib/sales/funnel";
 
-export function SalesAssistantPanel({ request, returnTo }: Readonly<{ request: ConciergeRequest; returnTo?: string }>) {
-  const availabilityMessage = buildAvailabilityMessage(request);
-  const clientReply = buildClientReply(request, inferLanguageFromCountry(request.clients?.country));
+export function SalesAssistantPanel({ request, returnTo, templates = [] }: Readonly<{ request: ConciergeRequest; returnTo?: string; templates?: MessageTemplate[] }>) {
+  const language = inferLanguageFromCountry(request.clients?.country);
+  const availabilityMessage = buildAvailabilityMessageFromTemplate(request, findTemplate(templates, "venue_check", "en"));
+  const clientReply = buildClientReplyFromTemplate(request, templates, language);
   const upsells = buildUpsellIdeas(request);
 
   return (

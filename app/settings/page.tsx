@@ -3,14 +3,15 @@ import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { MessageTemplateManager } from "@/components/settings/message-template-manager";
 import { requireProfile } from "@/lib/auth";
-import { getPlatformSetting } from "@/lib/data/app";
+import { getMessageTemplates, getPlatformSetting } from "@/lib/data/app";
 import { savePlatformSetting } from "@/lib/actions/management-actions";
 import Link from "next/link";
 
 export default async function SettingsPage() {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
-  const destination = await getPlatformSetting("whatsapp_destination_number");
+  const [destination, templates] = await Promise.all([getPlatformSetting("whatsapp_destination_number"), getMessageTemplates()]);
   return (
     <AppShell profile={profile} title="Settings" eyebrow="Notifications">
       <LuxuryCard>
@@ -24,6 +25,7 @@ export default async function SettingsPage() {
           <Button type="submit">Save</Button>
         </form>
       </LuxuryCard>
+      <MessageTemplateManager templates={templates} />
       <Button asChild variant="secondary" className="mt-4 w-full md:w-auto"><Link href="/notifications">View delivery history</Link></Button>
     </AppShell>
   );
