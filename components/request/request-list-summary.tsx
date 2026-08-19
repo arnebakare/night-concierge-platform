@@ -8,8 +8,9 @@ import { isMissingRequestContact, requestValueSignal } from "@/lib/concierge/req
 export function RequestListSummary({
   requests,
   baseHref,
-  showLeadAction = true
-}: Readonly<{ requests: ConciergeRequest[]; baseHref: string; showLeadAction?: boolean }>) {
+  showLeadAction = true,
+  availabilityHref
+}: Readonly<{ requests: ConciergeRequest[]; baseHref: string; showLeadAction?: boolean; availabilityHref?: string }>) {
   const today = dateString(0);
   const tomorrow = dateString(1);
   const needsReply = requests.filter((request) => ["NEW", "CONTACTED", "PENDING"].includes(request.status)).length;
@@ -30,11 +31,20 @@ export function RequestListSummary({
           <p className="mt-1 text-sm text-slate-500">{nextAction}</p>
         </div>
         {showLeadAction && (
-          <Button asChild>
-            <Link href="/requests/lead">
-              <MessageCircle className="size-4" /> Paste lead
-            </Link>
-          </Button>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            {availabilityHref && (
+              <Button asChild variant="secondary">
+                <Link href={availabilityHref}>
+                  <CalendarDays className="size-4" /> Availability
+                </Link>
+              </Button>
+            )}
+            <Button asChild>
+              <Link href="/requests/lead">
+                <MessageCircle className="size-4" /> Paste lead
+              </Link>
+            </Button>
+          </div>
         )}
       </div>
 

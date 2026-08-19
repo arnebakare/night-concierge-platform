@@ -220,6 +220,107 @@ export async function createAvailabilitySlot(formData: FormData) {
   revalidatePath("/manager/availability");
 }
 
+const availabilitySlotUpdateSchema = availabilitySlotSchema.extend({
+  slotId: z.string().min(1),
+  active: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
+export async function updateAvailabilitySlot(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = availabilitySlotUpdateSchema.safeParse({
+    requestId: formData.get("requestId") || "",
+    slotId: formData.get("slotId"),
+    clubId: formData.get("clubId"),
+    slotDate: formData.get("slotDate"),
+    serviceType: formData.get("serviceType"),
+    title: formData.get("title"),
+    area: formData.get("area") || "",
+    minSpend: formData.get("minSpend") || "",
+    capacity: formData.get("capacity") || "",
+    status: formData.get("status") || "AVAILABLE",
+    notes: formData.get("notes") || "",
+    active: formData.get("active") || "true"
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/manager/availability");
+    if (parsed.data.requestId) revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+    return;
+  }
+
+  const supabase = await createClient();
+  const { data: previous } = await supabase.from("availability_slots").select("status, min_spend, active").eq("id", parsed.data.slotId).maybeSingle();
+  const { error } = await supabase
+    .from("availability_slots")
+    .update({
+      club_id: parsed.data.clubId,
+      service_type: parsed.data.serviceType,
+      slot_date: parsed.data.slotDate,
+      title: parsed.data.title,
+      area: parsed.data.area || null,
+      min_spend: parsed.data.minSpend || null,
+      capacity: parsed.data.capacity || null,
+      status: parsed.data.status,
+      notes: parsed.data.notes || null,
+      active: parsed.data.active
+    })
+    .eq("id", parsed.data.slotId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: parsed.data.active ? "AVAILABILITY_SLOT_UPDATED" : "AVAILABILITY_SLOT_ARCHIVED",
+    entityType: "availability_slots",
+    entityId: parsed.data.slotId,
+    metadata: { from: previous ?? null, to: { status: parsed.data.status, minSpend: parsed.data.minSpend || null, active: parsed.data.active } }
+  });
+
+  revalidatePath("/manager/availability");
+  if (parsed.data.requestId) revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+}
+
+const availabilitySlotStatusSchema = z.object({
+  slotId: z.string().min(1),
+  requestId: z.string().optional().or(z.literal("")),
+  status: z.enum(["AVAILABLE", "LIMITED", "WAITLIST", "SOLD_OUT"]).optional(),
+  active: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
+export async function setAvailabilitySlotStatus(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = availabilitySlotStatusSchema.safeParse({
+    slotId: formData.get("slotId"),
+    requestId: formData.get("requestId") || "",
+    status: formData.get("status") || undefined,
+    active: formData.get("active") || "true"
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/manager/availability");
+    if (parsed.data.requestId) revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+    return;
+  }
+
+  const supabase = await createClient();
+  const update: { active: boolean; status?: "AVAILABLE" | "LIMITED" | "WAITLIST" | "SOLD_OUT" } = { active: parsed.data.active };
+  if (parsed.data.status) update.status = parsed.data.status;
+  const { error } = await supabase.from("availability_slots").update(update).eq("id", parsed.data.slotId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: parsed.data.active ? "AVAILABILITY_SLOT_STATUS_UPDATED" : "AVAILABILITY_SLOT_ARCHIVED",
+    entityType: "availability_slots",
+    entityId: parsed.data.slotId,
+    metadata: { status: parsed.data.status ?? null, active: parsed.data.active }
+  });
+
+  revalidatePath("/manager/availability");
+  if (parsed.data.requestId) revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+}
+
 const requestOfferSchema = z.object({
   requestId: z.string().min(1),
   availabilitySlotId: z.string().min(1).optional().or(z.literal("")),

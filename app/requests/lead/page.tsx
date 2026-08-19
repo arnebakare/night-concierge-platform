@@ -4,11 +4,11 @@ import { AppShell } from "@/components/layout/app-shell";
 import { LeadAssistant } from "@/components/request/lead-assistant";
 import { Button } from "@/components/ui/button";
 import { requireProfile } from "@/lib/auth";
-import { getActiveClubsForApp, getClientsForProfile } from "@/lib/data/app";
+import { getActiveClubsForApp, getClientsForProfile, getMessageTemplates } from "@/lib/data/app";
 
 export default async function LeadAssistantPage() {
   const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
-  const [clubs, clients] = await Promise.all([getActiveClubsForApp(), getClientsForProfile(profile)]);
+  const [clubs, clients, templates] = await Promise.all([getActiveClubsForApp(), getClientsForProfile(profile), getMessageTemplates()]);
   const homeHref = profile.role === "PROMOTER_MANAGER" ? "/manager" : "/dashboard";
 
   return (
@@ -20,7 +20,7 @@ export default async function LeadAssistantPage() {
           </Link>
         </Button>
       </div>
-      <LeadAssistant clubs={clubs} clients={clients} />
+      <LeadAssistant clubs={clubs} clients={clients} templates={templates} />
     </AppShell>
   );
 }

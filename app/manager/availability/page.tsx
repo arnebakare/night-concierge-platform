@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { CalendarDays, Euro, Plus, Users } from "lucide-react";
+import { Archive, CalendarDays, ChevronDown, Euro, Plus, Save, Users } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Textarea } from "@/components/ui/textarea";
-import { createAvailabilitySlot } from "@/lib/actions/management-actions";
+import { createAvailabilitySlot, setAvailabilitySlotStatus, updateAvailabilitySlot } from "@/lib/actions/management-actions";
 import { requireProfile } from "@/lib/auth";
 import { getActiveClubsForApp, getAvailabilitySlotsForProfile } from "@/lib/data/app";
 import type { AvailabilitySlot, RequestType } from "@/lib/types";
@@ -101,14 +101,14 @@ export default async function ManagerAvailabilityPage({
         </LuxuryCard>
 
         <div className="compact-list grid gap-2">
-          {slots.length ? slots.map((slot) => <AvailabilityRow key={slot.id} slot={slot} />) : <EmptyState />}
+          {slots.length ? slots.map((slot) => <AvailabilityRow key={slot.id} slot={slot} clubs={clubs} />) : <EmptyState />}
         </div>
       </div>
     </AppShell>
   );
 }
 
-function AvailabilityRow({ slot }: Readonly<{ slot: AvailabilitySlot }>) {
+function AvailabilityRow({ slot, clubs }: Readonly<{ slot: AvailabilitySlot; clubs: Awaited<ReturnType<typeof getActiveClubsForApp>> }>) {
   return (
     <LuxuryCard className="client-row bg-white p-3 text-ink-950 md:p-3">
       <div className="grid gap-2 md:grid-cols-[1fr_auto] md:items-center">
@@ -116,7 +116,12 @@ function AvailabilityRow({ slot }: Readonly<{ slot: AvailabilitySlot }>) {
           <p className="truncate text-sm font-semibold md:text-base">{slot.clubs?.name ?? "Venue"} · {slot.title}</p>
           <p className="mt-0.5 text-xs text-slate-500">{formatEnum(slot.service_type)} · {slot.area || "Area TBC"}</p>
         </div>
-        <span className={statusClass(slot.status)}>{slot.status.toLowerCase().replaceAll("_", " ")}</span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className={statusClass(slot.status)}>{slot.status.toLowerCase().replaceAll("_", " ")}</span>
+          <QuickSlotStatus slotId={slot.id} status="AVAILABLE" active={slot.status === "AVAILABLE"} />
+          <QuickSlotStatus slotId={slot.id} status="LIMITED" active={slot.status === "LIMITED"} />
+          <QuickSlotStatus slotId={slot.id} status="SOLD_OUT" active={slot.status === "SOLD_OUT"} />
+        </div>
       </div>
       <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-slate-500">
         <MiniFact icon={CalendarDays} label="Date" value={slot.slot_date} />
@@ -124,7 +129,62 @@ function AvailabilityRow({ slot }: Readonly<{ slot: AvailabilitySlot }>) {
         <MiniFact icon={Euro} label="Spend" value={slot.min_spend || "TBC"} />
       </div>
       {slot.notes && <p className="mt-2 text-xs leading-5 text-slate-500">{slot.notes}</p>}
+      <details className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+        <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between text-xs font-semibold text-slate-700">
+          Edit option
+          <ChevronDown className="size-4 text-slate-400" />
+        </summary>
+        <form action={updateAvailabilitySlot} className="mt-2 grid gap-2 md:grid-cols-2">
+          <input type="hidden" name="slotId" value={slot.id} />
+          <input type="hidden" name="requestId" value="" />
+          <Field label="Venue">
+            <select name="clubId" defaultValue={slot.club_id} className="h-10 w-full rounded-md border bg-white px-3 text-sm" required>
+              {clubs.map((club) => <option key={club.id} value={club.id}>{club.name}</option>)}
+            </select>
+          </Field>
+          <Field label="Date"><Input name="slotDate" type="date" defaultValue={slot.slot_date} required /></Field>
+          <Field label="Type">
+            <select name="serviceType" defaultValue={slot.service_type} className="h-10 w-full rounded-md border bg-white px-3 text-sm">
+              {requestTypes.map((type) => <option key={type} value={type}>{formatEnum(type)}</option>)}
+            </select>
+          </Field>
+          <Field label="Option"><Input name="title" defaultValue={slot.title} required /></Field>
+          <Field label="Area"><Input name="area" defaultValue={slot.area ?? ""} /></Field>
+          <Field label="Minimum spend"><Input name="minSpend" defaultValue={slot.min_spend ?? ""} /></Field>
+          <Field label="Capacity"><Input name="capacity" type="number" min={1} defaultValue={slot.capacity ?? ""} /></Field>
+          <Field label="Status">
+            <select name="status" defaultValue={slot.status} className="h-10 w-full rounded-md border bg-white px-3 text-sm">
+              <option value="AVAILABLE">Available</option>
+              <option value="LIMITED">Limited</option>
+              <option value="WAITLIST">Waitlist</option>
+              <option value="SOLD_OUT">Sold out</option>
+            </select>
+          </Field>
+          <div className="space-y-1.5 md:col-span-2">
+            <Label>Internal note</Label>
+            <Textarea name="notes" defaultValue={slot.notes ?? ""} className="min-h-20" />
+          </div>
+          <div className="grid grid-cols-2 gap-2 md:col-span-2">
+            <Button type="submit" size="sm" name="active" value="true"><Save className="size-4" />Save</Button>
+            <Button type="submit" size="sm" variant="secondary" name="active" value="false">
+              <Archive className="size-4" />Archive
+            </Button>
+          </div>
+        </form>
+      </details>
     </LuxuryCard>
+  );
+}
+
+function QuickSlotStatus({ slotId, status, active }: Readonly<{ slotId: string; status: AvailabilitySlot["status"]; active: boolean }>) {
+  return (
+    <form action={setAvailabilitySlotStatus}>
+      <input type="hidden" name="slotId" value={slotId} />
+      <input type="hidden" name="active" value="true" />
+      <Button type="submit" name="status" value={status} size="sm" variant={active ? "default" : "secondary"} className="h-7 min-h-7 px-2 text-[11px]">
+        {status === "SOLD_OUT" ? "Sold" : status.toLowerCase()}
+      </Button>
+    </form>
   );
 }
 

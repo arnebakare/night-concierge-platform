@@ -39,7 +39,7 @@ export default async function ManagerRequestsPage({
           Showing completed and archived requests. <Link href="/manager/requests" className="font-semibold underline">Back to active inbox</Link>
         </div>
       )}
-      <RequestListSummary requests={requests} baseHref="/manager/requests" />
+      <RequestListSummary requests={requests} baseHref="/manager/requests" availabilityHref="/manager/availability" />
       <RequestFilters action="/manager/requests" values={filters} clubs={clubs} promoters={promoters} />
       <div className="easy-only compact-list grid gap-2">
         {requests.length ? requests.map((request) => (

@@ -9,13 +9,13 @@ import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Textarea } from "@/components/ui/textarea";
 import { CopyMessageButton } from "@/components/request/copy-message-button";
 import { createManualRequest } from "@/lib/actions/request-actions";
-import { buildAvailabilityMessage, buildClientReply, parseWhatsAppLead, whatsAppHref, type LeadDraft } from "@/lib/sales/funnel";
-import type { Client, Club, RequestType } from "@/lib/types";
+import { buildAvailabilityMessageFromTemplate, buildClientReplyFromTemplate, findTemplate, parseWhatsAppLead, whatsAppHref, type LeadDraft } from "@/lib/sales/funnel";
+import type { Client, Club, MessageTemplate, RequestType } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
 const requestTypes: RequestType[] = ["TABLE", "GUESTLIST", "VIP_SERVICE", "GENERAL"];
 
-export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clients: Client[] }>) {
+export function LeadAssistant({ clubs, clients, templates = [] }: Readonly<{ clubs: Club[]; clients: Client[]; templates?: MessageTemplate[] }>) {
   const [pending, startTransition] = useTransition();
   const [raw, setRaw] = useState("");
   const [draft, setDraft] = useState<LeadDraft>(() => parseWhatsAppLead("", clubs));
@@ -39,8 +39,8 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
     clients: { name: draft.clientName || "Guest", phone: draft.phone },
     clubs: { name: selectedClub?.name ?? "Venue", city: selectedClub?.city ?? "Marbella" }
   };
-  const availabilityMessage = buildAvailabilityMessage(salesRequest);
-  const clientReply = buildClientReply(salesRequest, draft.language);
+  const availabilityMessage = buildAvailabilityMessageFromTemplate(salesRequest, findTemplate(templates, "venue_check", "en"));
+  const clientReply = buildClientReplyFromTemplate(salesRequest, templates, draft.language);
   const missingFields = [
     !draft.phone ? "WhatsApp number" : null,
     !draft.requestedDate ? "date" : null,
