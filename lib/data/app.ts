@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AvailabilitySlot, Client, Club, ConciergeEvent, ConciergeRequest, Profile, RequestOffer, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, Club, ConciergeEvent, ConciergeRequest, Profile, RequestOffer, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
 const requestSelect =
-  "id, client_id, club_id, promoter_id, assigned_manager_id, source, request_type, status, requested_date, arrival_time, guest_count, budget, message, internal_summary, created_at, clients(name, phone, country, preferred_language, vip_level, status), clubs(name, city, slug), promoter:profiles!requests_promoter_id_fkey(name, email)";
+  "id, client_id, club_id, promoter_id, assigned_manager_id, source, request_type, status, requested_date, arrival_time, guest_count, budget, message, internal_summary, created_at, clients(name, phone, client_code, country, preferred_language, vip_level, status), clubs(name, city, slug), promoter:profiles!requests_promoter_id_fkey(name, email)";
 
 export type RequestFilters = {
   status?: RequestStatus;
@@ -157,7 +157,7 @@ export async function getClientsForProfile(profile: Profile, filters?: ClientFil
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("clients")
-      .select("id, name, phone, email, instagram, country, preferred_language, vip_level, status")
+      .select("id, name, phone, client_code, email, instagram, country, preferred_language, vip_level, status")
       .order("updated_at", { ascending: false })
       .limit(80);
     if (error) throw error;
@@ -197,10 +197,10 @@ export type NoteFilters = {
 export async function getClientProfile(clientId: string, filters?: NoteFilters) {
   try {
     const supabase = await createClient();
-    const [{ data: client, error: clientError }, { data: notes, error: notesError }] = await Promise.all([
+    const [{ data: client, error: clientError }, { data: notes, error: notesError }, { data: aliases, error: aliasError }] = await Promise.all([
       supabase
         .from("clients")
-        .select("id, name, phone, email, instagram, country, preferred_language, vip_level, status")
+        .select("id, name, phone, client_code, email, instagram, country, preferred_language, vip_level, status")
         .eq("id", clientId)
         .single(),
       supabase
@@ -209,14 +209,23 @@ export async function getClientProfile(clientId: string, filters?: NoteFilters) 
         .eq("client_id", clientId)
         .order("created_at", { ascending: false })
         .limit(30)
+      ,
+      supabase
+        .from("client_aliases")
+        .select("name, source, created_at")
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false })
+        .limit(12)
     ]);
     if (clientError) throw clientError;
     if (notesError) throw notesError;
-    return { client: client as Client, notes: applyNoteFilters(normalizeNotes(notes), filters) };
+    if (aliasError) throw aliasError;
+    return { client: client as Client, notes: applyNoteFilters(normalizeNotes(notes), filters), aliases: (aliases ?? []) as ClientAlias[] };
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
     return {
       client: demoClients.find((item) => item.id === clientId) ?? demoClients[0],
+      aliases: [{ name: "Daniel Sjoestrand", source: "Demo", created_at: new Date().toISOString() }],
       notes: applyNoteFilters([
         { note_type: "PREFERENCE", visibility: "GLOBAL", content: "Prefers table near DJ booth and sparkling water on arrival." },
         { note_type: "RELIABILITY", visibility: "PRIVATE_TO_AUTHOR", content: "Usually confirms late but arrives with full group." }
@@ -432,7 +441,7 @@ export async function getProfileById(profileId: string) {
 export async function getClientForAccount(profileId: string) {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.from("clients").select("id, name, phone, email, instagram, country, preferred_language, vip_level, status").eq("profile_id", profileId).maybeSingle();
+    const { data, error } = await supabase.from("clients").select("id, name, phone, client_code, email, instagram, country, preferred_language, vip_level, status").eq("profile_id", profileId).maybeSingle();
     if (error) throw error;
     return data as Client | null;
   } catch (error) {
@@ -662,6 +671,7 @@ function applyRequestFilters(requests: ConciergeRequest[], filters?: RequestFilt
     return [
       request.clients?.name,
       request.clients?.phone,
+      request.clients?.client_code,
       request.clubs?.name,
       request.promoter?.name,
       request.message,
@@ -739,6 +749,7 @@ function applyClientFilters(clients: Client[], filters?: ClientFilters) {
     [
       client.name,
       client.phone,
+      client.client_code,
       client.email,
       client.instagram,
       client.vip_level,

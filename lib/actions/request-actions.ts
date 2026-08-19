@@ -9,6 +9,7 @@ import { publicRequestSchema, manualRequestSchema, type PublicRequestInput } fro
 import { sendRequestWhatsApp } from "@/lib/services/whatsapp";
 import { writeAuditLog } from "@/lib/services/audit";
 import { hasSupabaseServiceEnv, isDemoAuthEnabled } from "@/lib/env";
+import { customerCodeFromPhone, normalizePhoneNumber } from "@/lib/concierge/phone";
 import { createHash } from "crypto";
 
 export type RequestActionState = {
@@ -121,7 +122,7 @@ export async function createManualRequest(input: unknown): Promise<RequestAction
     redirect("/requests");
   }
 
-  const supabase = await createServerSupabase();
+  const supabase = createAdminClient();
   const data = parsed.data;
   const normalizedPhone = normalizePhone(data.phone);
   const requestMessage = withRequestContext(data.message || "", {
@@ -129,23 +130,14 @@ export async function createManualRequest(input: unknown): Promise<RequestAction
     occasionName: data.occasionName,
     occasionDate: data.occasionDate
   });
-  let clientId = data.clientId;
-
-  if (!clientId) {
-    const { data: client, error } = await supabase
-      .from("clients")
-      .insert({
-        name: data.name,
-        phone: normalizedPhone,
-        email: data.email || null,
-        instagram: data.instagram || null,
-        created_by_user_id: profile.id
-      })
-      .select("id")
-      .single();
-    if (error || !client) return { ok: false, message: error?.message ?? "Could not create client." };
-    clientId = client.id;
-  }
+  const { clientId, status: clientStatus } = await upsertClient(supabase, {
+    name: data.name,
+    phone: normalizedPhone,
+    email: data.email || null,
+    instagram: data.instagram || null,
+    createdBy: profile.id
+  });
+  if (clientStatus === "BLOCKED") return { ok: false, message: "This client is blocked. A manager must review before creating a new request." };
 
   const { data: request, error } = await supabase
     .from("requests")
@@ -202,12 +194,18 @@ async function upsertClient(
     const { data: matchingProfile } = await supabase.from("profiles").select("id").eq("role", "CLIENT").ilike("email", input.email).maybeSingle();
     profileId = matchingProfile?.id ?? null;
   }
-  const { data: existing } = await supabase.from("clients").select("id, status").eq("phone", input.phone).maybeSingle();
+  const clientCode = customerCodeFromPhone(input.phone);
+  const { data: existing } = await supabase.from("clients").select("id, status, name").eq("client_code", clientCode).maybeSingle();
   if (existing?.id) {
-    if (existing.status !== "BLOCKED") await supabase
-      .from("clients")
-      .update({ name: input.name, email: input.email, instagram: input.instagram, ...(profileId ? { profile_id: profileId } : {}) })
-      .eq("id", existing.id);
+    if (existing.status !== "BLOCKED") {
+      const updates: Record<string, string | null> = {};
+      if (input.email) updates.email = input.email;
+      if (input.instagram) updates.instagram = input.instagram;
+      if (profileId) updates.profile_id = profileId;
+      if (!existing.name || /^unknown guest$/i.test(existing.name)) updates.name = input.name;
+      if (Object.keys(updates).length) await supabase.from("clients").update(updates).eq("id", existing.id);
+      await rememberClientAlias(supabase, existing.id, input.name, "PUBLIC_REQUEST");
+    }
     return { clientId: existing.id, status: existing.status as string };
   }
 
@@ -216,6 +214,7 @@ async function upsertClient(
     .insert({
       name: input.name,
       phone: input.phone,
+      client_code: clientCode,
       email: input.email,
       instagram: input.instagram,
       profile_id: profileId,
@@ -228,10 +227,13 @@ async function upsertClient(
   return { clientId: data.id, status: "NORMAL" };
 }
 
-function normalizePhone(phone: string) {
-  const digits = phone.replace(/\D/g, "");
-  return phone.trim().startsWith("+") ? `+${digits}` : digits;
+async function rememberClientAlias(supabase: ReturnType<typeof createAdminClient>, clientId: string, name: string, source: string) {
+  const cleanName = name.trim();
+  if (!cleanName || /^unknown guest$/i.test(cleanName)) return;
+  await supabase.from("client_aliases").upsert({ client_id: clientId, name: cleanName, source }, { onConflict: "client_id,name", ignoreDuplicates: true });
 }
+
+const normalizePhone = normalizePhoneNumber;
 
 function withRequestContext(
   message: string,

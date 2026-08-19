@@ -51,12 +51,19 @@ export type Client = {
   id: string;
   name: string;
   phone: string;
+  client_code?: string | null;
   email: string | null;
   instagram: string | null;
   country?: string | null;
   preferred_language?: "en" | "es" | "sv" | null;
   vip_level: "STANDARD" | "SILVER" | "GOLD" | "PLATINUM";
   status: "NORMAL" | "WATCHLIST" | "MANAGER_APPROVAL_REQUIRED" | "BLOCKED";
+};
+
+export type ClientAlias = {
+  name: string;
+  source: string;
+  created_at: string;
 };
 
 export type ConciergeRequest = {
@@ -75,7 +82,7 @@ export type ConciergeRequest = {
   message: string | null;
   internal_summary: string | null;
   created_at: string;
-  clients?: Pick<Client, "name" | "phone" | "country" | "preferred_language" | "vip_level" | "status"> | null;
+  clients?: Pick<Client, "name" | "phone" | "client_code" | "country" | "preferred_language" | "vip_level" | "status"> | null;
   clubs?: Pick<Club, "name" | "city" | "slug"> | null;
   promoter?: Pick<Profile, "name" | "email"> | null;
 };

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Crown, Globe2, Languages, Phone, ShieldAlert } from "lucide-react";
+import { Barcode, Crown, Globe2, Languages, Phone, ShieldAlert } from "lucide-react";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import type { Client } from "@/lib/types";
+import { formatCustomerCode } from "@/lib/concierge/phone";
 import { formatEnum } from "@/lib/utils";
 
 export function ClientCard({ client, href }: Readonly<{ client: Client; href: string }>) {
@@ -19,6 +20,9 @@ export function ClientCard({ client, href }: Readonly<{ client: Client; href: st
               <p className="truncate text-sm font-semibold leading-tight text-ink-950 md:text-base">{client.name}</p>
               <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-slate-500">
                 <Phone className="size-3.5 shrink-0" />{client.phone}
+              </p>
+              <p className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] font-medium text-slate-400">
+                <Barcode className="size-3.5 shrink-0" />{client.client_code ? `SKU ${client.client_code}` : formatCustomerCode(client.phone)}
               </p>
             </div>
           </div>

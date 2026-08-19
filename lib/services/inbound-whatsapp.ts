@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { customerCodeFromPhone, normalizePhoneNumber } from "@/lib/concierge/phone";
 import { parseWhatsAppLead } from "@/lib/sales/funnel";
 import { generateSchedulePlan, type SpendProfile } from "@/lib/services/ai-schedule";
 import type { Club, Profile } from "@/lib/types";
@@ -56,9 +57,9 @@ export async function handleInboundWhatsApp(payload: TwilioInboundWhatsAppPayloa
   const selectedClub = clubs.find((club) => club.id === draft.clubId) ?? clubs[0];
   const clientPhone = staff ? extractClientPhone(body) : from.replace(/^whatsapp:/, "");
   const clientName = extractClientName(body) || (!staff ? payload.ProfileName : "") || "Unknown guest";
-  const fallbackPhone = clientPhone || fallbackLeadPhone(providerMessageId, from);
   const missing = [
-    !selectedClub ? "venue" : null
+    !selectedClub ? "venue" : null,
+    !clientPhone ? "client WhatsApp number" : null
   ].filter(Boolean);
 
   const inboundId = await insertInboundMessage(supabase, {
@@ -82,7 +83,7 @@ export async function handleInboundWhatsApp(payload: TwilioInboundWhatsAppPayloa
   try {
     const clientId = await upsertClient(supabase, {
       name: clientName,
-      phone: fallbackPhone,
+      phone: clientPhone,
       createdBy: staff?.id ?? null
     });
     const managerId = staff?.role === "PROMOTER_MANAGER" ? staff.id : staff?.manager_id ?? await resolveDefaultManagerForClub(supabase, selectedClub.id);
@@ -265,18 +266,32 @@ async function insertInboundMessage(
 
 async function upsertClient(supabase: SupabaseClient, input: { name: string; phone: string; createdBy: string | null }) {
   const phone = normalizePhone(input.phone);
-  const { data: existing } = await supabase.from("clients").select("id, status").eq("phone", phone).maybeSingle();
+  const clientCode = customerCodeFromPhone(phone);
+  const { data: existing } = await supabase.from("clients").select("id, status, name").eq("client_code", clientCode).maybeSingle();
   if (existing?.id) {
-    if (existing.status !== "BLOCKED") await supabase.from("clients").update({ name: input.name }).eq("id", existing.id);
+    if (existing.status !== "BLOCKED" && (!existing.name || /^unknown guest$/i.test(existing.name))) {
+      await supabase.from("clients").update({ name: input.name, phone, client_code: clientCode }).eq("id", existing.id);
+    }
+    await rememberClientAlias(supabase, existing.id, input.name, "INBOUND_WHATSAPP");
     return existing.id as string;
   }
   const { data, error } = await supabase
     .from("clients")
-    .insert({ name: input.name, phone, created_by_user_id: input.createdBy })
+    .insert({ name: input.name, phone, client_code: clientCode, created_by_user_id: input.createdBy })
     .select("id")
     .single();
   if (error || !data) throw new Error(error?.message ?? "Could not create client.");
+  await rememberClientAlias(supabase, data.id, input.name, "INBOUND_WHATSAPP");
   return data.id as string;
+}
+
+async function rememberClientAlias(supabase: SupabaseClient, clientId: string, name: string, source: string) {
+  const cleanName = name.trim();
+  if (!cleanName || /^unknown guest$/i.test(cleanName)) return;
+  await supabase.from("client_aliases").upsert(
+    { client_id: clientId, name: cleanName, source },
+    { onConflict: "client_id,name", ignoreDuplicates: true }
+  );
 }
 
 async function resolveDefaultManagerForClub(supabase: SupabaseClient, clubId: string) {
@@ -365,15 +380,9 @@ function extractClientName(body: string) {
 
 function normalizePhone(phone: string) {
   if (phone.startsWith("lead-")) return phone;
-  const digits = onlyDigits(phone);
-  return phone.trim().startsWith("+") ? `+${digits}` : digits;
+  return normalizePhoneNumber(phone);
 }
 
 function onlyDigits(value: string) {
   return value.replace(/\D/g, "");
-}
-
-function fallbackLeadPhone(providerMessageId: string | null, from: string) {
-  const sid = providerMessageId ? onlyDigits(providerMessageId).slice(-10) : "";
-  return `lead-${sid || onlyDigits(from).slice(-10) || Date.now()}`;
 }

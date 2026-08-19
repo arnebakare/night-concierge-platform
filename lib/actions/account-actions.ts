@@ -8,6 +8,7 @@ import { isDemoAuthEnabled } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/services/audit";
 import { roleHome } from "@/lib/auth";
+import { normalizePhoneNumber } from "@/lib/concierge/phone";
 
 const profileSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -18,11 +19,16 @@ export async function updateOwnProfile(formData: FormData) {
   const profile = await requireProfile();
   const parsed = profileSchema.safeParse({ name: formData.get("name"), phone: formData.get("phone") || "" });
   if (!parsed.success || isDemoAuthEnabled()) { revalidatePath("/profile"); return; }
+  const submittedPhone = parsed.data.phone ?? "";
+  if (profile.role === "CLIENT" && submittedPhone.trim().length < 6) {
+    throw new Error("Add your WhatsApp number so your requests stay connected to your profile.");
+  }
   const supabase = await createClient();
-  const { error } = await supabase.from("profiles").update({ name: parsed.data.name, phone: parsed.data.phone || null }).eq("id", profile.id);
+  const phone = submittedPhone ? normalizePhoneNumber(submittedPhone) : "";
+  const { error } = await supabase.from("profiles").update({ name: parsed.data.name, phone: phone || null }).eq("id", profile.id);
   if (error) throw new Error(error.message);
   if (profile.role === "CLIENT") {
-    const { error: clientError } = await supabase.rpc("update_own_client_contact", { p_name: parsed.data.name, p_phone: parsed.data.phone || "", p_email: profile.email || "" });
+    const { error: clientError } = await supabase.rpc("update_own_client_contact", { p_name: parsed.data.name, p_phone: phone, p_email: profile.email || "" });
     if (clientError) throw new Error(clientError.message);
   }
   await writeAuditLog(supabase, { userId: profile.id, action: "PROFILE_UPDATED", entityType: "profiles", entityId: profile.id, metadata: {} });

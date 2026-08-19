@@ -7,18 +7,22 @@ import { ClientNoteForm } from "@/components/client/client-note-form";
 import { ClientEditForm } from "@/components/client/client-edit-form";
 import { requireProfile } from "@/lib/auth";
 import { getActiveClubsForApp, getClientProfile } from "@/lib/data/app";
+import { formatCustomerCode } from "@/lib/concierge/phone";
 
 export default async function ManagerClientDetailPage({
   params,
   searchParams
 }: Readonly<{ params: Promise<{ id: string }>; searchParams: Promise<{ visibility?: string; type?: string }> }>) {
   const [profile, { id }, filters] = await Promise.all([requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]), params, searchParams]);
-  const [{ client, notes }, clubs] = await Promise.all([getClientProfile(id, filters), getActiveClubsForApp()]);
+  const [{ client, notes, aliases }, clubs] = await Promise.all([getClientProfile(id, filters), getActiveClubsForApp()]);
+  const aliasNames = aliases.map((alias) => alias.name).filter((name) => name && name !== client.name);
 
   return (
     <AppShell profile={profile} title={client.name} eyebrow="Full profile">
       <LuxuryCard>
-        <p className="text-muted-foreground">{client.phone} · {client.email ?? "No email"} · {client.instagram ?? "No Instagram"}</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">{client.client_code ? `SKU ${client.client_code}` : formatCustomerCode(client.phone)}</p>
+        <p className="mt-2 text-muted-foreground">{client.phone} · {client.email ?? "No email"} · {client.instagram ?? "No Instagram"}</p>
+        {aliasNames.length ? <p className="mt-2 text-xs text-slate-500">Also known as {aliasNames.slice(0, 4).join(", ")}</p> : null}
         <p className="mt-2 text-sm">VIP {client.vip_level} · {client.status}</p>
         <div className="mt-4 flex gap-2">
           <Button asChild size="sm" variant="secondary">

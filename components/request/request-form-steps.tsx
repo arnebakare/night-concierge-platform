@@ -305,7 +305,7 @@ export function RequestFormSteps({
 
       {step === 3 && (
         <div className="space-y-4">
-          <StepIntro title="Who should we contact?" description="WhatsApp is best. Email and Instagram are optional." />
+          <StepIntro title="Who should we contact?" description="Your WhatsApp number keeps every request connected to the right profile." />
           <div className="flex items-start gap-2 rounded-xl border border-champagne-700/24 bg-white/[0.045] p-3 text-xs leading-5 text-muted-foreground">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-champagne-300" />
             <span>Your details only go to the hosting team so they can reply and confirm availability.</span>
@@ -313,7 +313,7 @@ export function RequestFormSteps({
           <Field label="Name" error={form.formState.errors.name?.message}>
             <Input {...form.register("name")} placeholder="Full name" autoComplete="name" />
           </Field>
-          <Field label="Phone / WhatsApp" error={form.formState.errors.phone?.message}>
+          <Field label="WhatsApp number" error={form.formState.errors.phone?.message}>
             <Input {...form.register("phone")} placeholder="+34 600 000 000" inputMode="tel" autoComplete="tel" />
           </Field>
           <Field label="Email optional" error={form.formState.errors.email?.message}>

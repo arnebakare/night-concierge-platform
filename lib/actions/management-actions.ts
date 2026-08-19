@@ -12,6 +12,7 @@ import { writeAuditLog } from "@/lib/services/audit";
 import { sendStoredWhatsApp } from "@/lib/services/whatsapp";
 import { sendStoredEmail } from "@/lib/services/email";
 import { importEventsFromConfiguredSources } from "@/lib/services/event-import";
+import { customerCodeFromPhone, normalizePhoneNumber } from "@/lib/concierge/phone";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const statusSchema = z.object({
@@ -67,7 +68,7 @@ const requestClientContactSchema = z.object({
   requestId: z.string().min(1),
   clientId: z.string().min(1),
   name: z.string().trim().min(2).max(100),
-  phone: z.string().trim().min(2).max(40),
+  phone: z.string().trim().min(6).max(40).regex(/^[+\d][\d\s().-]+$/),
   country: z.string().trim().max(80).optional().or(z.literal("")),
   preferredLanguage: z.enum(["en", "es", "sv"]).default("en")
 });
@@ -90,30 +91,43 @@ export async function updateRequestClientContact(formData: FormData) {
     return;
   }
 
-  const supabase = await createClient();
-  const { data: previous } = await supabase.from("clients").select("name, phone, country, preferred_language").eq("id", parsed.data.clientId).maybeSingle();
+  const supabase = createAdminClient();
+  const normalizedPhone = normalizePhoneNumber(parsed.data.phone);
+  const clientCode = customerCodeFromPhone(normalizedPhone);
+  const [{ data: previous }, { data: phoneOwner }] = await Promise.all([
+    supabase.from("clients").select("id, name, phone, country, preferred_language").eq("id", parsed.data.clientId).maybeSingle(),
+    supabase.from("clients").select("id, name").eq("client_code", clientCode).maybeSingle()
+  ]);
+  const targetClientId = phoneOwner?.id ?? parsed.data.clientId;
+  if (targetClientId !== parsed.data.clientId) {
+    await mergeClientPortfolio(supabase, parsed.data.clientId, targetClientId);
+  }
   const { error } = await supabase
     .from("clients")
     .update({
-      name: parsed.data.name,
-      phone: parsed.data.phone,
+      name: phoneOwner?.id && !/^unknown guest$/i.test(phoneOwner.name) ? phoneOwner.name : parsed.data.name,
+      phone: normalizedPhone,
+      client_code: clientCode,
       country: parsed.data.country || null,
       preferred_language: parsed.data.preferredLanguage
     })
-    .eq("id", parsed.data.clientId);
+    .eq("id", targetClientId);
   if (error) throw new Error(error.message);
+  await rememberClientAlias(supabase, targetClientId, parsed.data.name, "REQUEST_CONTACT_UPDATE");
 
   await writeAuditLog(supabase, {
     userId: profile.id,
     action: "REQUEST_CLIENT_CONTACT_UPDATED",
     entityType: "clients",
-    entityId: parsed.data.clientId,
+    entityId: targetClientId,
     metadata: {
       requestId: parsed.data.requestId,
+      requestedClientId: parsed.data.clientId,
+      phoneMatchedClientId: phoneOwner?.id ?? null,
       from: previous ?? null,
       to: {
         name: parsed.data.name,
-        phone: parsed.data.phone,
+        phone: normalizedPhone,
         country: parsed.data.country || null,
         preferredLanguage: parsed.data.preferredLanguage
       }
@@ -122,6 +136,8 @@ export async function updateRequestClientContact(formData: FormData) {
 
   revalidatePath(`/requests/${parsed.data.requestId}`);
   revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+  revalidatePath(`/clients/${targetClientId}`);
+  revalidatePath(`/manager/clients/${targetClientId}`);
   revalidatePath("/clients");
   revalidatePath("/manager/clients");
 }
@@ -986,7 +1002,7 @@ export async function addClientNote(formData: FormData) {
 
 const clientSchema = z.object({
   name: z.string().min(2),
-  phone: z.string().min(6),
+  phone: z.string().trim().min(6).max(30).regex(/^[+\d][\d\s().-]+$/),
   email: z.string().email().optional().or(z.literal("")),
   instagram: z.string().optional().or(z.literal("")),
   country: z.string().trim().max(80).optional().or(z.literal("")),
@@ -1015,12 +1031,14 @@ export async function createClientRecord(formData: FormData) {
     return;
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("clients")
-    .insert({
-      name: parsed.data.name,
-      phone: parsed.data.phone,
+  const supabase = createAdminClient();
+  const normalizedPhone = normalizePhoneNumber(parsed.data.phone);
+  const clientCode = customerCodeFromPhone(normalizedPhone);
+  const { data: existing } = await supabase.from("clients").select("id, status, name").eq("client_code", clientCode).maybeSingle();
+  const payload = {
+      name: existing?.name && !/^unknown guest$/i.test(existing.name) ? existing.name : parsed.data.name,
+      phone: normalizedPhone,
+      client_code: clientCode,
       email: parsed.data.email || null,
       instagram: parsed.data.instagram || null,
       country: parsed.data.country || null,
@@ -1028,15 +1046,17 @@ export async function createClientRecord(formData: FormData) {
       vip_level: parsed.data.vipLevel,
       status: parsed.data.status,
       created_by_user_id: profile.id
-    })
-    .select("id")
-    .single();
+    };
+  const { data, error } = existing?.id
+    ? await supabase.from("clients").update(payload).eq("id", existing.id).select("id").single()
+    : await supabase.from("clients").insert(payload).select("id").single();
 
   if (error || !data) throw new Error(error?.message ?? "Could not create client.");
+  await rememberClientAlias(supabase, data.id, parsed.data.name, "CRM_CREATE");
 
   await writeAuditLog(supabase, {
     userId: profile.id,
-    action: "CLIENT_CREATED",
+    action: existing?.id ? "CLIENT_MATCHED_BY_PHONE" : "CLIENT_CREATED",
     entityType: "clients",
     entityId: data.id,
     metadata: { vipLevel: parsed.data.vipLevel, status: parsed.data.status }
@@ -1075,10 +1095,18 @@ export async function updateClientRecord(formData: FormData) {
     return;
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
+  const normalizedPhone = normalizePhoneNumber(parsed.data.phone);
+  const clientCode = customerCodeFromPhone(normalizedPhone);
+  const { data: phoneOwner } = await supabase.from("clients").select("id, name").eq("client_code", clientCode).maybeSingle();
+  const targetClientId = phoneOwner?.id ?? parsed.data.clientId;
+  if (targetClientId !== parsed.data.clientId) {
+    await mergeClientPortfolio(supabase, parsed.data.clientId, targetClientId);
+  }
   const updates: Record<string, string | null> = {
-      name: parsed.data.name,
-      phone: parsed.data.phone,
+      name: phoneOwner?.id && !/^unknown guest$/i.test(phoneOwner.name) ? phoneOwner.name : parsed.data.name,
+      phone: normalizedPhone,
+      client_code: clientCode,
       email: parsed.data.email || null,
       instagram: parsed.data.instagram || null,
       country: parsed.data.country || null,
@@ -1089,22 +1117,42 @@ export async function updateClientRecord(formData: FormData) {
   const { error } = await supabase
     .from("clients")
     .update(updates)
-    .eq("id", parsed.data.clientId);
+    .eq("id", targetClientId);
 
   if (error) throw new Error(error.message);
+  await rememberClientAlias(supabase, targetClientId, parsed.data.name, "CRM_UPDATE");
 
   await writeAuditLog(supabase, {
     userId: profile.id,
     action: "CLIENT_UPDATED",
     entityType: "clients",
-    entityId: parsed.data.clientId,
-    metadata: { vipLevel: parsed.data.vipLevel, status, country: parsed.data.country || null, preferredLanguage: parsed.data.preferredLanguage }
+    entityId: targetClientId,
+    metadata: { requestedClientId: parsed.data.clientId, phoneMatchedClientId: phoneOwner?.id ?? null, vipLevel: parsed.data.vipLevel, status, country: parsed.data.country || null, preferredLanguage: parsed.data.preferredLanguage }
   });
 
-  revalidatePath(`/clients/${parsed.data.clientId}`);
-  revalidatePath(`/manager/clients/${parsed.data.clientId}`);
+  revalidatePath(`/clients/${targetClientId}`);
+  revalidatePath(`/manager/clients/${targetClientId}`);
   revalidatePath("/clients");
   revalidatePath("/manager/clients");
+}
+
+async function rememberClientAlias(supabase: ReturnType<typeof createAdminClient>, clientId: string, name: string, source: string) {
+  const cleanName = name.trim();
+  if (!cleanName || /^unknown guest$/i.test(cleanName)) return;
+  await supabase.from("client_aliases").upsert({ client_id: clientId, name: cleanName, source }, { onConflict: "client_id,name", ignoreDuplicates: true });
+}
+
+async function mergeClientPortfolio(supabase: ReturnType<typeof createAdminClient>, fromClientId: string, toClientId: string) {
+  if (fromClientId === toClientId) return;
+  const { data: source } = await supabase.from("clients").select("name").eq("id", fromClientId).maybeSingle();
+  await rememberClientAlias(supabase, toClientId, source?.name ?? "", "CRM_MERGE");
+  await Promise.all([
+    supabase.from("requests").update({ client_id: toClientId }).eq("client_id", fromClientId),
+    supabase.from("client_notes").update({ client_id: toClientId }).eq("client_id", fromClientId),
+    supabase.from("magic_links").update({ client_id: toClientId }).eq("client_id", fromClientId),
+    supabase.from("retention_outreach").update({ client_id: toClientId }).eq("client_id", fromClientId),
+    supabase.from("schedule_plans").update({ client_id: toClientId }).eq("client_id", fromClientId)
+  ]);
 }
 
 const assignmentSchema = z.object({

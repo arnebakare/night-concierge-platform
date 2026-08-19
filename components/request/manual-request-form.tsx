@@ -35,7 +35,7 @@ export function ManualRequestForm({ clubs, clients }: Readonly<{ clubs: Club[]; 
       internalNote: ""
     }
   });
-  const matchingClients = useMemo(() => clients.filter((client) => `${client.name} ${client.phone} ${client.instagram ?? ""}`.toLowerCase().includes(clientQuery.toLowerCase())).slice(0, 8), [clients, clientQuery]);
+  const matchingClients = useMemo(() => clients.filter((client) => `${client.name} ${client.phone} ${client.client_code ?? ""} ${client.instagram ?? ""}`.toLowerCase().includes(clientQuery.toLowerCase())).slice(0, 8), [clients, clientQuery]);
   const values = form.watch();
 
   function chooseClient(clientId: string) {
@@ -55,13 +55,14 @@ export function ManualRequestForm({ clubs, clients }: Readonly<{ clubs: Club[]; 
     <form onSubmit={form.handleSubmit(submit)} className="space-y-5">
       <section className="space-y-3">
         <p className="text-sm uppercase tracking-[0.24em] text-champagne-300">1. Client</p>
-        <Input value={clientQuery} onChange={(event) => setClientQuery(event.target.value)} placeholder="Search phone, name, Instagram" />
+        <p className="text-sm text-muted-foreground">WhatsApp number is the customer code. Same phone means same portfolio, even if the name changes.</p>
+        <Input value={clientQuery} onChange={(event) => setClientQuery(event.target.value)} placeholder="Search phone, SKU, name, Instagram" />
         {clientQuery && <div className="grid gap-2">{matchingClients.map((client) => <button key={client.id} type="button" onClick={() => chooseClient(client.id)} className="min-h-12 rounded-md border border-champagne-700/40 bg-secondary px-3 text-left text-sm"><span className="font-semibold">{client.name}</span><span className="ml-2 text-muted-foreground">{client.phone}</span></button>)}</div>}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Name" error={form.formState.errors.name?.message}>
             <Input {...form.register("name")} placeholder="Name" />
           </Field>
-          <Field label="WhatsApp" error={form.formState.errors.phone?.message}>
+          <Field label="WhatsApp number" error={form.formState.errors.phone?.message}>
             <Input {...form.register("phone")} placeholder="+34..." />
           </Field>
         </div>

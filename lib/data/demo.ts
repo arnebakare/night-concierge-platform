@@ -52,7 +52,7 @@ export const demoRequests: ConciergeRequest[] = [
 ];
 
 export const demoClients: Client[] = [
-  { id: "c1", name: "Daniel", phone: "+34 611 222 333", email: "daniel@example.com", instagram: "@daniel", country: "Sweden", preferred_language: "sv", vip_level: "GOLD", status: "NORMAL" },
-  { id: "c2", name: "Olivia", phone: "+34 622 333 444", email: null, instagram: "@olivia", country: "United Kingdom", preferred_language: "en", vip_level: "SILVER", status: "NORMAL" },
-  { id: "c3", name: "Daniel", phone: "+34 633 444 555", email: "daniel.vip@example.com", instagram: "@danielvip", country: "Spain", preferred_language: "es", vip_level: "PLATINUM", status: "MANAGER_APPROVAL_REQUIRED" }
+  { id: "c1", name: "Daniel", phone: "+34 611 222 333", client_code: "34611222333", email: "daniel@example.com", instagram: "@daniel", country: "Sweden", preferred_language: "sv", vip_level: "GOLD", status: "NORMAL" },
+  { id: "c2", name: "Olivia", phone: "+34 622 333 444", client_code: "34622333444", email: null, instagram: "@olivia", country: "United Kingdom", preferred_language: "en", vip_level: "SILVER", status: "NORMAL" },
+  { id: "c3", name: "Daniel", phone: "+34 633 444 555", client_code: "34633444555", email: "daniel.vip@example.com", instagram: "@danielvip", country: "Spain", preferred_language: "es", vip_level: "PLATINUM", status: "MANAGER_APPROVAL_REQUIRED" }
 ];

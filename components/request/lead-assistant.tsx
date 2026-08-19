@@ -42,6 +42,7 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
   const availabilityMessage = buildAvailabilityMessage(salesRequest);
   const clientReply = buildClientReply(salesRequest, draft.language);
   const missingFields = [
+    !draft.phone ? "phone" : null,
     !draft.requestedDate ? "date" : null,
     !draft.clubId ? "venue" : null
   ].filter(Boolean);
@@ -67,6 +68,10 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
 
   function submit() {
     setError("");
+    if (!draft.phone.trim()) {
+      setError("Add the client's WhatsApp number first. The phone number is the customer code and keeps their portfolio together.");
+      return;
+    }
     startTransition(async () => {
       const result = await createManualRequest({
         clubId: draft.clubId,
@@ -74,7 +79,7 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
         requestedDate: draft.requestedDate,
         guestCount: draft.guestCount,
         name: draft.clientName || "Unknown guest",
-        phone: draft.phone || `000${Date.now()}`,
+        phone: draft.phone,
         email: "",
         instagram: "",
         arrivalTime: draft.arrivalTime,
@@ -134,7 +139,7 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
           <Field label="Client optional">
             <Input value={draft.clientName} onChange={(event) => setDraftField("clientName", event.target.value, setDraft)} placeholder="Name" />
           </Field>
-          <Field label="WhatsApp optional">
+          <Field label="WhatsApp">
             <Input value={draft.phone} onChange={(event) => setDraftField("phone", event.target.value, setDraft)} placeholder="+34..." />
           </Field>
           <Field label="Venue">
@@ -174,7 +179,7 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
           <Textarea value={draft.message} onChange={(event) => setDraftField("message", event.target.value, setDraft)} />
         </Field>
 
-        <Button type="button" size="lg" className="w-full" onClick={submit} disabled={pending || !draft.clubId}>
+        <Button type="button" size="lg" className="w-full" onClick={submit} disabled={pending || !draft.clubId || !draft.phone.trim()}>
           <Send className="size-5" /> {pending ? "Creating" : "Create request"}
         </Button>
         {error && <p className="text-sm text-red-200">{error}</p>}
