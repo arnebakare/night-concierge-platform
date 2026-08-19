@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { sendClientRetentionMessage } from "@/lib/actions/management-actions";
 import type { RetentionClient } from "@/lib/data/app";
-import { inferLanguageFromCountry } from "@/lib/sales/funnel";
+import type { MessageTemplate } from "@/lib/types";
+import { buildRetentionMessageFromTemplate, inferLanguageFromCountry } from "@/lib/sales/funnel";
 
-export function RetentionClientCard({ client }: Readonly<{ client: RetentionClient }>) {
+export function RetentionClientCard({ client, templates = [] }: Readonly<{ client: RetentionClient; templates?: MessageTemplate[] }>) {
   const language = client.preferred_language ?? inferLanguageFromCountry(client.country);
-  const message = buildRetentionMessage(client.name, language);
+  const message = buildRetentionMessageFromTemplate(client, templates) || buildRetentionMessage(client.name, language);
   const dormantLabel = client.days_since_booking === null ? "No bookings yet" : `${client.days_since_booking} days since last booking`;
   const mailtoHref = client.email
     ? `mailto:${client.email}?subject=${encodeURIComponent("A note from your Marbella concierge")}&body=${encodeURIComponent(message)}`

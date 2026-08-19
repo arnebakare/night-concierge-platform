@@ -1,4 +1,4 @@
-import { CalendarDays, Euro, Users } from "lucide-react";
+import { Archive, CalendarDays, Euro, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CopyMessageButton } from "@/components/request/copy-message-button";
 import { OfferComposer } from "@/components/request/offer-composer";
 import { StatusSubmitButton } from "@/components/request/status-submit-button";
-import { createAvailabilitySlot, updateRequestOfferStatus } from "@/lib/actions/management-actions";
+import { createAvailabilitySlot, setAvailabilitySlotStatus, updateRequestOfferStatus } from "@/lib/actions/management-actions";
 import type { AvailabilitySlot, ConciergeRequest, MessageTemplate, RequestOffer } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 import { buildClientOfferFromTemplate, isTemporaryPhone } from "@/lib/sales/funnel";
@@ -50,6 +50,21 @@ export function AvailabilityOfferPanel({
               <MiniFact icon={Euro} label="Spend" value={slot.min_spend || "TBC"} />
             </div>
             {slot.notes && <p className="mt-2 text-xs leading-5 text-ink-500">{slot.notes}</p>}
+            {canManageAvailability && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <QuickSlotStatus slotId={slot.id} requestId={request.id} status="AVAILABLE" active={slot.status === "AVAILABLE"} />
+                <QuickSlotStatus slotId={slot.id} requestId={request.id} status="LIMITED" active={slot.status === "LIMITED"} />
+                <QuickSlotStatus slotId={slot.id} requestId={request.id} status="SOLD_OUT" active={slot.status === "SOLD_OUT"} />
+                <form action={setAvailabilitySlotStatus}>
+                  <input type="hidden" name="slotId" value={slot.id} />
+                  <input type="hidden" name="requestId" value={request.id} />
+                  <input type="hidden" name="active" value="false" />
+                  <Button type="submit" size="sm" variant="secondary" className="h-8 min-h-8 px-2.5 text-xs">
+                    <Archive className="size-3.5" /> Archive
+                  </Button>
+                </form>
+              </div>
+            )}
           </div>
         )) : (
           <div className="rounded-md border border-dashed border-champagne-700/40 bg-secondary/40 p-3 text-sm text-muted-foreground">
@@ -158,6 +173,19 @@ function MiniFact({ icon: Icon, label, value }: Readonly<{ icon: typeof Calendar
 
 function StatusPill({ value }: Readonly<{ value: string }>) {
   return <span className="w-fit rounded-full border border-champagne-700/40 px-2 py-1 text-[11px] font-semibold text-champagne-100">{statusLabel(value)}</span>;
+}
+
+function QuickSlotStatus({ slotId, requestId, status, active }: Readonly<{ slotId: string; requestId: string; status: AvailabilitySlot["status"]; active: boolean }>) {
+  return (
+    <form action={setAvailabilitySlotStatus}>
+      <input type="hidden" name="slotId" value={slotId} />
+      <input type="hidden" name="requestId" value={requestId} />
+      <input type="hidden" name="active" value="true" />
+      <Button type="submit" name="status" value={status} size="sm" variant={active ? "default" : "secondary"} className="h-8 min-h-8 px-2.5 text-xs">
+        {status === "SOLD_OUT" ? "Sold" : status.toLowerCase()}
+      </Button>
+    </form>
+  );
 }
 
 function statusLabel(status: string) {

@@ -128,6 +128,38 @@ export function buildClientOfferFromTemplate(
   });
 }
 
+export function buildRetentionMessageFromTemplate(
+  client: { name: string; country?: string | null; preferred_language?: LeadDraft["language"] | null },
+  templates: MessageTemplate[] = []
+) {
+  const language = client.preferred_language ?? inferLanguageFromCountry(client.country);
+  const template = findTemplate(templates, "retention_checkin", language);
+  if (!template) return "";
+  const clientName = client.name || "there";
+  const firstName = clientName.split(" ").filter(Boolean)[0] || clientName;
+  return renderTemplate(template.body, {
+    request_type: "GENERAL",
+    requested_date: localDateString(0),
+    arrival_time: "",
+    guest_count: 1,
+    budget: "",
+    message: "",
+    status: "NEW",
+    clients: {
+      name: clientName,
+      country: client.country,
+      preferred_language: language
+    },
+    clubs: {
+      name: "Marbella",
+      city: "Marbella"
+    }
+  }, {
+    client_first_name: firstName,
+    client_name: clientName
+  });
+}
+
 export function findTemplate(templates: MessageTemplate[], key: string, language: LeadDraft["language"] = "en") {
   return templates.find((template) => template.active && template.key === key && template.language === language)
     ?? templates.find((template) => template.active && template.key === key && template.language === "en")

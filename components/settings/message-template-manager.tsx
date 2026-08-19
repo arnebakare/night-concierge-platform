@@ -6,10 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { saveMessageTemplate } from "@/lib/actions/management-actions";
 import type { MessageTemplate } from "@/lib/types";
 
+const editableTemplateKeys = ["client_reply", "venue_check", "client_offer", "retention_checkin"];
 const variables = ["{{client_first_name}}", "{{client_name}}", "{{venue_name}}", "{{date}}", "{{guest_count}}", "{{request_type}}", "{{budget_line}}"];
 
 export function MessageTemplateManager({ templates }: Readonly<{ templates: MessageTemplate[] }>) {
-  const activeTemplates = templates.filter((template) => ["client_reply", "venue_check", "client_offer"].includes(template.key));
+  const activeTemplates = templates.filter((template) => editableTemplateKeys.includes(template.key));
 
   return (
     <LuxuryCard className="mt-4 space-y-4">

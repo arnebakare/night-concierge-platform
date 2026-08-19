@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { requireProfile } from "@/lib/auth";
-import { getRetentionClientsForProfile } from "@/lib/data/app";
+import { getMessageTemplates, getRetentionClientsForProfile } from "@/lib/data/app";
 import { getEmailConfigStatus } from "@/lib/services/email";
 import { getWhatsAppConfigStatus } from "@/lib/services/whatsapp";
 
@@ -15,8 +15,9 @@ export default async function RetentionPage({
   const params = await searchParams;
   const days = Number.parseInt(params.days ?? "45", 10);
   const threshold = Number.isFinite(days) && days > 0 ? days : 45;
-  const [clients, emailConfig] = await Promise.all([
+  const [clients, templates, emailConfig] = await Promise.all([
     getRetentionClientsForProfile(profile, threshold),
+    getMessageTemplates(),
     Promise.resolve(getEmailConfigStatus())
   ]);
   const whatsAppConfig = getWhatsAppConfigStatus("+34000000000");
@@ -42,7 +43,7 @@ export default async function RetentionPage({
       </div>
 
       <div className="compact-list grid gap-2">
-        {clients.length ? clients.map((client) => <RetentionClientCard key={client.id} client={client} />) : (
+        {clients.length ? clients.map((client) => <RetentionClientCard key={client.id} client={client} templates={templates} />) : (
           <LuxuryCard className="text-center text-sm text-muted-foreground">
             No clients match this retention window.
           </LuxuryCard>
