@@ -2,33 +2,37 @@ import { CalendarDays, Clock, MessageCircle, Users, UserRoundPlus } from "lucide
 import Link from "next/link";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
+import { fullDateLabel, isMissingRequestContact, requestDateLabel, requestPriority, requestServiceLabel, requestValueSignal } from "@/lib/concierge/requests";
 import type { ConciergeRequest } from "@/lib/types";
-import { isTemporaryPhone, nextSalesAction } from "@/lib/sales/funnel";
+import { nextSalesAction } from "@/lib/sales/funnel";
 import { formatEnum } from "@/lib/utils";
 
 export function RequestCard({ request, href, audience = "staff" }: Readonly<{ request: ConciergeRequest; href?: string; audience?: "staff" | "client" }>) {
-  const service = request.message?.match(/^Selected service:\s*(.+)$/m)?.[1];
-  const missingContact = !request.clients?.phone || isTemporaryPhone(request.clients.phone);
+  const service = requestServiceLabel(request);
+  const missingContact = isMissingRequestContact(request);
+  const priority = requestPriority(request);
+  const valueSignal = requestValueSignal(request);
   const card = (
     <LuxuryCard className="group relative overflow-hidden p-0 transition hover:border-champagne-300/55 hover:bg-card">
-      <div className="absolute inset-y-0 left-0 w-1 bg-champagne-300/70" />
+      <div className={priorityRailClass(priority.tone)} />
       <div className="space-y-2.5 p-3 pl-4 md:p-3.5 md:pl-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-base font-semibold leading-tight">{request.clients?.name ?? "Guest"}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">{request.clubs?.name ?? "Club"} · {service ?? formatEnum(request.request_type)}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">{request.clubs?.name ?? "Club"} · {service}</p>
           {audience === "staff" && <p className="mt-0.5 text-[11px] text-muted-foreground">{request.promoter?.name ?? "Unassigned"} · {formatEnum(request.source)}</p>}
         </div>
         <RequestStatusBadge status={request.status} />
       </div>
       <div className="grid grid-cols-3 gap-1.5 text-sm">
-        <Fact icon={CalendarDays} label={dateLabel(request.requested_date)} value={request.requested_date.slice(5)} />
+        <Fact icon={CalendarDays} label={requestDateLabel(request.requested_date)} value={fullDateLabel(request.requested_date)} />
         <Fact icon={Users} label="Guests" value={String(request.guest_count)} />
         <Fact icon={Clock} label="Arrival" value={request.arrival_time ?? "TBC"} />
       </div>
-      {request.message && !service && <p className="line-clamp-3 rounded-md bg-secondary/80 p-2 text-xs leading-relaxed text-muted-foreground md:text-sm">{request.message}</p>}
+      {request.message && <p className="line-clamp-2 rounded-md bg-secondary/80 p-2 text-xs leading-relaxed text-muted-foreground md:text-sm">{cleanMessage(request.message)}</p>}
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-champagne-700/30 pt-2 text-xs">
         <span className="rounded-full bg-champagne-300/10 px-2.5 py-1 text-champagne-100">{audience === "client" ? clientStatusHint(request.status) : nextSalesAction(request.status)}</span>
+        {valueSignal && <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-amber-100">{valueSignal}</span>}
         <span className={missingContact ? "flex items-center gap-1 text-amber-100" : "flex items-center gap-1 text-muted-foreground"}>
           {missingContact ? <UserRoundPlus className="size-3" /> : <MessageCircle className="size-3" />}
           {missingContact ? "Add contact" : "Client contact"}
@@ -71,16 +75,13 @@ function Fact({
   );
 }
 
-function dateLabel(value: string) {
-  const today = dateString(0);
-  if (value === today) return "Today";
-  if (value === dateString(1)) return "Tomorrow";
-  return "Date";
+function priorityRailClass(tone: ReturnType<typeof requestPriority>["tone"]) {
+  if (tone === "hot") return "absolute inset-y-0 left-0 w-1 bg-rose-400";
+  if (tone === "warning") return "absolute inset-y-0 left-0 w-1 bg-amber-400";
+  if (tone === "success") return "absolute inset-y-0 left-0 w-1 bg-emerald-400";
+  return "absolute inset-y-0 left-0 w-1 bg-champagne-300/70";
 }
 
-function dateString(offset: number) {
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() + offset);
-  return date.toISOString().slice(0, 10);
+function cleanMessage(message: string) {
+  return message.replace(/^Selected service:\s*.+$/m, "").trim() || message;
 }

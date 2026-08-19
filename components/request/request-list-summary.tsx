@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { CalendarDays, CheckCircle2, MessageCircle, Sparkles, UserRoundPlus } from "lucide-react";
+import { AlertCircle, CalendarDays, CheckCircle2, MessageCircle, Sparkles, UserRoundPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import type { ConciergeRequest } from "@/lib/types";
-import { isTemporaryPhone } from "@/lib/sales/funnel";
+import { isMissingRequestContact, requestValueSignal } from "@/lib/concierge/requests";
 
 export function RequestListSummary({
   requests,
@@ -14,10 +14,12 @@ export function RequestListSummary({
   const tomorrow = dateString(1);
   const needsReply = requests.filter((request) => ["NEW", "CONTACTED", "PENDING"].includes(request.status)).length;
   const confirmed = requests.filter((request) => request.status === "CONFIRMED").length;
-  const missingContact = requests.filter((request) => !request.clients?.phone || isTemporaryPhone(request.clients.phone)).length;
+  const missingContact = requests.filter(isMissingRequestContact).length;
+  const highIntent = requests.filter((request) => requestValueSignal(request)).length;
   const tonightGuests = requests
     .filter((request) => request.requested_date === today)
     .reduce((sum, request) => sum + request.guest_count, 0);
+  const nextAction = missingContact ? "Fix missing contact details first" : needsReply ? "Reply to new leads first" : confirmed ? "Confirmed bookings are ready" : "Inbox is calm";
 
   return (
     <LuxuryCard className="ops-summary mb-4 overflow-hidden bg-white text-ink-950">
@@ -25,6 +27,7 @@ export function RequestListSummary({
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.18em] text-champagne-700">Live inbox</p>
           <h2 className="mt-1 text-xl font-semibold tracking-normal">What needs attention</h2>
+          <p className="mt-1 text-sm text-slate-500">{nextAction}</p>
         </div>
         {showLeadAction && (
           <Button asChild>
@@ -35,10 +38,11 @@ export function RequestListSummary({
         )}
       </div>
 
-      <div className="ops-metrics grid grid-cols-2 divide-x divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200 md:grid-cols-4 md:divide-y-0">
-        <Metric icon={Sparkles} label="Need reply" value={String(needsReply)} />
+      <div className="ops-metrics grid grid-cols-2 divide-x divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200 md:grid-cols-5 md:divide-y-0">
+        <Metric icon={AlertCircle} label="Need reply" value={String(needsReply)} hot={needsReply > 0} />
         <Metric icon={CheckCircle2} label="Confirmed" value={String(confirmed)} />
         <Metric icon={CalendarDays} label="Tonight" value={`${tonightGuests} guests`} />
+        <Metric icon={Sparkles} label="High intent" value={String(highIntent)} muted={highIntent === 0} />
         <Metric icon={UserRoundPlus} label="Missing contact" value={String(missingContact)} muted={missingContact === 0} />
       </div>
 
@@ -58,15 +62,16 @@ function Metric({
   icon: Icon,
   label,
   value,
-  muted
-}: Readonly<{ icon: typeof Sparkles; label: string; value: string; muted?: boolean }>) {
+  muted,
+  hot
+}: Readonly<{ icon: typeof Sparkles; label: string; value: string; muted?: boolean; hot?: boolean }>) {
   return (
     <div className="metric-cell bg-slate-50 p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-slate-500">{label}</span>
-        <Icon className={muted ? "size-4 text-slate-400" : "size-4 text-champagne-700"} />
+        <Icon className={muted ? "size-4 text-slate-400" : hot ? "size-4 text-rose-500" : "size-4 text-champagne-700"} />
       </div>
-      <p className="mt-2 text-2xl font-semibold leading-none tracking-tight">{value}</p>
+      <p className={hot ? "mt-2 text-2xl font-semibold leading-none tracking-tight text-rose-700" : "mt-2 text-2xl font-semibold leading-none tracking-tight"}>{value}</p>
     </div>
   );
 }

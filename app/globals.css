@@ -146,11 +146,11 @@ body {
 }
 
 .cms-shell .action-tile {
-  min-height: 4.4rem;
+  min-height: 4rem;
   border-color: #e2e8f0 !important;
   background: #ffffff !important;
   color: #0f172a !important;
-  padding: 0.85rem !important;
+  padding: 0.75rem !important;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
 }
 
@@ -166,6 +166,8 @@ body {
 
 .cms-shell .action-tile span {
   color: #0f172a !important;
+  font-size: 0.9rem;
+  line-height: 1.15rem;
 }
 
 .cms-shell .lead-row {
@@ -264,7 +266,7 @@ body {
 }
 
 .cms-shell .lead-row form button {
-  min-height: 2.15rem;
+  min-height: 2.05rem;
 }
 
 .cms-shell .lead-row:hover {
@@ -531,7 +533,7 @@ body {
 }
 
 .cms-shell .ops-summary {
-  padding: 0.85rem !important;
+  padding: 0 !important;
 }
 
 .cms-shell .salary-report thead {
@@ -569,6 +571,18 @@ body {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
+.cms-shell .request-filter-panel {
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.cms-shell .request-filter-panel form {
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  padding: 0.5rem;
+}
+
 .cms-shell table {
   background: #ffffff;
 }
@@ -585,6 +599,34 @@ body {
 
 .cms-shell tr {
   border-color: #e2e8f0 !important;
+}
+
+.cms-shell .client-search-bar {
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.cms-shell .client-create-panel {
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+}
+
+.cms-shell .client-create-panel > div {
+  border-color: #e2e8f0 !important;
+  background: #f8fafc !important;
+}
+
+@media (min-width: 768px) {
+  .cms-shell .lead-row .md\:px-3 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .cms-shell .lead-row .md\:py-2\.5 {
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+  }
 }
 
 .line-clamp-3 {

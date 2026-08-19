@@ -1,12 +1,10 @@
-import { CalendarDays, Clock, Users } from "lucide-react";
+import { CalendarDays, Clock, MessageCircle, Sparkles, Users, UserRoundPlus } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
 import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { updateRequestStatus } from "@/lib/actions/management-actions";
-import { nextSalesAction } from "@/lib/sales/funnel";
+import { compactDate, fullDateLabel, isMissingRequestContact, requestFreshnessLabel, requestPriority, requestServiceLabel, requestValueSignal, whatsappContactHref } from "@/lib/concierge/requests";
 import type { ConciergeRequest, RequestStatus } from "@/lib/types";
-import { formatEnum } from "@/lib/utils";
 
 const easyActions: Partial<Record<RequestStatus, { status: RequestStatus; label: string; variant?: "default" | "secondary" }[]>> = {
   NEW: [
@@ -24,28 +22,32 @@ export function RequestLeadRow({
   returnTo,
   showActions = true
 }: Readonly<{ request: ConciergeRequest; href: string; returnTo?: string; showActions?: boolean }>) {
-  const service = request.message?.match(/^Selected service:\s*(.+)$/m)?.[1];
+  const service = requestServiceLabel(request);
   const actions = showActions ? easyActions[request.status] ?? [] : [];
+  const priority = requestPriority(request);
+  const missingContact = isMissingRequestContact(request);
+  const valueSignal = requestValueSignal(request);
+  const replyHref = whatsappContactHref(request.clients?.phone, buildQuickReply(request));
 
   return (
     <div className="lead-row rounded-lg border border-slate-200 bg-white text-ink-950 shadow-sm transition hover:border-champagne-600/70 hover:shadow-md">
-      <div className="grid gap-2 p-2 md:grid-cols-[minmax(180px,1.15fr)_minmax(220px,1fr)_auto] md:items-center md:px-3 md:py-2.5">
+      <div className="grid gap-2 p-2 md:grid-cols-[minmax(220px,1.15fr)_minmax(230px,1fr)_auto] md:items-center md:px-3 md:py-2.5">
         <Link href={href} className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="h-8 w-1 rounded-full bg-champagne-300" />
+            <span className={priorityBarClass(priority.tone)} />
             <div className="min-w-0">
               <div className="flex items-center gap-2 md:block">
                 <p className="min-w-0 truncate text-sm font-semibold text-ink-950 md:text-base">{request.clients?.name ?? "Guest"}</p>
                 <div className="shrink-0 md:hidden"><RequestStatusBadge status={request.status} /></div>
               </div>
-              <p className="truncate text-xs text-slate-500">{request.clubs?.name ?? "Club"} · {service ?? formatEnum(request.request_type)}</p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">{request.promoter?.name ?? "Unassigned"} · {formatEnum(request.source)}</p>
+              <p className="truncate text-xs text-slate-500">{request.clubs?.name ?? "Club"} · {service}</p>
+              <p className="mt-0.5 truncate text-[11px] text-slate-400">{request.promoter?.name ?? "Unassigned"} · {requestFreshnessLabel(request.created_at)}</p>
             </div>
           </div>
         </Link>
 
         <Link href={href} className="flex items-center gap-2 pl-3 text-xs text-slate-500 md:hidden">
-          <span>{request.requested_date.slice(5)}</span>
+          <span>{compactDate(request.requested_date)}</span>
           <span>·</span>
           <span>{request.guest_count} guests</span>
           <span>·</span>
@@ -53,14 +55,24 @@ export function RequestLeadRow({
         </Link>
 
         <Link href={href} className="hidden grid-cols-3 gap-1 text-xs text-slate-500 md:grid">
-          <Fact icon={CalendarDays} label="Date" value={request.requested_date.slice(5)} />
+          <Fact icon={CalendarDays} label="Date" value={fullDateLabel(request.requested_date)} />
           <Fact icon={Users} label="Guests" value={String(request.guest_count)} />
           <Fact icon={Clock} label="Arrival" value={request.arrival_time ?? "TBC"} />
         </Link>
 
         <div className="flex flex-wrap items-center justify-end gap-1.5 md:gap-2">
           <div className="hidden md:block"><RequestStatusBadge status={request.status} /></div>
-          <span className="hidden max-w-44 truncate text-xs text-slate-500 lg:block">{nextSalesAction(request.status)}</span>
+          <span className={priorityPillClass(priority.tone)}>{priority.label}</span>
+          {valueSignal && <span className="hidden items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 sm:inline-flex"><Sparkles className="size-3" />{valueSignal}</span>}
+          {missingContact ? (
+            <Link href={href} className="inline-flex h-9 items-center gap-1.5 rounded-md bg-amber-50 px-2.5 text-xs font-semibold text-amber-800">
+              <UserRoundPlus className="size-3.5" /> Contact
+            </Link>
+          ) : (
+            <a href={replyHref} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-md bg-slate-100 px-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200">
+              <MessageCircle className="size-3.5" /> WhatsApp
+            </a>
+          )}
           {actions.map((action) => (
             <form action={updateRequestStatus} key={action.status}>
               <input type="hidden" name="requestId" value={request.id} />
@@ -85,4 +97,26 @@ function Fact({
       <p className="truncate text-sm font-semibold text-ink-950">{value}</p>
     </div>
   );
+}
+
+function priorityBarClass(tone: ReturnType<typeof requestPriority>["tone"]) {
+  if (tone === "hot") return "h-9 w-1 rounded-full bg-rose-400";
+  if (tone === "warning") return "h-9 w-1 rounded-full bg-amber-400";
+  if (tone === "success") return "h-9 w-1 rounded-full bg-emerald-400";
+  return "h-9 w-1 rounded-full bg-slate-300";
+}
+
+function priorityPillClass(tone: ReturnType<typeof requestPriority>["tone"]) {
+  const base = "hidden rounded-full px-2 py-1 text-xs font-medium md:inline-flex";
+  if (tone === "hot") return `${base} bg-rose-50 text-rose-700`;
+  if (tone === "warning") return `${base} bg-amber-50 text-amber-700`;
+  if (tone === "success") return `${base} bg-emerald-50 text-emerald-700`;
+  return `${base} bg-slate-100 text-slate-600`;
+}
+
+function buildQuickReply(request: ConciergeRequest) {
+  const firstName = request.clients?.name?.split(" ").filter(Boolean)[0] ?? "";
+  const clubName = request.clubs?.name ?? "the venue";
+  const date = fullDateLabel(request.requested_date);
+  return `Hi ${firstName || "there"}, I am checking ${clubName} for ${date} for ${request.guest_count} guests and will come back shortly.`;
 }

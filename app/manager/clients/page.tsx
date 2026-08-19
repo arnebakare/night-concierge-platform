@@ -27,8 +27,9 @@ export default async function ManagerClientsPage({
 
 function EmptyState() {
   return (
-    <div className="rounded-lg border border-champagne-700/40 bg-card/80 p-6 text-center text-sm text-muted-foreground">
-      No clients match this search.
+    <div className="rounded-lg border border-dashed border-slate-300 bg-white p-5 text-center text-sm text-slate-500">
+      <p className="font-medium text-ink-950">No clients found</p>
+      <p className="mt-1">Try another name, phone number, Instagram handle, or VIP level.</p>
     </div>
   );
 }

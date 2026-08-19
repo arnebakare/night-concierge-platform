@@ -18,9 +18,9 @@ export function ClientCreateForm({ role }: Readonly<{ role: Role }>) {
   const canSetRiskStatus = role === "PROMOTER_MANAGER" || role === "SUPER_ADMIN";
 
   return (
-    <details className="group rounded-lg border border-champagne-700/40 bg-card/80 p-2 shadow-panel">
+    <details className="client-create-panel group rounded-lg border border-champagne-700/40 bg-card/80 p-2 shadow-panel">
       <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3">
-        <span className="flex items-center gap-2 font-semibold">
+        <span className="flex items-center gap-2 text-sm font-semibold">
           <span className="flex size-7 items-center justify-center rounded-md bg-champagne-500/10 text-champagne-300"><UserPlus className="size-4" /></span>
           Add client
         </span>

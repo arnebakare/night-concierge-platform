@@ -8,11 +8,12 @@ import { RequestListSummary } from "@/components/request/request-list-summary";
 import { RequestStatusControl } from "@/components/request/request-status-control";
 import { requireProfile } from "@/lib/auth";
 import { getRequestsForProfile } from "@/lib/data/app";
+import { formatEnum } from "@/lib/utils";
 import type { RequestStatus, RequestType } from "@/lib/types";
 
 export default async function RequestsPage({
   searchParams
-}: Readonly<{ searchParams: Promise<{ status?: string; type?: string; date?: string; q?: string; archived?: string }> }>) {
+}: Readonly<{ searchParams: Promise<{ status?: string; type?: string; date?: string; q?: string; archived?: string; updated?: string }> }>) {
   const profile = await requireProfile(["PROMOTER", "SUPER_ADMIN"]);
   const filters = await searchParams;
   const archiveMode = filters.archived === "1";
@@ -27,6 +28,11 @@ export default async function RequestsPage({
 
   return (
     <AppShell profile={profile} title="My requests" eyebrow="Guestlist">
+      {parseStatus(filters.updated) && (
+        <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">
+          Booking status updated to {statusLabel(filters.updated as RequestStatus)}.
+        </div>
+      )}
       {archiveMode && (
         <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
           Showing completed and archived requests. <Link href="/requests" className="font-semibold underline">Back to active requests</Link>
@@ -63,10 +69,17 @@ function isArchivedStatus(status: RequestStatus) {
   return ["ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"].includes(status);
 }
 
+function statusLabel(status: RequestStatus) {
+  if (status === "ARRIVED") return "Completed";
+  if (status === "CANCELLED") return "Archived";
+  return formatEnum(status).toLowerCase();
+}
+
 function EmptyState() {
   return (
-    <div className="rounded-lg border border-champagne-700/40 bg-card/80 p-6 text-center text-sm text-muted-foreground">
-      No requests match these filters.
+    <div className="rounded-lg border border-dashed border-slate-300 bg-white p-5 text-center text-sm text-slate-500">
+      <p className="font-medium text-ink-950">No bookings found</p>
+      <p className="mt-1">Try clearing filters or create a new request.</p>
     </div>
   );
 }

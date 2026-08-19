@@ -34,7 +34,7 @@ export async function updateRequestStatus(formData: FormData) {
     revalidatePath("/manager/requests");
     revalidatePath(`/requests/${parsed.data.requestId}`);
     revalidatePath(`/manager/requests/${parsed.data.requestId}`);
-    redirectAfterArchive(parsed.data.status, parsed.data.returnTo);
+    redirectAfterStatusUpdate(parsed.data.status, parsed.data.returnTo);
     return;
   }
 
@@ -60,7 +60,7 @@ export async function updateRequestStatus(formData: FormData) {
   revalidatePath(`/manager/requests/${parsed.data.requestId}`);
   revalidatePath("/dashboard");
   revalidatePath("/manager");
-  redirectAfterArchive(parsed.data.status, parsed.data.returnTo);
+  redirectAfterStatusUpdate(parsed.data.status, parsed.data.returnTo);
 }
 
 const requestClientContactSchema = z.object({
@@ -126,10 +126,12 @@ export async function updateRequestClientContact(formData: FormData) {
   revalidatePath("/manager/clients");
 }
 
-function redirectAfterArchive(status: z.infer<typeof statusSchema>["status"], returnTo?: string) {
-  if (!["ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"].includes(status) || !returnTo?.startsWith("/")) return;
+function redirectAfterStatusUpdate(status: z.infer<typeof statusSchema>["status"], returnTo?: string) {
+  if (!returnTo?.startsWith("/")) return;
   const separator = returnTo.includes("?") ? "&" : "?";
-  redirect(`${returnTo}${separator}archived=1`);
+  const archived = ["ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"].includes(status);
+  const params = archived ? `archived=1&updated=${status}` : `updated=${status}`;
+  redirect(`${returnTo}${separator}${params}`);
 }
 
 const tableCostSchema = z.object({

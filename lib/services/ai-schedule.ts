@@ -212,6 +212,9 @@ function buildPrompt(input: ScheduleInput, date: string, plannerRules: AiVenueRu
       "If the previous day already used a beach club, dinner venue, or nightclub, choose a different base venue in that same category unless a clearly named DJ or event makes the repeat worth it.",
       "Do not use La Plage Casanis, Mamzel, or Le Jade on consecutive days unless a named DJ/artist is written in that specific stop. Secret Guest is not enough reason to repeat.",
       "Do not pair the exact same three-stop pattern on two different days. A human promoter should feel that every day has its own purpose.",
+      "If a trip is 3+ days, use at least three different late-night venues across the range when public programming does not clearly justify repeats.",
+      "If a trip is 4+ days, use at least three different daytime/beach options across the range unless the client specifically asks for one venue.",
+      "Mamzel is a strong dinner option, not a nightly default. Rotate with GAIA, Coya, Nobu, Cipriani, Nota Blu, Motel Particulier, or a lighter no-dinner flow when the beach party runs late.",
       "For normal spend, prioritize variety and approachable good taste over always choosing the most famous or expensive room.",
       "For high spend, include premium options but still rotate rooms and only repeat when there is a strong named event reason.",
       "Vary the beach club, dinner, and late-night options across the date range. If yesterday used La Plage Casanis, Mamzel, and Le Jade, today should normally use different venues.",
@@ -335,7 +338,17 @@ function validateMultiDayVariety(days: ScheduleDay[]) {
   for (const [pattern, count] of dayPatterns.entries()) {
     if (count > 1) warnings.push(`Repeated full-day pattern ${count} times: ${pattern}`);
   }
-  if (warnings.length >= 3) {
+  const venueCounts = new Map<string, number>();
+  for (const day of days) {
+    for (const stop of day.stops) {
+      const base = baseVenueName(stop.venue);
+      if (!hasSpecificEventReason(stop)) venueCounts.set(base, (venueCounts.get(base) ?? 0) + 1);
+    }
+  }
+  for (const [venue, count] of venueCounts.entries()) {
+    if (count > Math.max(1, Math.floor(days.length / 3))) warnings.push(`${venue} repeated ${count} times without a named DJ/event reason`);
+  }
+  if (warnings.length >= 2) {
     throw new Error(`OpenAI returned a repetitive itinerary without enough DJ/event reasons. ${warnings.slice(0, 5).join("; ")}.`);
   }
 }

@@ -12,7 +12,7 @@ import type { RequestStatus, RequestType } from "@/lib/types";
 
 export default async function ManagerRequestsPage({
   searchParams
-}: Readonly<{ searchParams: Promise<{ status?: string; type?: string; date?: string; q?: string; club?: string; promoter?: string; archived?: string }> }>) {
+}: Readonly<{ searchParams: Promise<{ status?: string; type?: string; date?: string; q?: string; club?: string; promoter?: string; archived?: string; updated?: string }> }>) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const filters = await searchParams;
   const archiveMode = filters.archived === "1";
@@ -29,6 +29,11 @@ export default async function ManagerRequestsPage({
 
   return (
     <AppShell profile={profile} title="Request inbox" eyebrow="Manager">
+      {parseStatus(filters.updated) && (
+        <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">
+          Booking status updated to {statusLabel(filters.updated as RequestStatus)}.
+        </div>
+      )}
       {archiveMode && (
         <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
           Showing completed and archived requests. <Link href="/manager/requests" className="font-semibold underline">Back to active inbox</Link>
@@ -46,16 +51,16 @@ export default async function ManagerRequestsPage({
           <RequestLeadRow key={request.id} request={request} href={`/manager/requests/${request.id}`} returnTo="/manager/requests" />
         )) : <EmptyState archived={archiveMode} />}
       </div>
-      <div className="advanced-only hidden overflow-hidden rounded-lg border border-champagne-700/40 bg-card md:block">
+      <div className="advanced-only hidden overflow-hidden rounded-lg border border-slate-200 bg-white text-ink-950 md:block">
         <table className="w-full text-left text-sm">
-          <thead className="bg-ink-800 text-muted-foreground">
+          <thead className="bg-slate-50 text-xs uppercase tracking-[0.08em] text-slate-500">
             <tr><th className="p-3">Client</th><th>Club</th><th>Type</th><th>Status</th><th>Date</th><th>Promoter</th></tr>
           </thead>
           <tbody>
             {requests.length ? requests.map((request) => (
-              <tr key={request.id} className="border-t border-champagne-700/30">
+              <tr key={request.id} className="border-t border-slate-200 hover:bg-slate-50">
                 <td className="p-3 font-medium">
-                  <Link href={`/manager/requests/${request.id}`} className="text-champagne-100 hover:text-champagne-300">
+                  <Link href={`/manager/requests/${request.id}`} className="text-ink-950 hover:text-champagne-700">
                     {request.clients?.name}
                   </Link>
                 </td>
@@ -91,10 +96,18 @@ function isArchivedStatus(status: RequestStatus) {
   return ["ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"].includes(status);
 }
 
+function statusLabel(status: RequestStatus) {
+  if (status === "ARRIVED") return "Completed";
+  if (status === "CANCELLED") return "Archived";
+  return formatEnum(status).toLowerCase();
+}
+
 function EmptyState({ archived = false }: Readonly<{ archived?: boolean }>) {
   return (
-    <div className="rounded-lg border border-champagne-700/40 bg-card/80 p-6 text-center text-sm text-muted-foreground">
-      {archived ? "No completed or archived requests match these filters." : "No active requests match these filters."}
+    <div className="rounded-lg border border-dashed border-slate-300 bg-white p-5 text-center text-sm text-slate-500">
+      <p className="font-medium text-ink-950">{archived ? "No archived bookings found" : "No active bookings found"}</p>
+      <p className="mt-1">{archived ? "Try clearing filters or return to the live inbox." : "Try another date, clear filters, or paste a WhatsApp lead."}</p>
+      {!archived && <Button asChild size="sm" className="mt-3"><Link href="/requests/lead">Paste lead</Link></Button>}
     </div>
   );
 }
