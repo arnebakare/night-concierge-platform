@@ -1,4 +1,4 @@
-import { CalendarDays, Clock, MessageCircle, Sparkles, Users, UserRoundPlus } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, MessageCircle, Sparkles, Users, UserRoundPlus } from "lucide-react";
 import Link from "next/link";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
 import { StatusSubmitButton } from "@/components/request/status-submit-button";
@@ -30,29 +30,29 @@ export function RequestLeadRow({
   const replyHref = whatsappContactHref(request.clients?.phone, buildQuickReply(request));
 
   return (
-    <div className="lead-row rounded-lg border border-slate-200 bg-white text-ink-950 shadow-sm transition hover:border-champagne-600/70 hover:shadow-md">
-      <div className="grid gap-2 p-2.5 md:grid-cols-[minmax(220px,1.15fr)_minmax(230px,1fr)_auto] md:items-center md:px-3 md:py-2.5">
+    <div className="lead-row rounded-lg border border-slate-200 bg-white text-ink-950 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+      <div className="grid gap-2 p-2.5 md:grid-cols-[minmax(220px,1.05fr)_minmax(240px,1fr)_auto] md:items-center md:px-3 md:py-2">
         <Link href={href} className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className={priorityBarClass(priority.tone)} />
+            <span className={priorityBarClass(priority.tone)} aria-hidden="true" />
             <div className="min-w-0">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:block">
-                <p className="min-w-0 truncate text-sm font-semibold text-slate-950 md:text-base">{request.clients?.name ?? "Guest"}</p>
+                <p className="min-w-0 truncate text-[15px] font-semibold leading-tight text-slate-950">{request.clients?.name ?? "Guest"}</p>
                 <div className="shrink-0 md:hidden">
                   <RequestStatusBadge status={request.status} />
                 </div>
               </div>
-              <p className="truncate text-xs text-slate-500">{request.clubs?.name ?? "Club"} · {service}</p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">{request.promoter?.name ?? "Unassigned"} · {requestFreshnessLabel(request.created_at)}</p>
+              <p className="mt-0.5 truncate text-[13px] text-slate-600">{request.clubs?.name ?? "Club"} · {service}</p>
+              <p className="mt-0.5 truncate text-xs text-slate-500">{request.promoter?.name ?? "Unassigned"} · {requestFreshnessLabel(request.created_at)}</p>
             </div>
           </div>
         </Link>
 
-        <Link href={href} className="flex items-center gap-2 pl-3 text-xs text-slate-500 md:hidden">
+        <Link href={href} className="flex items-center gap-2 pl-3 text-[13px] font-medium text-slate-600 md:hidden">
           <span>{compactDate(request.requested_date)}</span>
-          <span>·</span>
+          <span className="text-slate-300">·</span>
           <span>{request.guest_count} guests</span>
-          <span>·</span>
+          <span className="text-slate-300">·</span>
           <span>{request.arrival_time ?? "TBC"}</span>
         </Link>
 
@@ -62,7 +62,7 @@ export function RequestLeadRow({
           <Fact icon={Clock} label="Arrival" value={request.arrival_time ?? "TBC"} />
         </Link>
 
-        <div className="flex flex-wrap items-center justify-end gap-1.5 md:gap-2">
+        <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:justify-end md:gap-2">
           <div className="hidden md:block"><RequestStatusBadge status={request.status} /></div>
           <span className={priorityPillClass(priority.tone)}>{priority.label}</span>
           {valueSignal && <span className="hidden items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 sm:inline-flex"><Sparkles className="size-3" />{valueSignal}</span>}
@@ -71,17 +71,22 @@ export function RequestLeadRow({
               <UserRoundPlus className="size-3.5" /> Contact
             </Link>
           ) : (
-            <a href={replyHref} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-md bg-slate-100 px-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200">
+            <a href={replyHref} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-slate-100 px-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200">
               <MessageCircle className="size-3.5" /> WhatsApp
             </a>
           )}
           {actions.map((action) => (
-            <form action={updateRequestStatus} key={action.status}>
+            <form action={updateRequestStatus} key={action.status} className="min-w-0">
               <input type="hidden" name="requestId" value={request.id} />
               {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
-              <StatusSubmitButton value={action.status} label={action.label} pendingLabel="Saving" variant={action.variant ?? "default"} size="sm" />
+              <StatusSubmitButton className="w-full" value={action.status} label={action.label} pendingLabel="Saving" variant={action.variant ?? "default"} size="sm" />
             </form>
           ))}
+          {!actions.length && (
+            <Link href={href} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-slate-100 px-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200">
+              Open <ArrowRight className="size-3.5" />
+            </Link>
+          )}
         </div>
       </div>
     </div>

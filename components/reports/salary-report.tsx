@@ -33,9 +33,11 @@ export function SalaryReport({
       ])
     )
   );
+  const [commissionRate, setCommissionRate] = useState("10");
 
   const totalGuests = reportableRequests.reduce((total, request) => total + request.guest_count, 0);
   const totalCost = reportableRequests.reduce((total, request) => total + parseMoney(rows[request.id]?.tableCost), 0);
+  const commission = totalCost * (parseMoney(commissionRate) / 100);
   const rangeLabel = from && to ? `${from} to ${to}` : from ? `From ${from}` : to ? `Until ${to}` : "Current filtered period";
 
   function updateRow(requestId: string, patch: Partial<SalaryRow>) {
@@ -63,10 +65,28 @@ export function SalaryReport({
         </Button>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 divide-x divide-border overflow-hidden rounded-md border border-border">
+      <div className="mt-4 grid grid-cols-2 divide-x divide-y divide-border overflow-hidden rounded-md border border-border md:grid-cols-4 md:divide-y-0">
         <ReportMetric label="Period" value={rangeLabel} />
         <ReportMetric label="Guests" value={String(totalGuests)} />
         <ReportMetric label="Table cost" value={formatCurrency(totalCost)} />
+        <ReportMetric label="Commission" value={formatCurrency(commission)} />
+      </div>
+
+      <div className="mt-3 grid gap-2 rounded-lg border border-champagne-700/40 bg-ink-950/60 p-3 print:hidden sm:grid-cols-[1fr_auto] sm:items-center">
+        <div>
+          <p className="text-sm font-semibold">Commission estimate</p>
+          <p className="text-xs text-muted-foreground">Change the percentage for this report before printing.</p>
+        </div>
+        <label className="grid grid-cols-[auto_5.5rem] items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Rate</span>
+          <input
+            value={commissionRate}
+            onChange={(event) => setCommissionRate(event.target.value)}
+            inputMode="decimal"
+            className="h-10 rounded-md border bg-input px-2 text-right"
+            aria-label="Commission rate"
+          />
+        </label>
       </div>
 
       <div className="mt-4 overflow-x-auto rounded-lg border border-champagne-700/40">
@@ -136,7 +156,10 @@ export function SalaryReport({
           <Calculator className="size-4 text-champagne-300" />
           Salary report total
         </span>
-        <span className="text-2xl font-semibold text-champagne-100">{formatCurrency(totalCost)}</span>
+        <span className="text-right">
+          <span className="block text-xs text-muted-foreground">Table cost {formatCurrency(totalCost)}</span>
+          <span className="block text-2xl font-semibold text-champagne-100">{formatCurrency(commission)}</span>
+        </span>
       </div>
     </LuxuryCard>
   );

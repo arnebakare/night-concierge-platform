@@ -15,21 +15,21 @@ export default async function ConfirmedPage({ searchParams }: Readonly<{ searchP
         <p className="mt-5 text-[11px] uppercase tracking-[0.24em] text-champagne-300">Request sent</p>
         <h1 className="mt-2 font-serif text-[2.55rem] leading-[0.95]">We have your details.</h1>
         <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
-          A host will check availability and reply personally on WhatsApp.
+          A host will check availability and reply personally on WhatsApp. Your phone number keeps future requests connected to the same client profile.
         </p>
         <div className="mt-5 grid grid-cols-3 gap-2 text-left">
-          <NextStep icon={MessageCircle} label="Host reply" />
-          <NextStep icon={Timer} label="Availability" />
+          <NextStep icon={MessageCircle} label="Reply" />
+          <NextStep icon={Timer} label="Check" />
           <NextStep icon={ShieldCheck} label="Confirm" />
         </div>
         <div className="mt-4 space-y-2 text-left text-sm text-muted-foreground">
           <div className="flex items-start gap-3 rounded-xl border border-champagne-700/24 bg-white/[0.045] p-3">
             <MessageCircle className="mt-0.5 size-4 shrink-0 text-champagne-300" />
-            <span>The team will confirm the venue, date, timing, and any spend or door conditions.</span>
+            <span>The team will confirm venue availability, timing, spend, and any door details before anything is final.</span>
           </div>
           <div className="flex items-start gap-3 rounded-xl border border-champagne-700/24 bg-white/[0.045] p-3">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-champagne-300" />
-            <span>Nothing is final until a host replies and confirms it with you.</span>
+            <span>If you need something special, reply directly to your host in the same WhatsApp chat.</span>
           </div>
         </div>
         {id && <p className="mt-5 text-xs uppercase tracking-[0.18em] text-champagne-300">Reference {id.slice(0, 8).toUpperCase()}</p>}

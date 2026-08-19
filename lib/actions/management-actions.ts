@@ -144,8 +144,14 @@ export async function updateRequestClientContact(formData: FormData) {
 
 function redirectAfterStatusUpdate(status: z.infer<typeof statusSchema>["status"], returnTo?: string) {
   if (!returnTo?.startsWith("/")) return;
-  const separator = returnTo.includes("?") ? "&" : "?";
   const archived = ["ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"].includes(status);
+  if (archived) {
+    const detailMatch = returnTo.match(/^\/(manager\/requests|requests)\/[^/?#]+$/);
+    if (detailMatch) {
+      redirect(`/${detailMatch[1]}?archived=1&updated=${status}`);
+    }
+  }
+  const separator = returnTo.includes("?") ? "&" : "?";
   const params = archived ? `archived=1&updated=${status}` : `updated=${status}`;
   redirect(`${returnTo}${separator}${params}`);
 }

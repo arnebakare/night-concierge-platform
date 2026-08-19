@@ -2,7 +2,7 @@ import { cn, formatEnum } from "@/lib/utils";
 import type { RequestStatus } from "@/lib/types";
 
 const tone: Record<RequestStatus, string> = {
-  NEW: "border-champagne-600/35 bg-champagne-300/20 text-champagne-800",
+  NEW: "border-amber-200 bg-amber-50 text-amber-800",
   CONTACTED: "border-sky-200 bg-sky-50 text-sky-700",
   PENDING: "border-amber-200 bg-amber-50 text-amber-700",
   CONFIRMED: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -13,7 +13,7 @@ const tone: Record<RequestStatus, string> = {
 };
 
 export function RequestStatusBadge({ status }: Readonly<{ status: RequestStatus }>) {
-  return <span className={cn("rounded-full border px-2.5 py-1 text-xs font-semibold", tone[status])}>{statusLabel(status)}</span>;
+  return <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold leading-none", tone[status])}>{statusLabel(status)}</span>;
 }
 
 function statusLabel(status: RequestStatus) {

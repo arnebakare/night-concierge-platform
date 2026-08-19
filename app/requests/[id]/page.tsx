@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { AvailabilityOfferPanel } from "@/components/request/availability-offer-panel";
+import { RequestActivityTimeline } from "@/components/request/request-activity-timeline";
 import { RequestDetail } from "@/components/request/request-detail";
 import { requireProfile } from "@/lib/auth";
-import { getMessageTemplates, getRequestCommerce, getRequestDetail } from "@/lib/data/app";
+import { getMessageTemplates, getRequestActivity, getRequestCommerce, getRequestDetail } from "@/lib/data/app";
 import type { RequestStatus } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
@@ -15,7 +16,7 @@ export default async function RequestDetailPage({
   const [request, templates] = await Promise.all([getRequestDetail(id), getMessageTemplates()]);
 
   if (!request) notFound();
-  const commerce = await getRequestCommerce(request);
+  const [commerce, activity] = await Promise.all([getRequestCommerce(request), getRequestActivity(request.id)]);
   const updated = parseStatus(query.updated);
 
   return (
@@ -24,6 +25,7 @@ export default async function RequestDetailPage({
         {updated && <StatusNotice status={updated} />}
         <RequestDetail request={request} backHref="/requests" clientHref={`/clients/${request.client_id}`} statusReturnTo={`/requests/${request.id}`} templates={templates} />
         <AvailabilityOfferPanel request={request} slots={commerce.slots} offers={commerce.offers} canManageAvailability={profile.role === "SUPER_ADMIN"} templates={templates} />
+        <RequestActivityTimeline activity={activity} />
       </div>
     </AppShell>
   );

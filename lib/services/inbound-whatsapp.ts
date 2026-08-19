@@ -169,13 +169,23 @@ async function createScheduleFromWhatsApp(
     };
   }
 
-  const generated = await generateSchedulePlan({
-    dateFrom: parsed.from,
-    dateTo: parsed.to,
-    spendProfile: parsed.spendProfile,
-    city: "Marbella",
-    clientContext: "Generated from WhatsApp command."
-  });
+  let generated: Awaited<ReturnType<typeof generateSchedulePlan>>;
+  try {
+    generated = await generateSchedulePlan({
+      dateFrom: parsed.from,
+      dateTo: parsed.to,
+      spendProfile: parsed.spendProfile,
+      city: "Marbella",
+      clientContext: "Generated from WhatsApp command."
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown schedule error";
+    await supabase.from("inbound_whatsapp_messages").update({ status: "FAILED", error_message: message }).eq("id", inboundId);
+    return {
+      ok: false,
+      reply: `I could not create the schedule automatically right now. Reason: ${shortError(message)}`
+    };
+  }
 
   const { data, error } = await supabase
     .from("schedule_plans")
@@ -359,6 +369,10 @@ function inferYear(month: number) {
 
 function toDateString(year: number, month: number, day: number) {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function shortError(message: string) {
+  return message.length > 220 ? `${message.slice(0, 217)}...` : message;
 }
 
 function normalizeWhatsAppAddress(value?: string | null) {

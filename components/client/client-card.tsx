@@ -10,14 +10,14 @@ export function ClientCard({ client, href }: Readonly<{ client: Client; href: st
 
   return (
     <Link href={href} className="client-card block">
-      <LuxuryCard className="client-row bg-white text-ink-950 transition hover:border-champagne-600/70">
+      <LuxuryCard className="client-row bg-white text-ink-950 transition hover:border-slate-300 hover:shadow-sm">
         <div className="grid gap-2 sm:grid-cols-[minmax(220px,1.25fr)_minmax(180px,0.85fr)_auto] sm:items-center">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700">
               {initials || "VIP"}
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold leading-tight text-ink-950 md:text-base">{client.name}</p>
+              <p className="truncate text-[15px] font-semibold leading-tight text-slate-950">{client.name}</p>
               <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-slate-500">
                 <Phone className="size-3.5 shrink-0" />{client.phone}
               </p>
@@ -39,7 +39,7 @@ export function ClientCard({ client, href }: Readonly<{ client: Client; href: st
               <Languages className="size-3.5" />{(client.preferred_language ?? "en").toUpperCase()}
             </span>
           </div>
-          <span className="w-fit rounded-full border border-champagne-600/35 bg-champagne-300/15 px-2 py-0.5 text-[11px] font-semibold text-champagne-800">
+          <span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
             <Crown className="mr-1 inline size-3" />{client.vip_level}
           </span>
         </div>

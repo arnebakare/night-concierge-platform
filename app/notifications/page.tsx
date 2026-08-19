@@ -95,11 +95,20 @@ function NotificationRow({ item }: Readonly<{ item: Awaited<ReturnType<typeof ge
         </div>
       </div>
       {item.error_message && (
-        <p className="mt-3 rounded-md border border-red-200 bg-red-50 p-2.5 text-sm text-red-700">
-          {item.error_message}
-        </p>
+        <DeliveryIssue message={item.error_message} />
       )}
     </LuxuryCard>
+  );
+}
+
+function DeliveryIssue({ message }: Readonly<{ message: string }>) {
+  const issue = explainTwilioIssue(message);
+  return (
+    <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-2.5 text-sm text-red-700">
+      <p className="font-semibold">{issue.title}</p>
+      <p className="mt-1">{issue.detail}</p>
+      <p className="mt-2 rounded bg-white/70 px-2 py-1 text-xs text-red-800">Raw: {message}</p>
+    </div>
   );
 }
 
@@ -131,4 +140,36 @@ function StatusPill({ ok, label }: Readonly<{ ok: boolean; label: string }>) {
       {label}
     </span>
   );
+}
+
+function explainTwilioIssue(message: string) {
+  const lower = message.toLowerCase();
+  if (lower.includes("authenticate") || lower.includes("auth")) {
+    return {
+      title: "Twilio login details do not match",
+      detail: "Check that the Account SID and Auth Token in Vercel come from the same Twilio account, then redeploy."
+    };
+  }
+  if (lower.includes("sandbox") || lower.includes("join")) {
+    return {
+      title: "WhatsApp sandbox recipient is not joined",
+      detail: "The receiving phone must first join the Twilio WhatsApp sandbox, unless you have an approved production WhatsApp sender."
+    };
+  }
+  if (lower.includes("from") || lower.includes("sender")) {
+    return {
+      title: "WhatsApp sender is not valid",
+      detail: "Check that TWILIO_WHATSAPP_FROM starts with whatsapp:+ and belongs to your Twilio WhatsApp sender."
+    };
+  }
+  if (lower.includes("to") || lower.includes("number") || lower.includes("recipient")) {
+    return {
+      title: "Destination number needs checking",
+      detail: "Use international format with whatsapp:+, country code, and no spaces."
+    };
+  }
+  return {
+    title: "Delivery failed",
+    detail: "Retry once. If it fails again, check the Twilio logs for this message and compare the sender, destination, and account."
+  };
 }

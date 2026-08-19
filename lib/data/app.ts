@@ -34,6 +34,15 @@ export type RetentionClient = Client & {
   days_since_booking: number | null;
 };
 
+export type RequestActivityItem = {
+  id: string;
+  type: "status" | "offer" | "whatsapp" | "audit";
+  label: string;
+  detail: string;
+  created_at: string;
+  tone: "neutral" | "good" | "warning" | "bad";
+};
+
 export async function getRequestsForProfile(profile: Profile, options?: RequestFilters) {
   try {
     const supabase = await createClient();
@@ -660,6 +669,45 @@ export async function getNotificationHistory() {
   }
 }
 
+export async function getRequestActivity(requestId: string): Promise<RequestActivityItem[]> {
+  try {
+    const supabase = await createClient();
+    const [{ data: logs, error: logError }, { data: notifications, error: notificationError }, { data: offers, error: offerError }] = await Promise.all([
+      supabase
+        .from("audit_logs")
+        .select("id, action, metadata, created_at, profiles(name, email)")
+        .eq("entity_type", "requests")
+        .eq("entity_id", requestId)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase
+        .from("whatsapp_notifications")
+        .select("id, provider, provider_message_id, status, error_message, created_at")
+        .eq("request_id", requestId)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase
+        .from("request_offers")
+        .select("id, offer_status, service_label, min_spend, sent_at, created_at, profiles(name, email)")
+        .eq("request_id", requestId)
+        .order("created_at", { ascending: false })
+        .limit(20)
+    ]);
+    if (logError || notificationError || offerError) throw logError ?? notificationError ?? offerError;
+    return [
+      ...normalizeActivityLogs(logs),
+      ...normalizeActivityNotifications(notifications),
+      ...normalizeActivityOffers(offers)
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 12);
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return [
+      { id: "activity-1", type: "status", label: "Status updated", detail: "Moved to confirmed by Julia", created_at: new Date().toISOString(), tone: "good" },
+      { id: "activity-2", type: "whatsapp", label: "WhatsApp sent", detail: "Notification sent to manager", created_at: new Date(Date.now() - 18 * 60000).toISOString(), tone: "good" }
+    ];
+  }
+}
+
 async function teamIdsCsv(managerId: string) {
   try {
     const supabase = await createClient();
@@ -689,6 +737,55 @@ function normalizeRequests(data: unknown): ConciergeRequest[] {
     clubs: Array.isArray(request.clubs) ? request.clubs[0] : request.clubs,
     promoter: Array.isArray(request.promoter) ? request.promoter[0] : request.promoter
   }));
+}
+
+function normalizeActivityLogs(data: unknown): RequestActivityItem[] {
+  return ((data as Array<{ id: string; action: string; metadata?: Record<string, unknown> | null; created_at: string; profiles?: { name?: string | null; email?: string | null } | null }> | null) ?? [])
+    .map((log) => {
+      const from = typeof log.metadata?.from === "string" ? log.metadata.from : "";
+      const to = typeof log.metadata?.to === "string" ? log.metadata.to : "";
+      const actor = log.profiles?.name ?? log.profiles?.email ?? "Team";
+      return {
+        id: `audit-${log.id}`,
+        type: log.action === "REQUEST_STATUS_UPDATED" ? "status" : "audit",
+        label: activityLabel(log.action),
+        detail: from && to ? `${actor} changed ${from.toLowerCase()} to ${to.toLowerCase()}` : actor,
+        created_at: log.created_at,
+        tone: to === "CONFIRMED" || to === "ARRIVED" ? "good" : to === "DECLINED" || to === "CANCELLED" || to === "NO_SHOW" ? "bad" : "neutral"
+      } satisfies RequestActivityItem;
+    });
+}
+
+function normalizeActivityNotifications(data: unknown): RequestActivityItem[] {
+  return ((data as Array<{ id: string; provider: string; provider_message_id?: string | null; status: string; error_message?: string | null; created_at: string }> | null) ?? [])
+    .map((notice) => ({
+      id: `whatsapp-${notice.id}`,
+      type: "whatsapp",
+      label: notice.status === "SENT" ? "WhatsApp sent" : "WhatsApp failed",
+      detail: notice.status === "SENT" ? `${notice.provider} ${notice.provider_message_id ?? ""}`.trim() : notice.error_message ?? "Delivery failed",
+      created_at: notice.created_at,
+      tone: notice.status === "SENT" ? "good" : "bad"
+    }));
+}
+
+function normalizeActivityOffers(data: unknown): RequestActivityItem[] {
+  return ((data as Array<{ id: string; offer_status: string; service_label: string; min_spend?: string | null; sent_at?: string | null; created_at: string; profiles?: { name?: string | null; email?: string | null } | null }> | null) ?? [])
+    .map((offer) => ({
+      id: `offer-${offer.id}`,
+      type: "offer",
+      label: offer.offer_status === "ACCEPTED" ? "Offer accepted" : offer.offer_status === "SENT" ? "Offer sent" : "Offer saved",
+      detail: `${offer.service_label}${offer.min_spend ? ` · ${offer.min_spend}` : ""} · ${offer.profiles?.name ?? offer.profiles?.email ?? "Team"}`,
+      created_at: offer.sent_at ?? offer.created_at,
+      tone: offer.offer_status === "ACCEPTED" ? "good" : offer.offer_status === "DECLINED" || offer.offer_status === "EXPIRED" ? "bad" : "neutral"
+    }));
+}
+
+function activityLabel(action: string) {
+  if (action === "REQUEST_STATUS_UPDATED") return "Status updated";
+  if (action === "PUBLIC_REQUEST_CREATED") return "Request created";
+  if (action === "REQUEST_CLIENT_CONTACT_UPDATED") return "Contact updated";
+  if (action === "REQUEST_ASSIGNED") return "Promoter assigned";
+  return action.toLowerCase().replaceAll("_", " ");
 }
 
 function normalizeClientHistory(data: unknown): ClientBookingHistoryItem[] {

@@ -305,7 +305,7 @@ export function RequestFormSteps({
 
       {step === 3 && (
         <div className="space-y-4">
-          <StepIntro title="Who should we contact?" description="Your WhatsApp number keeps every request connected to the right profile." />
+          <StepIntro title="Who should we contact?" description="Your WhatsApp number is required so your host can reply and keep future requests connected." />
           <div className="flex items-start gap-2 rounded-xl border border-champagne-700/24 bg-white/[0.045] p-3 text-xs leading-5 text-muted-foreground">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-champagne-300" />
             <span>Your details only go to the hosting team so they can reply and confirm availability.</span>
@@ -316,6 +316,9 @@ export function RequestFormSteps({
           <Field label="WhatsApp number" error={form.formState.errors.phone?.message}>
             <Input {...form.register("phone")} placeholder="+34 600 000 000" inputMode="tel" autoComplete="tel" />
           </Field>
+          <p className="-mt-2 text-xs leading-5 text-muted-foreground">
+            Use the same number each time. We will match your requests by WhatsApp number, even if the name is written differently.
+          </p>
           <Field label="Email optional" error={form.formState.errors.email?.message}>
             <Input {...form.register("email")} placeholder="name@email.com" inputMode="email" autoComplete="email" />
           </Field>

@@ -122,7 +122,7 @@ body {
   border-color: #e2e8f0 !important;
   background: #ffffff !important;
   color: #0f172a !important;
-  padding: 0.75rem !important;
+  padding: 0.72rem !important;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
   --tw-ring-color: transparent !important;
 }
@@ -188,6 +188,21 @@ body {
 .cms-shell .client-row .text-ink-950,
 .cms-shell .link-row .text-ink-950 {
   color: #0f172a !important;
+}
+
+.cms-shell .lead-row .text-slate-950,
+.cms-shell .client-row .text-slate-950,
+.cms-shell .link-row .text-slate-950,
+.cms-shell .lead-row .text-champagne-50,
+.cms-shell .client-row .text-champagne-50,
+.cms-shell .link-row .text-champagne-50 {
+  color: #0f172a !important;
+}
+
+.cms-shell .lead-row .text-champagne-100,
+.cms-shell .client-row .text-champagne-100,
+.cms-shell .link-row .text-champagne-100 {
+  color: #334155 !important;
 }
 
 .cms-shell .lead-row .text-slate-500,
@@ -257,7 +272,27 @@ body {
 }
 
 .cms-shell .client-row {
-  padding: 0.72rem !important;
+  padding: 0.62rem 0.72rem !important;
+}
+
+.cms-shell .lead-row {
+  overflow: hidden;
+}
+
+.cms-shell .lead-row > div {
+  min-height: 4.25rem;
+}
+
+.cms-shell .client-row p,
+.cms-shell .lead-row p,
+.cms-shell .link-row p {
+  letter-spacing: 0 !important;
+}
+
+.cms-shell .client-row [class*="font-serif"],
+.cms-shell .lead-row [class*="font-serif"],
+.cms-shell .link-row [class*="font-serif"] {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
 }
 
 .cms-shell .ops-summary {
@@ -326,6 +361,18 @@ body {
 }
 
 .cms-shell .lead-row form button {
+  min-height: 2.05rem;
+}
+
+.cms-shell .lead-row a,
+.cms-shell .client-row a,
+.cms-shell .link-row a {
+  color: inherit;
+}
+
+.cms-shell .lead-row button,
+.cms-shell .client-row button,
+.cms-shell .link-row button {
   min-height: 2.05rem;
 }
 
@@ -645,6 +692,7 @@ body {
 
 .cms-shell table {
   background: #ffffff;
+  border-collapse: collapse;
 }
 
 .cms-shell thead {
@@ -654,11 +702,16 @@ body {
 
 .cms-shell th,
 .cms-shell td {
-  padding: 0.65rem 0.75rem;
+  padding: 0.58rem 0.7rem;
+  vertical-align: middle;
 }
 
 .cms-shell tr {
   border-color: #e2e8f0 !important;
+}
+
+.cms-shell tbody tr:hover {
+  background: #f8fafc;
 }
 
 .cms-shell .client-search-bar {
@@ -670,6 +723,7 @@ body {
 .cms-shell .client-create-panel {
   border-color: #e2e8f0 !important;
   background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .cms-shell .client-create-panel > div {

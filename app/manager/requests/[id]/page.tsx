@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { AvailabilityOfferPanel } from "@/components/request/availability-offer-panel";
+import { RequestActivityTimeline } from "@/components/request/request-activity-timeline";
 import { RequestAssignmentControl } from "@/components/request/request-assignment-control";
 import { RequestDetail } from "@/components/request/request-detail";
 import { requireProfile } from "@/lib/auth";
-import { getMessageTemplates, getRequestCommerce, getRequestDetail, getTeamPromoters, getUsersForAdmin } from "@/lib/data/app";
+import { getMessageTemplates, getRequestActivity, getRequestCommerce, getRequestDetail, getTeamPromoters, getUsersForAdmin } from "@/lib/data/app";
 import type { RequestStatus } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
@@ -20,7 +21,7 @@ export default async function ManagerRequestDetailPage({
   ]);
 
   if (!request) notFound();
-  const commerce = await getRequestCommerce(request);
+  const [commerce, activity] = await Promise.all([getRequestCommerce(request), getRequestActivity(request.id)]);
   const updated = parseStatus(query.updated);
 
   return (
@@ -29,6 +30,7 @@ export default async function ManagerRequestDetailPage({
         {updated && <StatusNotice status={updated} />}
         <RequestDetail request={request} backHref="/manager/requests" clientHref={`/manager/clients/${request.client_id}`} statusReturnTo={`/manager/requests/${request.id}`} templates={templates} />
         <AvailabilityOfferPanel request={request} slots={commerce.slots} offers={commerce.offers} canManageAvailability templates={templates} />
+        <RequestActivityTimeline activity={activity} />
         <RequestAssignmentControl requestId={request.id} currentPromoterId={request.promoter_id} promoters={promoters} />
       </div>
     </AppShell>
