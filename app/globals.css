@@ -184,6 +184,66 @@ body {
   color: inherit;
 }
 
+.cms-shell .lead-row .text-ink-950,
+.cms-shell .client-row .text-ink-950,
+.cms-shell .link-row .text-ink-950 {
+  color: #0f172a !important;
+}
+
+.cms-shell .lead-row .text-slate-500,
+.cms-shell .client-row .text-slate-500,
+.cms-shell .link-row .text-slate-500 {
+  color: #475569 !important;
+}
+
+.cms-shell .lead-row .text-slate-400,
+.cms-shell .client-row .text-slate-400,
+.cms-shell .link-row .text-slate-400 {
+  color: #64748b !important;
+}
+
+.cms-shell .lead-row .text-champagne-800,
+.cms-shell .client-row .text-champagne-800,
+.cms-shell .link-row .text-champagne-800 {
+  color: #5f4518 !important;
+}
+
+.cms-shell .lead-row .text-sky-700,
+.cms-shell .client-row .text-sky-700,
+.cms-shell .link-row .text-sky-700 {
+  color: #0369a1 !important;
+}
+
+.cms-shell .lead-row .text-emerald-700,
+.cms-shell .client-row .text-emerald-700,
+.cms-shell .link-row .text-emerald-700,
+.cms-shell .lead-row .text-green-700,
+.cms-shell .client-row .text-green-700,
+.cms-shell .link-row .text-green-700 {
+  color: #047857 !important;
+}
+
+.cms-shell .lead-row .text-rose-700,
+.cms-shell .client-row .text-rose-700,
+.cms-shell .link-row .text-rose-700,
+.cms-shell .lead-row .text-red-700,
+.cms-shell .client-row .text-red-700,
+.cms-shell .link-row .text-red-700 {
+  color: #b91c1c !important;
+}
+
+.cms-shell .lead-row .text-amber-700,
+.cms-shell .client-row .text-amber-700,
+.cms-shell .link-row .text-amber-700 {
+  color: #92400e !important;
+}
+
+.cms-shell .lead-row .text-zinc-600,
+.cms-shell .client-row .text-zinc-600,
+.cms-shell .link-row .text-zinc-600 {
+  color: #52525b !important;
+}
+
 .cms-shell .compact-list {
   gap: 0.45rem !important;
 }
