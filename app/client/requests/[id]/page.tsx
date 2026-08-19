@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CalendarDays, MessageCircle, ShieldCheck, Users } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
+import { CustomerRequestTimeline } from "@/components/request/customer-request-timeline";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { requireProfile } from "@/lib/auth";
@@ -29,6 +30,9 @@ export default async function ClientRequestDetailPage({ params }: Readonly<{ par
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{statusMessage(request.status)}</p>
             </div>
             <RequestStatusBadge status={request.status} />
+          </div>
+          <div className="mt-4">
+            <CustomerRequestTimeline status={request.status} />
           </div>
         </LuxuryCard>
 

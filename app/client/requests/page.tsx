@@ -11,10 +11,11 @@ export default async function ClientRequestsPage() {
   const requests = await getRequestsForProfile(profile, { clientOnly: true });
   return (
     <AppShell profile={profile} title="My requests" eyebrow="Client">
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">{requests.length ? `${requests.length} request${requests.length === 1 ? "" : "s"} saved` : "Your bookings appear here"}</p>
         <Button asChild><Link href="/request">New request</Link></Button>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {requests.length ? requests.map((request) => <RequestCard key={request.id} request={request} href={`/client/requests/${request.id}`} audience="client" />) : <EmptyState />}
       </div>
     </AppShell>

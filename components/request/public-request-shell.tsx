@@ -20,9 +20,23 @@ export function PublicRequestShell({
           <h1 className="mt-2 max-w-[13ch] font-serif text-[2.85rem] leading-[0.94] text-foreground drop-shadow-2xl">{title}</h1>
           <p className="mt-3 max-w-sm text-[15px] leading-6 text-champagne-50/88">{description}</p>
           {hostLine && <p className="mt-3 rounded-lg border border-champagne-700/30 bg-ink-950/42 px-3 py-2 text-[13px] leading-5 text-champagne-100/82 backdrop-blur">{hostLine}</p>}
+          <div className="mt-4 grid grid-cols-3 overflow-hidden rounded-2xl border border-champagne-700/24 bg-ink-950/48 text-center backdrop-blur">
+            <TrustStat label="Reply" value="Personal" />
+            <TrustStat label="Booking" value="Checked" />
+            <TrustStat label="Access" value="Direct" />
+          </div>
         </header>
         {children}
       </div>
     </main>
+  );
+}
+
+function TrustStat({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <div className="border-l border-champagne-700/24 px-2 py-2 first:border-l-0">
+      <p className="text-[10px] uppercase tracking-[0.14em] text-champagne-300/80">{label}</p>
+      <p className="mt-0.5 truncate text-xs font-semibold text-champagne-50">{value}</p>
+    </div>
   );
 }

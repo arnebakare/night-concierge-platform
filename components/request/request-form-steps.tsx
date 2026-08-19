@@ -80,6 +80,7 @@ export function RequestFormSteps({
     [selectedClubEvents, values.occasionId]
   );
   const stepTitles = ["Venue", "Experience", "Guest", "Details", "Review"];
+  const nextLabel = step === 1 ? "Choose experience" : step === 2 ? "Add contact" : step === 3 ? "Add details" : "Review request";
 
   useEffect(() => {
     const serviceExists = selectedExperience.services.some((service) => service.label === values.serviceLabel && service.requestType === values.requestType);
@@ -145,10 +146,10 @@ export function RequestFormSteps({
   return (
     <section ref={flowRef} className="request-flow-card overflow-hidden rounded-[1.35rem] border border-champagne-300/24 bg-ink-950/76 shadow-[0_24px_90px_rgba(0,0,0,0.42)]">
       {!clubs.length && <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-red-100">Requests are temporarily unavailable because no active clubs are configured.</div>}
-      <div className="space-y-3 border-b border-champagne-700/24 bg-ink-950/36 px-4 pb-3 pt-4">
+      <div className="space-y-3 border-b border-champagne-700/24 bg-ink-950/50 px-4 pb-3 pt-4">
         <div className="flex items-center justify-between">
           <p className="text-xs uppercase tracking-[0.22em] text-champagne-300">{stepTitles[step - 1]}</p>
-          <p className="text-sm text-muted-foreground">{step}/5</p>
+          <p className="text-sm font-medium text-champagne-100">{step}/5</p>
         </div>
         <div className="grid grid-cols-5 gap-1">
           {[1, 2, 3, 4, 5].map((item) => (
@@ -171,7 +172,7 @@ export function RequestFormSteps({
 
       {step === 1 && (
         <div className="space-y-3">
-          <StepIntro title="Where are you going?" description="Choose a venue first. We only show services that make sense for that place." />
+          <StepIntro title="Where are you going?" description="Start with the place. Services adapt to each venue." />
           <div className="grid gap-3">
             {visibleClubs.map((club) => {
               const experience = getClubVenueExperience(club);
@@ -182,14 +183,14 @@ export function RequestFormSteps({
                 onClick={() => selectClub(club)}
                 className={cn(
                   "group relative flex min-h-[5.7rem] items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left transition active:scale-[0.99]",
-                  values.clubId === club.id ? "border-champagne-300 bg-champagne-300/12 shadow-glow" : "border-champagne-700/28 bg-white/[0.045] hover:border-champagne-300/55"
+                  values.clubId === club.id ? "border-champagne-300 bg-champagne-300/14 shadow-glow" : "border-champagne-700/28 bg-ink-950/48 hover:border-champagne-300/55"
                 )}
               >
                 <span className={cn("absolute inset-y-3 left-0 w-1 rounded-r-full bg-champagne-300/70 opacity-0 transition", values.clubId === club.id && "opacity-100")} />
                 <VenueLogo club={club} monogram={experience.monogram} size="lg" />
                 <span className="min-w-0">
-                  <span className="block font-serif text-[1.18rem] leading-tight">{experience.wordmark}</span>
-                  <span className="mt-1 block line-clamp-1 text-[13px] text-muted-foreground">{experience.tagline}</span>
+                  <span className="block font-serif text-[1.18rem] leading-tight text-champagne-50">{experience.wordmark}</span>
+                  <span className="mt-1 block line-clamp-1 text-[13px] text-champagne-100/76">{experience.tagline}</span>
                   <span className="mt-2 flex flex-wrap gap-2">
                     <span className="inline-flex items-center gap-1 rounded-full border border-champagne-700/35 px-2 py-0.5 text-[10px] uppercase tracking-[0.13em] text-champagne-300">
                       <MapPin className="size-3" /> {club.city}
@@ -231,7 +232,7 @@ export function RequestFormSteps({
               </div>
             </div>
           </div>
-          <StepIntro title="What should we arrange?" description="Pick the closest option. You can add details in the next step." />
+          <StepIntro title="What should we arrange?" description="Pick the closest option. Your host can fine-tune it after." />
           <div className="grid grid-cols-2 gap-3">
             {selectedExperience.services.map((service) => {
               const Icon = service.icon;
@@ -246,15 +247,15 @@ export function RequestFormSteps({
                 }}
                 className={cn(
                   "group relative flex min-h-[7.1rem] flex-col justify-between rounded-2xl border p-3 text-left transition active:scale-[0.99]",
-                  active ? "border-champagne-300 bg-champagne-300/12 shadow-glow" : "border-champagne-700/28 bg-white/[0.045] hover:border-champagne-300/55"
+                  active ? "border-champagne-300 bg-champagne-300/14 shadow-glow" : "border-champagne-700/28 bg-ink-950/48 hover:border-champagne-300/55"
                 )}
               >
                 <span className="flex size-9 items-center justify-center rounded-xl bg-ink-950/60 text-champagne-300">
                   <Icon className="size-5" />
                 </span>
                 <span>
-                  <span className="block font-semibold">{service.label}</span>
-                  <span className="mt-1 block line-clamp-2 text-xs leading-snug text-muted-foreground">{service.description}</span>
+                  <span className="block font-semibold text-champagne-50">{service.label}</span>
+                  <span className="mt-1 block line-clamp-2 text-xs leading-snug text-champagne-100/74">{service.description}</span>
                   {service.priceHint && <span className="mt-2 inline-flex rounded-full border border-champagne-700/30 px-2 py-0.5 text-[10px] text-champagne-200">{service.priceHint}</span>}
                 </span>
                 {active && <Check className="absolute right-3 top-3 size-4 text-champagne-300" />}
@@ -385,7 +386,7 @@ export function RequestFormSteps({
 
       {step === 5 && (
         <div className="space-y-4">
-          <StepIntro title="Ready to send" description="The team receives this immediately and follows up personally." />
+          <StepIntro title="Ready to send" description="Your host receives this and checks availability personally." />
           <div className="rounded-2xl border border-champagne-700/28 bg-white/[0.055] p-3.5 text-sm shadow-panel">
             <div className="mb-3 flex items-center gap-3">
               <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="md" />
@@ -409,9 +410,7 @@ export function RequestFormSteps({
             </div>
             <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
               <ShieldCheck className="mt-0.5 size-4 shrink-0 text-champagne-300" />
-              <span>
-              By sending, you ask the team to check availability. Your booking is only confirmed once a host replies.
-              </span>
+            <span>By sending, you ask the team to check availability. Nothing is confirmed until your host replies.</span>
             </p>
           </div>
         </div>
@@ -428,7 +427,7 @@ export function RequestFormSteps({
         )}
         {step < 5 ? (
           <Button type="button" className="flex-1 rounded-xl" size="lg" onClick={next} disabled={!clubs.length}>
-            Continue
+            {nextLabel}
           </Button>
         ) : (
           <Button type="button" className="flex-1 rounded-xl" size="lg" onClick={submit} disabled={pending}>

@@ -31,14 +31,16 @@ export function RequestLeadRow({
 
   return (
     <div className="lead-row rounded-lg border border-slate-200 bg-white text-ink-950 shadow-sm transition hover:border-champagne-600/70 hover:shadow-md">
-      <div className="grid gap-2 p-2 md:grid-cols-[minmax(220px,1.15fr)_minmax(230px,1fr)_auto] md:items-center md:px-3 md:py-2.5">
+      <div className="grid gap-2 p-2.5 md:grid-cols-[minmax(220px,1.15fr)_minmax(230px,1fr)_auto] md:items-center md:px-3 md:py-2.5">
         <Link href={href} className="min-w-0">
           <div className="flex items-center gap-2">
             <span className={priorityBarClass(priority.tone)} />
             <div className="min-w-0">
-              <div className="flex items-center gap-2 md:block">
-                <p className="min-w-0 truncate text-sm font-semibold text-ink-950 md:text-base">{request.clients?.name ?? "Guest"}</p>
-                <div className="shrink-0 md:hidden"><RequestStatusBadge status={request.status} /></div>
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:block">
+                <p className="min-w-0 truncate text-sm font-semibold text-slate-950 md:text-base">{request.clients?.name ?? "Guest"}</p>
+                <div className="shrink-0 md:hidden">
+                  <RequestStatusBadge status={request.status} />
+                </div>
               </div>
               <p className="truncate text-xs text-slate-500">{request.clubs?.name ?? "Club"} · {service}</p>
               <p className="mt-0.5 truncate text-[11px] text-slate-400">{request.promoter?.name ?? "Unassigned"} · {requestFreshnessLabel(request.created_at)}</p>

@@ -62,14 +62,14 @@ export function buildAvailabilityMessage(request: SalesRequest) {
   const message = request.message ? `\nNotes: ${cleanContext(request.message)}` : "";
 
   return [
-    `Can we do this?`,
+    "Can you check this for me?",
     `${clubName} · ${formatEnum(request.request_type)}`,
-    `Date: ${request.requested_date}${time}`,
+    `Date: ${formatClientDate(request.requested_date)}${time}`,
     `Client: ${clientName}`,
     `Guests: ${request.guest_count}`,
     `${budget}${message}`,
     "",
-    "If not, what is the closest option?"
+    "If that is not possible, what is the closest good option?"
   ].join("\n").replace(/\n{3,}/g, "\n\n");
 }
 
@@ -80,14 +80,14 @@ export function buildClientReply(request: SalesRequest, language?: LeadDraft["la
   const intro = clientName ? `Hi ${clientName}` : "Hi";
 
   if (selectedLanguage === "es") {
-    return `${intro}, perfecto. Lo miro con ${clubName} para el ${request.requested_date} para ${request.guest_count} personas y te digo enseguida. Si quieres alguna hora o zona específica, mándamelo por aquí.`;
+    return `${intro}, perfecto. Lo miro con ${clubName} para ${formatClientDate(request.requested_date)} para ${request.guest_count} personas y te digo enseguida. Si prefieres una hora o zona concreta, mándamelo por aquí.`;
   }
 
   if (selectedLanguage === "sv") {
-    return `${intro}, absolut. Jag kollar med ${clubName} den ${request.requested_date} för ${request.guest_count} personer och återkommer snart. Om du vill ha en särskild tid eller plats, skriv det här.`;
+    return `${intro}, absolut. Jag kollar med ${clubName} ${formatClientDate(request.requested_date)} för ${request.guest_count} personer och återkommer snart. Om du vill ha en särskild tid eller plats, skriv det här.`;
   }
 
-  return `${intro}, perfect. I’ll check with ${clubName} for ${request.requested_date} for ${request.guest_count} guests and get back to you shortly. If you prefer a specific time or area, just send it here.`;
+  return `${intro}, perfect. I’ll check with ${clubName} for ${formatClientDate(request.requested_date)} for ${request.guest_count} guests and get back to you shortly. If you prefer a specific time or area, just send it here.`;
 }
 
 export function buildUpsellIdeas(request: SalesRequest) {
@@ -188,6 +188,10 @@ function inferLanguage(lower: string): LeadDraft["language"] {
 
 function cleanContext(message: string) {
   return message.replace(/^Selected (service|occasion):.+$/gm, "").trim();
+}
+
+function formatClientDate(value: string) {
+  return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" }).format(new Date(`${value}T12:00:00`));
 }
 
 function parseExplicitDate(text: string) {

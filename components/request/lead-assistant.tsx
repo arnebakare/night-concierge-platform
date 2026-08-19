@@ -42,8 +42,6 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
   const availabilityMessage = buildAvailabilityMessage(salesRequest);
   const clientReply = buildClientReply(salesRequest, draft.language);
   const missingFields = [
-    !draft.clientName ? "name" : null,
-    !draft.phone ? "phone" : null,
     !draft.requestedDate ? "date" : null,
     !draft.clubId ? "venue" : null
   ].filter(Boolean);
@@ -113,7 +111,7 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
             <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Booking draft</p>
             <h3 className="mt-1 text-lg font-semibold">Check the essentials</h3>
           </div>
-          <span className="rounded-md bg-secondary px-3 py-1 text-xs text-muted-foreground">{missingFields.length ? `Missing ${missingFields.join(", ")}` : draft.language.toUpperCase()}</span>
+          <span className="rounded-md bg-secondary px-3 py-1 text-xs text-muted-foreground">{missingFields.length ? `Missing ${missingFields.join(", ")}` : `Ready · ${draft.language.toUpperCase()}`}</span>
         </div>
 
         {matchingClients.length > 0 && (
@@ -133,10 +131,10 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
         )}
 
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Client">
+          <Field label="Client optional">
             <Input value={draft.clientName} onChange={(event) => setDraftField("clientName", event.target.value, setDraft)} placeholder="Name" />
           </Field>
-          <Field label="WhatsApp">
+          <Field label="WhatsApp optional">
             <Input value={draft.phone} onChange={(event) => setDraftField("phone", event.target.value, setDraft)} placeholder="+34..." />
           </Field>
           <Field label="Venue">

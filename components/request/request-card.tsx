@@ -18,7 +18,7 @@ export function RequestCard({ request, href, audience = "staff" }: Readonly<{ re
       <div className="space-y-2.5 p-3 pl-4 md:p-3.5 md:pl-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-base font-semibold leading-tight">{request.clients?.name ?? "Guest"}</p>
+          <p className="text-base font-semibold leading-tight text-champagne-50">{request.clients?.name ?? "Guest"}</p>
           <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">{request.clubs?.name ?? "Club"} · {service}</p>
           {audience === "staff" && <p className="mt-0.5 text-[11px] text-muted-foreground">{request.promoter?.name ?? "Unassigned"} · {formatEnum(request.source)}</p>}
         </div>

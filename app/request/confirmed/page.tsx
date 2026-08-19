@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, MessageCircle, ShieldCheck } from "lucide-react";
+import { CheckCircle2, MessageCircle, ShieldCheck, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default async function ConfirmedPage({ searchParams }: Readonly<{ searchParams: Promise<{ id?: string }> }>) {
@@ -17,7 +17,12 @@ export default async function ConfirmedPage({ searchParams }: Readonly<{ searchP
         <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
           A host will check availability and reply personally on WhatsApp.
         </p>
-        <div className="mt-5 space-y-2 text-left text-sm text-muted-foreground">
+        <div className="mt-5 grid grid-cols-3 gap-2 text-left">
+          <NextStep icon={MessageCircle} label="Host reply" />
+          <NextStep icon={Timer} label="Availability" />
+          <NextStep icon={ShieldCheck} label="Confirm" />
+        </div>
+        <div className="mt-4 space-y-2 text-left text-sm text-muted-foreground">
           <div className="flex items-start gap-3 rounded-xl border border-champagne-700/24 bg-white/[0.045] p-3">
             <MessageCircle className="mt-0.5 size-4 shrink-0 text-champagne-300" />
             <span>The team will confirm the venue, date, timing, and any spend or door conditions.</span>
@@ -34,5 +39,14 @@ export default async function ConfirmedPage({ searchParams }: Readonly<{ searchP
       </section>
       </div>
     </main>
+  );
+}
+
+function NextStep({ icon: Icon, label }: Readonly<{ icon: typeof MessageCircle; label: string }>) {
+  return (
+    <div className="rounded-xl border border-champagne-700/24 bg-white/[0.045] px-2 py-2 text-center">
+      <Icon className="mx-auto size-4 text-champagne-300" />
+      <p className="mt-1 truncate text-[11px] font-semibold text-champagne-50">{label}</p>
+    </div>
   );
 }
