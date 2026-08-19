@@ -15,7 +15,7 @@ export default async function ClientsPage({
   return (
     <AppShell profile={profile} title="Clients" eyebrow="CRM">
       <div className="space-y-4">
-        <ClientSearchForm action="/clients" value={filters.q} />
+        <ClientSearchForm action="/clients" value={filters.q} placeholder="Search by SKU, phone, name, Instagram" />
         <ClientCreateForm role={profile.role} />
         <div className="compact-list grid gap-2">
           {clients.length ? clients.map((client) => <ClientCard key={client.id} client={client} href={`/clients/${client.id}`} />) : <EmptyState />}
@@ -29,7 +29,7 @@ function EmptyState() {
   return (
     <div className="rounded-lg border border-dashed border-slate-300 bg-white p-5 text-center text-sm text-slate-500">
       <p className="font-medium text-ink-950">No clients found</p>
-      <p className="mt-1">Try another search or add the client from the button above.</p>
+      <p className="mt-1">Try another SKU, phone number, name, or Instagram handle.</p>
     </div>
   );
 }

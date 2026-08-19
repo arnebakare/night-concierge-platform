@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, Clock, MessageCircle, Phone, User, Users } from "lucide-react";
+import { ArrowLeft, Barcode, CalendarDays, Clock, MessageCircle, Phone, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { RequestStatusControl } from "@/components/request/request-status-contro
 import { updateRequestClientContact } from "@/lib/actions/management-actions";
 import type { ConciergeRequest, RequestStatus } from "@/lib/types";
 import { isTemporaryPhone, whatsAppHref } from "@/lib/sales/funnel";
+import { formatCustomerCode } from "@/lib/concierge/phone";
 import { formatEnum } from "@/lib/utils";
 
 export function RequestDetail({
@@ -54,6 +55,10 @@ export function RequestDetail({
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Client</p>
             <h3 className="mt-1 truncate text-lg font-semibold">{request.clients?.name ?? "Guest"}</h3>
+            <p className="mt-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <Barcode className="size-4 text-champagne-300" />
+              {request.clients?.client_code ? `SKU ${request.clients.client_code}` : formatCustomerCode(request.clients?.phone)}
+            </p>
             <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
               <Phone className="size-4 text-champagne-300" />
               {visiblePhone(request.clients?.phone) || "No phone yet"}

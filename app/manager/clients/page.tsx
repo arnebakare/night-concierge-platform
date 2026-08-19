@@ -15,7 +15,7 @@ export default async function ManagerClientsPage({
   return (
     <AppShell profile={profile} title="Client CRM" eyebrow="Manager">
       <div className="space-y-4">
-        <ClientSearchForm action="/manager/clients" value={filters.q} placeholder="Search by phone, name, Instagram, VIP level" />
+        <ClientSearchForm action="/manager/clients" value={filters.q} placeholder="Search by SKU, phone, name, Instagram, VIP level" />
         <ClientCreateForm role={profile.role} />
         <div className="compact-list grid gap-2">
           {clients.length ? clients.map((client) => <ClientCard key={client.id} client={client} href={`/manager/clients/${client.id}`} />) : <EmptyState />}

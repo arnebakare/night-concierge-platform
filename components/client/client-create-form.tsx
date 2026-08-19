@@ -28,11 +28,14 @@ export function ClientCreateForm({ role }: Readonly<{ role: Role }>) {
       </summary>
       <div className="mt-2 rounded-md border border-champagne-700/20 bg-background/35 p-2.5">
         <form action={createClientRecord} className="space-y-2.5">
+        <p className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          WhatsApp number is the customer code. Existing numbers update the same portfolio.
+        </p>
         <div className="grid gap-2 md:grid-cols-2">
           <Field label="Name">
             <Input name="name" placeholder="Daniel" required />
           </Field>
-          <Field label="Phone / WhatsApp">
+          <Field label="WhatsApp number">
             <Input name="phone" placeholder="+34..." required />
           </Field>
           <Field label="Email optional">
