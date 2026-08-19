@@ -66,6 +66,19 @@ export type ClientAlias = {
   created_at: string;
 };
 
+export type ClientBookingHistoryItem = {
+  id: string;
+  requested_date: string;
+  arrival_time: string | null;
+  guest_count: number;
+  request_type: RequestType;
+  status: RequestStatus;
+  budget: string | null;
+  created_at: string;
+  clubs?: Pick<Club, "name" | "city" | "slug"> | null;
+  promoter?: Pick<Profile, "name" | "email"> | null;
+};
+
 export type ConciergeRequest = {
   id: string;
   client_id: string;

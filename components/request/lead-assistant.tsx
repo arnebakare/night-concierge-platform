@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition, type Dispatch, type SetStateAction } from "react";
-import { CalendarDays, MessageCircle, Send, Wand2 } from "lucide-react";
+import { Barcode, CalendarDays, MessageCircle, Send, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +25,7 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
     const query = `${draft.clientName} ${draft.phone}`.trim().toLowerCase();
     if (!query) return [];
     return clients
-      .filter((client) => `${client.name} ${client.phone} ${client.instagram ?? ""}`.toLowerCase().includes(query))
+      .filter((client) => `${client.name} ${client.phone} ${client.client_code ?? ""} ${client.instagram ?? ""}`.toLowerCase().includes(query))
       .slice(0, 4);
   }, [clients, draft.clientName, draft.phone]);
   const salesRequest = {
@@ -42,7 +42,7 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
   const availabilityMessage = buildAvailabilityMessage(salesRequest);
   const clientReply = buildClientReply(salesRequest, draft.language);
   const missingFields = [
-    !draft.phone ? "phone" : null,
+    !draft.phone ? "WhatsApp number" : null,
     !draft.requestedDate ? "date" : null,
     !draft.clubId ? "venue" : null
   ].filter(Boolean);
@@ -116,7 +116,13 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
             <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Booking draft</p>
             <h3 className="mt-1 text-lg font-semibold">Check the essentials</h3>
           </div>
-          <span className="rounded-md bg-secondary px-3 py-1 text-xs text-muted-foreground">{missingFields.length ? `Missing ${missingFields.join(", ")}` : `Ready · ${draft.language.toUpperCase()}`}</span>
+          <span className={confidenceClass(draft.confidence)}>
+            {draft.confidence}% read
+          </span>
+        </div>
+        <div className="grid gap-2 rounded-md bg-secondary/70 p-2 text-xs text-muted-foreground sm:grid-cols-[auto_1fr] sm:items-center">
+          <span className="font-semibold text-foreground">{missingFields.length ? `Missing ${missingFields.join(", ")}` : `Ready · ${draft.language.toUpperCase()}`}</span>
+          <span>{draft.missingFields.length ? `Parser note: ${draft.missingFields.join(", ")}` : "The lead has the important details."}</span>
         </div>
 
         {matchingClients.length > 0 && (
@@ -130,6 +136,7 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
               >
                 <span className="font-semibold">{client.name}</span>
                 <span className="ml-2 text-muted-foreground">{client.phone}</span>
+                {client.client_code && <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground"><Barcode className="size-3" />SKU {client.client_code}</span>}
               </button>
             ))}
           </div>
@@ -202,6 +209,13 @@ export function LeadAssistant({ clubs, clients }: Readonly<{ clubs: Club[]; clie
       </div>
     </div>
   );
+}
+
+function confidenceClass(confidence: number) {
+  const base = "rounded-md px-3 py-1 text-xs font-semibold";
+  if (confidence >= 84) return `${base} bg-emerald-50 text-emerald-700`;
+  if (confidence >= 60) return `${base} bg-amber-50 text-amber-700`;
+  return `${base} bg-rose-50 text-rose-700`;
 }
 
 function setDraftField<K extends keyof LeadDraft>(

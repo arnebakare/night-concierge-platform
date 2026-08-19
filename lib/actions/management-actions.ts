@@ -429,6 +429,8 @@ export async function updateRequestTableCost(formData: FormData) {
   revalidatePath("/reports");
   revalidatePath("/requests");
   revalidatePath("/manager/requests");
+  revalidatePath(`/requests/${parsed.data.requestId}`);
+  revalidatePath(`/manager/requests/${parsed.data.requestId}`);
 }
 
 const retentionSchema = z.object({

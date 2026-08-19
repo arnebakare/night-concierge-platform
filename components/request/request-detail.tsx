@@ -7,7 +7,8 @@ import { LuxuryCard } from "@/components/ui/luxury-card";
 import { SalesAssistantPanel } from "@/components/request/sales-assistant-panel";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
 import { RequestStatusControl } from "@/components/request/request-status-control";
-import { updateRequestClientContact } from "@/lib/actions/management-actions";
+import { StatusSubmitButton } from "@/components/request/status-submit-button";
+import { updateRequestClientContact, updateRequestTableCost } from "@/lib/actions/management-actions";
 import type { ConciergeRequest, RequestStatus } from "@/lib/types";
 import { isTemporaryPhone, whatsAppHref } from "@/lib/sales/funnel";
 import { formatCustomerCode } from "@/lib/concierge/phone";
@@ -16,8 +17,9 @@ import { formatEnum } from "@/lib/utils";
 export function RequestDetail({
   request,
   backHref,
-  clientHref
-}: Readonly<{ request: ConciergeRequest; backHref: string; clientHref: string }>) {
+  clientHref,
+  statusReturnTo
+}: Readonly<{ request: ConciergeRequest; backHref: string; clientHref: string; statusReturnTo?: string }>) {
   return (
     <div className="space-y-4">
       <Button asChild variant="secondary" size="sm">
@@ -43,12 +45,21 @@ export function RequestDetail({
           <Fact icon={MessageCircle} label="Budget" value={request.budget ?? "Not set"} />
         </div>
 
+        <form action={updateRequestTableCost} className="grid gap-2 rounded-md border border-border bg-secondary/50 p-2 sm:grid-cols-[1fr_auto] sm:items-end">
+          <input type="hidden" name="requestId" value={request.id} />
+          <div className="space-y-1.5">
+            <Label>Table cost / spend</Label>
+            <Input name="tableCost" defaultValue={request.budget ?? ""} placeholder="Example: 1500 EUR" />
+          </div>
+          <StatusSubmitButton label="Save cost" pendingLabel="Saving" variant="secondary" />
+        </form>
+
         <WorkflowStrip status={request.status} />
 
-        <RequestStatusControl requestId={request.id} status={request.status} returnTo={backHref} />
+        <RequestStatusControl requestId={request.id} status={request.status} returnTo={statusReturnTo ?? backHref} />
       </LuxuryCard>
 
-      <SalesAssistantPanel request={request} returnTo={backHref} />
+      <SalesAssistantPanel request={request} returnTo={statusReturnTo ?? backHref} />
 
       <LuxuryCard className="space-y-3">
         <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-start">

@@ -5,6 +5,7 @@ import { ClientNoteCard } from "@/components/client/client-note-card";
 import { ClientNoteFilters } from "@/components/client/client-note-filters";
 import { ClientNoteForm } from "@/components/client/client-note-form";
 import { ClientEditForm } from "@/components/client/client-edit-form";
+import { ClientBookingHistory } from "@/components/client/client-booking-history";
 import { requireProfile } from "@/lib/auth";
 import { getActiveClubsForApp, getClientProfile } from "@/lib/data/app";
 import { formatCustomerCode } from "@/lib/concierge/phone";
@@ -14,7 +15,7 @@ export default async function ManagerClientDetailPage({
   searchParams
 }: Readonly<{ params: Promise<{ id: string }>; searchParams: Promise<{ visibility?: string; type?: string }> }>) {
   const [profile, { id }, filters] = await Promise.all([requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]), params, searchParams]);
-  const [{ client, notes, aliases }, clubs] = await Promise.all([getClientProfile(id, filters), getActiveClubsForApp()]);
+  const [{ client, notes, aliases, history }, clubs] = await Promise.all([getClientProfile(id, filters), getActiveClubsForApp()]);
   const aliasNames = aliases.map((alias) => alias.name).filter((name) => name && name !== client.name);
 
   return (
@@ -35,6 +36,9 @@ export default async function ManagerClientDetailPage({
       </LuxuryCard>
       <div className="mt-4">
         <ClientEditForm client={client} role={profile.role} />
+      </div>
+      <div className="mt-4">
+        <ClientBookingHistory history={history} />
       </div>
       <div className="mt-4">
         <ClientNoteForm clientId={client.id} role={profile.role} clubs={clubs} />

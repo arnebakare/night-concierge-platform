@@ -3,6 +3,7 @@ import { ClientNoteCard } from "@/components/client/client-note-card";
 import { ClientNoteFilters } from "@/components/client/client-note-filters";
 import { ClientNoteForm } from "@/components/client/client-note-form";
 import { ClientEditForm } from "@/components/client/client-edit-form";
+import { ClientBookingHistory } from "@/components/client/client-booking-history";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Button } from "@/components/ui/button";
 import { requireProfile } from "@/lib/auth";
@@ -14,7 +15,7 @@ export default async function ClientProfilePage({
   searchParams
 }: Readonly<{ params: Promise<{ id: string }>; searchParams: Promise<{ visibility?: string; type?: string }> }>) {
   const [profile, { id }, filters] = await Promise.all([requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]), params, searchParams]);
-  const [{ client, notes, aliases }, clubs] = await Promise.all([getClientProfile(id, filters), getActiveClubsForApp()]);
+  const [{ client, notes, aliases, history }, clubs] = await Promise.all([getClientProfile(id, filters), getActiveClubsForApp()]);
   const aliasNames = aliases.map((alias) => alias.name).filter((name) => name && name !== client.name);
 
   return (
@@ -35,6 +36,7 @@ export default async function ClientProfilePage({
           </div>
         </LuxuryCard>
         <ClientEditForm client={client} role={profile.role} />
+        <ClientBookingHistory history={history} />
         <ClientNoteForm clientId={client.id} role={profile.role} clubs={clubs} />
         <ClientNoteFilters action={`/clients/${client.id}`} values={filters} />
         {notes.length ? notes.map((note, index) => <ClientNoteCard key={`${note.note_type}-${index}`} note={note} />) : <LuxuryCard className="text-center text-sm text-muted-foreground">No notes match these filters.</LuxuryCard>}

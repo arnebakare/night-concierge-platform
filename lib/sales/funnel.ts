@@ -12,6 +12,8 @@ export type LeadDraft = {
   budget: string;
   message: string;
   language: "en" | "es" | "sv";
+  confidence: number;
+  missingFields: string[];
 };
 
 type SalesRequest = Pick<
@@ -39,9 +41,17 @@ export function parseWhatsAppLead(raw: string, clubs: Club[]): LeadDraft {
   const budget = inferBudget(text);
   const arrival = inferArrivalTime(text);
   const language = inferLanguage(lower);
+  const clientName = inferClientName(text);
+  const missingFields = [
+    !phone ? "WhatsApp number" : null,
+    !club?.id ? "venue" : null,
+    !arrival ? "arrival time" : null,
+    !guests ? "guest count" : null,
+    !clientName ? "client name" : null
+  ].filter((value): value is string => Boolean(value));
 
   return {
-    clientName: inferClientName(text),
+    clientName,
     phone,
     clubId: club?.id ?? "",
     requestType,
@@ -50,7 +60,9 @@ export function parseWhatsAppLead(raw: string, clubs: Club[]): LeadDraft {
     guestCount: guests ?? (requestType === "TABLE" ? 4 : 2),
     budget,
     message: text,
-    language
+    language,
+    confidence: Math.max(20, 100 - missingFields.length * 16),
+    missingFields
   };
 }
 
@@ -134,14 +146,15 @@ export function isTemporaryPhone(phone?: string | null) {
 }
 
 function inferRequestType(lower: string): RequestType {
-  if (/\b(table|mesa|bord|vip table|minimum spend)\b/.test(lower)) return "TABLE";
-  if (/\b(vip|bottle|botella|service)\b/.test(lower)) return "VIP_SERVICE";
+  if (/\b(table|mesa|bord|vip table|minimum spend|min spend|minimum|cabana|sofa)\b/.test(lower)) return "TABLE";
+  if (/\b(vip|bottle|botella|service|bottles|champagne)\b/.test(lower)) return "VIP_SERVICE";
   if (/\b(guestlist|guest list|lista|gästlista)\b/.test(lower)) return "GUESTLIST";
   return "GENERAL";
 }
 
 function inferClientName(text: string) {
   const patterns = [
+    /\b(?:name|client|guest|nombre|namn)\s*[:\-]\s*([A-Za-zÀ-ÿ .'’-]{2,60})/i,
     /\b(?:i am|i'm|im|this is|my name is|name is)\s+([A-ZÅÄÖÁÉÍÓÚÑ][\p{L}'-]{1,}(?:\s+[A-ZÅÄÖÁÉÍÓÚÑ][\p{L}'-]{1,})?)/u,
     /\b(?:soy|me llamo|mi nombre es)\s+([A-ZÁÉÍÓÚÑ][\p{L}'-]{1,}(?:\s+[A-ZÁÉÍÓÚÑ][\p{L}'-]{1,})?)/u,
     /\b(?:jag heter|det är|mitt namn är)\s+([A-ZÅÄÖ][\p{L}'-]{1,}(?:\s+[A-ZÅÄÖ][\p{L}'-]{1,})?)/u
@@ -154,10 +167,12 @@ function inferClientName(text: string) {
 }
 
 function inferGuestCount(lower: string) {
-  const direct = lower.match(/\b(\d{1,3})\s*(pax|people|persons|guests|guest|personer|pers|personas|personas?|friends|girls|guys|people total)\b/)?.[1];
+  const direct = lower.match(/\b(\d{1,3})\s*(pax|people|persons|guests|guest|personer|pers|personas|friends|girls|guys|boys|ladies|total)\b/)?.[1];
   if (direct) return Number(direct);
   const forNumber = lower.match(/\b(?:for|för|para|table for|bord för|mesa para)\s+(\d{1,3})\b/)?.[1];
   if (forNumber) return Number(forNumber);
+  const group = lower.match(/\b(?:we are|we're|were|somos|vi är|vi ar)\s+(\d{1,3})\b/)?.[1];
+  if (group) return Number(group);
   return null;
 }
 
@@ -257,6 +272,12 @@ function parseWeekday(text: string) {
 function inferArrivalTime(text: string) {
   const explicit = text.match(/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/);
   if (explicit) return `${explicit[1].padStart(2, "0")}:${explicit[2]}`;
+  const nightHour = text.match(/\b(?:at|around|sobre|a las|kl|klockan)\s*([01]?\d|2[0-3])\b/i)?.[1];
+  if (nightHour) {
+    const rawHour = Number(nightHour);
+    const hour = rawHour >= 8 && rawHour <= 12 ? rawHour + 12 : rawHour;
+    return `${String(hour).padStart(2, "0")}:00`;
+  }
   const compact = text.match(/\b([01]?\d|2[0-3])\s*(pm|am)\b/i);
   if (!compact) return "";
   let hour = Number(compact[1]);

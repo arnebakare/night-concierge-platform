@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AvailabilitySlot, Client, ClientAlias, Club, ConciergeEvent, ConciergeRequest, Profile, RequestOffer, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, Club, ConciergeEvent, ConciergeRequest, Profile, RequestOffer, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -197,7 +197,7 @@ export type NoteFilters = {
 export async function getClientProfile(clientId: string, filters?: NoteFilters) {
   try {
     const supabase = await createClient();
-    const [{ data: client, error: clientError }, { data: notes, error: notesError }, { data: aliases, error: aliasError }] = await Promise.all([
+    const [{ data: client, error: clientError }, { data: notes, error: notesError }, { data: aliases, error: aliasError }, { data: history, error: historyError }] = await Promise.all([
       supabase
         .from("clients")
         .select("id, name, phone, client_code, email, instagram, country, preferred_language, vip_level, status")
@@ -216,16 +216,45 @@ export async function getClientProfile(clientId: string, filters?: NoteFilters) 
         .eq("client_id", clientId)
         .order("created_at", { ascending: false })
         .limit(12)
+      ,
+      supabase
+        .from("requests")
+        .select("id, requested_date, arrival_time, guest_count, request_type, status, budget, created_at, clubs(name, city, slug), promoter:profiles!requests_promoter_id_fkey(name, email)")
+        .eq("client_id", clientId)
+        .order("requested_date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(20)
     ]);
     if (clientError) throw clientError;
     if (notesError) throw notesError;
     if (aliasError) throw aliasError;
-    return { client: client as Client, notes: applyNoteFilters(normalizeNotes(notes), filters), aliases: (aliases ?? []) as ClientAlias[] };
+    if (historyError) throw historyError;
+    return {
+      client: client as Client,
+      notes: applyNoteFilters(normalizeNotes(notes), filters),
+      aliases: (aliases ?? []) as ClientAlias[],
+      history: normalizeClientHistory(history)
+    };
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
     return {
       client: demoClients.find((item) => item.id === clientId) ?? demoClients[0],
       aliases: [{ name: "Daniel Sjoestrand", source: "Demo", created_at: new Date().toISOString() }],
+      history: demoRequests
+        .filter((request) => request.client_id === clientId || clientId === "c1")
+        .slice(0, 6)
+        .map((request) => ({
+          id: request.id,
+          requested_date: request.requested_date,
+          arrival_time: request.arrival_time,
+          guest_count: request.guest_count,
+          request_type: request.request_type,
+          status: request.status,
+          budget: request.budget,
+          created_at: request.created_at,
+          clubs: request.clubs,
+          promoter: request.promoter
+        })),
       notes: applyNoteFilters([
         { note_type: "PREFERENCE", visibility: "GLOBAL", content: "Prefers table near DJ booth and sparkling water on arrival." },
         { note_type: "RELIABILITY", visibility: "PRIVATE_TO_AUTHOR", content: "Usually confirms late but arrives with full group." }
@@ -641,6 +670,14 @@ function normalizeRequests(data: unknown): ConciergeRequest[] {
   return ((data as ConciergeRequest[] | null) ?? []).map((request) => ({
     ...request,
     clients: Array.isArray(request.clients) ? request.clients[0] : request.clients,
+    clubs: Array.isArray(request.clubs) ? request.clubs[0] : request.clubs,
+    promoter: Array.isArray(request.promoter) ? request.promoter[0] : request.promoter
+  }));
+}
+
+function normalizeClientHistory(data: unknown): ClientBookingHistoryItem[] {
+  return ((data as ClientBookingHistoryItem[] | null) ?? []).map((request) => ({
+    ...request,
     clubs: Array.isArray(request.clubs) ? request.clubs[0] : request.clubs,
     promoter: Array.isArray(request.promoter) ? request.promoter[0] : request.promoter
   }));
