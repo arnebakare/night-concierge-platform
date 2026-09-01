@@ -1,8 +1,9 @@
-import { Percent, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LuxuryCard } from "@/components/ui/luxury-card";
+import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { saveCommissionRule, setCommissionRuleActive } from "@/lib/actions/management-actions";
 import type { Club, CommissionRule, Profile, RequestType } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
@@ -24,7 +25,10 @@ export function CommissionRulesManager({
               <Plus className="size-3.5" /> Promoter, venue, service
             </span>
           </summary>
-          <form action={saveCommissionRule} className="mt-3 grid gap-2 md:grid-cols-5">
+          <form action={saveCommissionRule} className="mt-3 grid gap-2 md:grid-cols-6">
+            <Field label="Rule name">
+              <Input name="label" placeholder="Julia table sales" className="bg-white text-slate-950" />
+            </Field>
             <Field label="Promoter">
               <select name="promoterId" className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
                 <option value="">Any promoter</option>
@@ -49,9 +53,10 @@ export function CommissionRulesManager({
             <Field label="Flat fee">
               <Input name="flatFee" type="number" min={0} step="1" defaultValue={0} className="bg-white text-slate-950" />
             </Field>
-            <Button type="submit" className="bg-slate-950 text-white hover:bg-slate-800 md:col-span-5">
-              <Percent className="size-4" /> Save rule
-            </Button>
+            <Field label="Internal note">
+              <Input name="notes" placeholder="Applies after confirmed arrival" className="bg-white text-slate-950" />
+            </Field>
+            <StatusSubmitButton label="Save rule" pendingLabel="Saving" className="bg-slate-950 text-white hover:bg-slate-800 md:col-span-6" />
           </form>
         </details>
       </LuxuryCard>
@@ -59,7 +64,8 @@ export function CommissionRulesManager({
       <div className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
         {rules.map((rule) => (
           <div key={rule.id} className={`p-3 text-sm text-slate-950 ${!rule.active ? "opacity-60" : ""}`}>
-            <div className="grid gap-2 md:grid-cols-[1fr_1fr_0.8fr_0.8fr_auto] md:items-center">
+            <div className="grid gap-2 md:grid-cols-[1.2fr_1fr_1fr_0.8fr_0.8fr_auto] md:items-center">
+              <RuleCell label="Rule" value={rule.label ?? defaultRuleLabel(rule)} />
               <RuleCell label="Promoter" value={rule.profiles?.name ?? rule.profiles?.email ?? "Any promoter"} />
               <RuleCell label="Venue" value={rule.clubs?.name ?? "Any venue"} />
               <RuleCell label="Service" value={rule.request_type ? formatEnum(rule.request_type) : "Any service"} />
@@ -72,10 +78,14 @@ export function CommissionRulesManager({
                 </Button>
               </form>
             </div>
+            {rule.notes && <p className="mt-2 rounded-md bg-slate-50 px-2.5 py-2 text-xs text-slate-500">{rule.notes}</p>}
             <details className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2">
               <summary className="cursor-pointer text-xs font-semibold text-slate-600">Edit rule</summary>
-              <form action={saveCommissionRule} className="mt-3 grid gap-2 md:grid-cols-5">
+              <form action={saveCommissionRule} className="mt-3 grid gap-2 md:grid-cols-6">
                 <input type="hidden" name="ruleId" value={rule.id} />
+                <Field label="Rule name">
+                  <Input name="label" defaultValue={rule.label ?? ""} placeholder={defaultRuleLabel(rule)} className="bg-white text-slate-950" />
+                </Field>
                 <Field label="Promoter">
                   <select name="promoterId" defaultValue={rule.promoter_id ?? ""} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
                     <option value="">Any promoter</option>
@@ -100,7 +110,10 @@ export function CommissionRulesManager({
                 <Field label="Flat fee">
                   <Input name="flatFee" type="number" min={0} step="1" defaultValue={rule.flat_fee_cents / 100} className="bg-white text-slate-950" />
                 </Field>
-                <Button type="submit" size="sm" className="bg-slate-950 text-white hover:bg-slate-800 md:col-span-5">Save changes</Button>
+                <Field label="Internal note">
+                  <Input name="notes" defaultValue={rule.notes ?? ""} placeholder="Optional rule context" className="bg-white text-slate-950" />
+                </Field>
+                <StatusSubmitButton label="Save changes" pendingLabel="Saving" size="sm" className="bg-slate-950 text-white hover:bg-slate-800 md:col-span-6" />
               </form>
             </details>
           </div>
@@ -126,4 +139,11 @@ function RuleCell({ label, value }: Readonly<{ label: string; value: string }>) 
 
 function formatMoney(amountCents: number, currency: string) {
   return new Intl.NumberFormat("en-GB", { style: "currency", currency: currency.toUpperCase(), maximumFractionDigits: 0 }).format(amountCents / 100);
+}
+
+function defaultRuleLabel(rule: CommissionRule) {
+  const promoter = rule.profiles?.name ?? "Any promoter";
+  const venue = rule.clubs?.name ?? "all venues";
+  const service = rule.request_type ? formatEnum(rule.request_type).toLowerCase() : "all services";
+  return `${promoter} · ${venue} · ${service}`;
 }

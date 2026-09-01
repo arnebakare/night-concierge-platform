@@ -29,6 +29,12 @@ export function ClientLifecycleTimeline({
   outreach = [],
   tasks = []
 }: Readonly<{ history: ClientBookingHistoryItem[]; notes: NoteLike[]; aliases: ClientAlias[]; outreach?: ClientOutreachItem[]; tasks?: ClientFollowUpTask[] }>) {
+  const confirmedBookings = history.filter((request) => request.status === "CONFIRMED" || request.status === "ARRIVED").length;
+  const openTasks = tasks.filter((task) => task.status === "OPEN").length;
+  const lastBooking = history
+    .map((request) => request.requested_date)
+    .sort()
+    .at(-1);
   const items = [
     ...history.map((request) => ({
       id: `request-${request.id}`,
@@ -78,11 +84,25 @@ export function ClientLifecycleTimeline({
         <p className="text-xs uppercase tracking-[0.18em] text-champagne-700">Relationship timeline</p>
         <h3 className="mt-1 text-lg font-semibold">Latest client activity</h3>
       </div>
+      <div className="mb-3 grid grid-cols-3 overflow-hidden rounded-md border border-slate-200 bg-slate-50 text-center">
+        <MiniMetric label="Booked" value={String(confirmedBookings)} />
+        <MiniMetric label="Care" value={String(openTasks)} />
+        <MiniMetric label="Last visit" value={lastBooking ? new Date(`${lastBooking}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "-"} />
+      </div>
       <div className="space-y-2">
         {items.map((item) => <TimelineRow key={item.id} item={item} />)}
         {!items.length && <p className="rounded-md border border-slate-200 p-4 text-center text-sm text-slate-500">No activity yet.</p>}
       </div>
     </LuxuryCard>
+  );
+}
+
+function MiniMetric({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <div className="border-r border-slate-200 p-2 last:border-r-0">
+      <p className="text-[11px] text-slate-500">{label}</p>
+      <p className="mt-0.5 truncate text-sm font-semibold text-slate-950">{value}</p>
+    </div>
   );
 }
 

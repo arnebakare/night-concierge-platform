@@ -25,12 +25,14 @@ export async function getSystemReadiness(): Promise<ReadinessCheck[]> {
   }
 
   const admin = createAdminClient();
-  const [{ error: databaseError }, { error: clientMigrationError }, { error: rateLimitError }, { error: paymentError }, { error: inboundError }, { error: followUpError }, { data: destination }] = await Promise.all([
+  const [{ error: databaseError }, { error: clientMigrationError }, { error: rateLimitError }, { error: paymentError }, { error: inboundError }, { error: inboundAlertError }, { error: commissionNotesError }, { error: followUpError }, { data: destination }] = await Promise.all([
     admin.from("clubs").select("id", { head: true, count: "exact" }).limit(1),
     admin.from("clients").select("profile_id").limit(1),
     admin.from("public_request_rate_limits").select("fingerprint").limit(1),
     admin.from("request_payments").select("id").limit(1),
     admin.from("inbound_whatsapp_messages").select("id").limit(1),
+    admin.from("inbound_whatsapp_messages").select("alert_sent_at").limit(1),
+    admin.from("commission_rules").select("label, notes").limit(1),
     admin.from("client_follow_up_tasks").select("id").limit(1),
     admin.from("platform_settings").select("value").eq("key", "whatsapp_destination_number").maybeSingle()
   ]);
@@ -39,6 +41,8 @@ export async function getSystemReadiness(): Promise<ReadinessCheck[]> {
   checks.push({ label: "Public rate limiting", ok: !rateLimitError, detail: rateLimitError ? "Apply migration 005" : "Migration 005 detected" });
   checks.push({ label: "Payment tables", ok: !paymentError, detail: paymentError ? "Apply migration 020" : "Migration 020 detected" });
   checks.push({ label: "Inbound WhatsApp table", ok: !inboundError, detail: inboundError ? "Apply migration 012" : "Migration 012 detected" });
+  checks.push({ label: "Inbound alert tracking", ok: !inboundAlertError, detail: inboundAlertError ? "Apply migration 021" : "Migration 021 alert column detected" });
+  checks.push({ label: "Commission rule notes", ok: !commissionNotesError, detail: commissionNotesError ? "Apply migration 021" : "Migration 021 commission fields detected" });
   checks.push({ label: "Client follow-up tasks", ok: !followUpError, detail: followUpError ? "Apply migration 022" : "Migration 022 detected" });
   checks.push({ label: "WhatsApp destination", ok: Boolean(destination?.value || process.env.WHATSAPP_DESTINATION_NUMBER), detail: destination?.value || process.env.WHATSAPP_DESTINATION_NUMBER ? "Configured" : "Missing" });
   return checks;

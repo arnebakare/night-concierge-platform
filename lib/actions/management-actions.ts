@@ -164,6 +164,8 @@ const tableCostSchema = z.object({
 
 const commissionRuleSchema = z.object({
   ruleId: z.string().uuid().optional().or(z.literal("")),
+  label: z.string().trim().max(80).optional().or(z.literal("")),
+  notes: z.string().trim().max(240).optional().or(z.literal("")),
   promoterId: z.string().uuid().optional().or(z.literal("")),
   clubId: z.string().uuid().optional().or(z.literal("")),
   requestType: z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"]).optional().or(z.literal("")),
@@ -275,6 +277,8 @@ export async function saveCommissionRule(formData: FormData) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const parsed = commissionRuleSchema.safeParse({
     ruleId: formData.get("ruleId") || "",
+    label: formData.get("label") || "",
+    notes: formData.get("notes") || "",
     promoterId: formData.get("promoterId") || "",
     clubId: formData.get("clubId") || "",
     requestType: formData.get("requestType") || "",
@@ -297,11 +301,29 @@ export async function saveCommissionRule(formData: FormData) {
     request_type: parsed.data.requestType || null,
     rate_percent: parsed.data.ratePercent,
     flat_fee_cents: Math.round(parsed.data.flatFee * 100),
+    label: parsed.data.label || null,
+    notes: parsed.data.notes || null,
     created_by: profile.id
   };
-  const { data, error } = parsed.data.ruleId
+  const result = parsed.data.ruleId
     ? await supabase.from("commission_rules").update(values).eq("id", parsed.data.ruleId).select("id").single()
     : await supabase.from("commission_rules").insert(values).select("id").single();
+  let { data, error } = result;
+  if (error && /label|notes/i.test(error.message)) {
+    const legacyValues = {
+      promoter_id: values.promoter_id,
+      club_id: values.club_id,
+      request_type: values.request_type,
+      rate_percent: values.rate_percent,
+      flat_fee_cents: values.flat_fee_cents,
+      created_by: values.created_by
+    };
+    const fallback = parsed.data.ruleId
+      ? await supabase.from("commission_rules").update(legacyValues).eq("id", parsed.data.ruleId).select("id").single()
+      : await supabase.from("commission_rules").insert(legacyValues).select("id").single();
+    data = fallback.data;
+    error = fallback.error;
+  }
   if (error || !data) throw new Error(error?.message ?? "Could not save commission rule.");
 
   await writeAuditLog(supabase, {

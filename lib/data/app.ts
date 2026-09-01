@@ -654,7 +654,7 @@ export async function getCommissionRulesForProfile(profile: Profile): Promise<Co
     const supabase = await createClient();
     let query = supabase
       .from("commission_rules")
-      .select("id, promoter_id, club_id, request_type, rate_percent, flat_fee_cents, active, created_by, created_at, updated_at, profiles(name, email), clubs(name, slug)")
+      .select("id, promoter_id, club_id, request_type, rate_percent, flat_fee_cents, label, notes, active, created_by, created_at, updated_at, profiles(name, email), clubs(name, slug)")
       .order("active", { ascending: false })
       .order("created_at", { ascending: false });
 
@@ -665,7 +665,17 @@ export async function getCommissionRulesForProfile(profile: Profile): Promise<Co
       query = query.or(scopedRules.join(","));
     }
 
-    const { data, error } = await query.limit(100);
+    let { data, error } = await query.limit(100);
+    if (error && /label|notes/i.test(error.message)) {
+      const fallback = await supabase
+        .from("commission_rules")
+        .select("id, promoter_id, club_id, request_type, rate_percent, flat_fee_cents, active, created_by, created_at, updated_at, profiles(name, email), clubs(name, slug)")
+        .order("active", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(100);
+      data = fallback.data?.map((rule) => ({ ...rule, label: null, notes: null })) ?? null;
+      error = fallback.error;
+    }
     if (error) throw error;
     return normalizeCommissionRules(data);
   } catch (error) {

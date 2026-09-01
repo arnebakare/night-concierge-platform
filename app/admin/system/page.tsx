@@ -40,8 +40,8 @@ export default async function AdminSystemPage() {
         <p className="text-xs uppercase tracking-[0.18em] text-champagne-700">Database setup</p>
         <h2 className="mt-1 text-lg font-semibold">Latest migrations</h2>
         <div className="mt-3 grid gap-2 text-sm text-slate-600">
-          <SetupLine text="Run migration 021 for inbound WhatsApp alert tracking." />
-          <SetupLine text="Run migration 022 for client follow-up tasks." />
+          <SetupLine text="Run migration 021 for inbound WhatsApp alerts plus commission labels and notes." />
+          <SetupLine text="Run migration 022 for client follow-up tasks and CRM care badges." />
           <SetupLine text="After running migrations, refresh this page to confirm both checks are ready." />
         </div>
       </LuxuryCard>

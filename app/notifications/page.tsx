@@ -98,6 +98,16 @@ export default async function NotificationsPage({
                 <span className="w-fit rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">
                   {formatInboundKind(getInboundKind(message.body))}
                 </span>
+                {message.created_request_id && (
+                  <Link href={`/manager/requests/${message.created_request_id}`} className="w-fit rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                    request
+                  </Link>
+                )}
+                {message.created_schedule_plan_id && (
+                  <Link href={`/schedule/plans/${message.created_schedule_plan_id}`} className="w-fit rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                    schedule
+                  </Link>
+                )}
                 <StatusPill ok={message.status === "CREATED" || message.status === "RECEIVED"} label={message.status.toLowerCase().replaceAll("_", " ")} />
                 {(message.status === "FAILED" || message.status === "NEEDS_REVIEW") && (
                   <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${message.alert_sent_at ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
