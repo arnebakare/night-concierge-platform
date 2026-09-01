@@ -244,7 +244,7 @@ export async function getRetentionClientsForProfile(profile: Profile, days = 45)
   }
 }
 
-export async function getOpenFollowUpTasksForProfile(profile: Profile): Promise<ClientFollowUpTask[]> {
+export async function getOpenFollowUpTasksForProfile(profile: Profile, options?: { priority?: "HIGH" | "NORMAL" | "LOW"; dueBefore?: string }): Promise<ClientFollowUpTask[]> {
   try {
     const supabase = await createClient();
     let query = supabase
@@ -256,6 +256,8 @@ export async function getOpenFollowUpTasksForProfile(profile: Profile): Promise<
       .order("created_at", { ascending: false })
       .limit(50);
     if (profile.role === "PROMOTER") query = query.eq("assigned_to", profile.id);
+    if (options?.priority) query = query.eq("priority", options.priority);
+    if (options?.dueBefore) query = query.lte("due_date", options.dueBefore);
     const { data, error } = await query;
     if (error) throw error;
     return normalizeClientFollowUpTasks(data);

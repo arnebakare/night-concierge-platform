@@ -3,6 +3,7 @@ import { RetentionClientCard } from "@/components/client/retention-client-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LuxuryCard } from "@/components/ui/luxury-card";
+import Link from "next/link";
 import { updateClientFollowUpTaskStatus } from "@/lib/actions/management-actions";
 import { requireProfile } from "@/lib/auth";
 import { getMessageTemplates, getOpenFollowUpTasksForProfile, getRetentionClientsForProfile } from "@/lib/data/app";
@@ -12,14 +13,16 @@ import type { ClientFollowUpTask } from "@/lib/types";
 
 export default async function RetentionPage({
   searchParams
-}: Readonly<{ searchParams: Promise<{ days?: string }> }>) {
+}: Readonly<{ searchParams: Promise<{ days?: string; task?: string }> }>) {
   const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const params = await searchParams;
   const days = Number.parseInt(params.days ?? "45", 10);
   const threshold = Number.isFinite(days) && days > 0 ? days : 45;
+  const today = new Date().toISOString().slice(0, 10);
+  const taskFilter = params.task === "overdue" || params.task === "high" ? params.task : "all";
   const [clients, tasks, templates, emailConfig] = await Promise.all([
     getRetentionClientsForProfile(profile, threshold),
-    getOpenFollowUpTasksForProfile(profile),
+    getOpenFollowUpTasksForProfile(profile, taskFilter === "high" ? { priority: "HIGH" } : taskFilter === "overdue" ? { dueBefore: today } : undefined),
     getMessageTemplates(),
     Promise.resolve(getEmailConfigStatus())
   ]);
@@ -53,6 +56,11 @@ export default async function RetentionPage({
           </div>
           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{tasks.length} open</span>
         </div>
+        <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+          <FilterButton href={`/manager/retention?days=${threshold}`} active={taskFilter === "all"} label="All" />
+          <FilterButton href={`/manager/retention?days=${threshold}&task=overdue`} active={taskFilter === "overdue"} label="Due now" />
+          <FilterButton href={`/manager/retention?days=${threshold}&task=high`} active={taskFilter === "high"} label="High priority" />
+        </div>
         <div className="divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200">
           {tasks.slice(0, 12).map((task) => <TaskRow key={task.id} task={task} />)}
           {!tasks.length && <div className="p-5 text-center text-sm text-slate-500">No open follow-ups right now.</div>}
@@ -71,12 +79,13 @@ export default async function RetentionPage({
 }
 
 function TaskRow({ task }: Readonly<{ task: ClientFollowUpTask }>) {
+  const overdue = Boolean(task.due_date && task.due_date < new Date().toISOString().slice(0, 10));
   return (
     <div className="grid gap-2 bg-white p-3 text-sm md:grid-cols-[1fr_auto_auto] md:items-center">
       <div className="min-w-0">
-        <p className="truncate font-semibold text-slate-950">{task.title}</p>
+        <Link href={`/manager/clients/${task.client_id}`} className="truncate font-semibold text-slate-950 hover:underline">{task.title}</Link>
         <p className="mt-0.5 truncate text-xs text-slate-500">
-          {task.clients?.name ?? "Client"} · {task.due_date ? `Due ${task.due_date}` : "No due date"} · {task.assignee?.name ?? task.assignee?.email ?? "Unassigned"}
+          {task.clients?.name ?? "Client"} · {task.due_date ? `${overdue ? "Overdue" : "Due"} ${task.due_date}` : "No due date"} · {task.assignee?.name ?? task.assignee?.email ?? "Unassigned"}
         </p>
       </div>
       <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${task.priority === "HIGH" ? "border-red-200 bg-red-50 text-red-700" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
@@ -89,6 +98,14 @@ function TaskRow({ task }: Readonly<{ task: ClientFollowUpTask }>) {
         <Button type="submit" size="sm" variant="secondary" className="bg-slate-100 text-slate-900 hover:bg-slate-200">Done</Button>
       </form>
     </div>
+  );
+}
+
+function FilterButton({ href, active, label }: Readonly<{ href: string; active: boolean; label: string }>) {
+  return (
+    <Button asChild size="sm" variant={active ? "default" : "secondary"} className={active ? "bg-slate-950 text-white hover:bg-slate-800" : "bg-slate-100 text-slate-900 hover:bg-slate-200"}>
+      <Link href={href}>{label}</Link>
+    </Button>
   );
 }
 

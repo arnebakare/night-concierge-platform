@@ -75,6 +75,8 @@ Seeded accounts use password `password123`.
 - Health check: `/api/health`
 - WhatsApp delivery: `/notifications`
 - Launch readiness: `/admin/system`
+- Client care: `/manager/retention`
+- Commission rules: `/admin/commissions`
 
 ## Security Notes
 
@@ -99,7 +101,8 @@ Detailed Vercel instructions are in `docs/vercel-deployment.md`.
 
 - Set `NEXT_PUBLIC_DEMO_MODE=false` in production.
 - Configure all Supabase and Twilio secrets in Vercel, never in client-side variables.
-- Apply migrations `001` through `006` to the production Supabase project.
+- Apply migrations `001` through `022` to the production Supabase project.
+- Make sure migrations `021` and `022` are applied before enabling WhatsApp monitor alerts or client follow-up tasks.
 - Set the production URL in `NEXT_PUBLIC_APP_URL` and Supabase Auth redirect URLs.
 - Configure the WhatsApp destination from the manager settings screen.
 - Verify `/api/health`, public request submission, WhatsApp delivery, and each role dashboard.

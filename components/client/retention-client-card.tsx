@@ -1,7 +1,8 @@
 import { Mail, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { LuxuryCard } from "@/components/ui/luxury-card";
-import { sendClientRetentionMessage } from "@/lib/actions/management-actions";
+import { createClientFollowUpTask, sendClientRetentionMessage } from "@/lib/actions/management-actions";
 import type { RetentionClient } from "@/lib/data/app";
 import type { MessageTemplate } from "@/lib/types";
 import { buildRetentionMessageFromTemplate, inferLanguageFromCountry } from "@/lib/sales/funnel";
@@ -56,6 +57,17 @@ export function RetentionClientCard({ client, templates = [] }: Readonly<{ clien
           <a href={mailtoHref}>Open email app instead</a>
         </Button>
       )}
+
+      <details className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2.5">
+        <summary className="cursor-pointer text-xs font-semibold text-slate-600">Schedule next check-in</summary>
+        <form action={createClientFollowUpTask} className="mt-3 grid gap-2 sm:grid-cols-[1fr_150px_auto]">
+          <input type="hidden" name="clientId" value={client.id} />
+          <input type="hidden" name="priority" value="NORMAL" />
+          <Input name="title" defaultValue={`Follow up with ${client.name.split(" ")[0] || client.name}`} className="bg-white text-slate-950" />
+          <Input name="dueDate" type="date" className="bg-white text-slate-950" />
+          <Button type="submit" size="sm" variant="secondary" className="bg-slate-100 text-slate-900 hover:bg-slate-200">Save task</Button>
+        </form>
+      </details>
     </LuxuryCard>
   );
 }
