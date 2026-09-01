@@ -14,7 +14,8 @@ export function GET() {
       whatsappInboundValidation: process.env.TWILIO_VALIDATE_WEBHOOKS === "false" ? "disabled" : Boolean(process.env.TWILIO_AUTH_TOKEN),
       openAiSchedule: Boolean(process.env.OPENAI_API_KEY),
       stripeDeposits: stripe.ready,
-      stripeWebhooks: stripe.webhookReady
+      stripeWebhooks: stripe.webhookReady,
+      inboundMonitorCron: Boolean(process.env.CRON_SECRET)
     }
   }, { headers: { "Cache-Control": "no-store" } });
 }

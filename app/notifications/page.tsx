@@ -66,7 +66,14 @@ export default async function NotificationsPage() {
                 <p className="mt-0.5 truncate text-xs text-slate-500">{new Date(message.created_at).toLocaleString()}</p>
               </div>
               <p className="line-clamp-2 text-slate-600">{message.body}</p>
-              <StatusPill ok={message.status === "CREATED" || message.status === "RECEIVED"} label={message.status.toLowerCase().replaceAll("_", " ")} />
+              <div className="flex flex-wrap gap-1.5 md:justify-end">
+                <StatusPill ok={message.status === "CREATED" || message.status === "RECEIVED"} label={message.status.toLowerCase().replaceAll("_", " ")} />
+                {(message.status === "FAILED" || message.status === "NEEDS_REVIEW") && (
+                  <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${message.alert_sent_at ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+                    {message.alert_sent_at ? "alert sent" : "not alerted"}
+                  </span>
+                )}
+              </div>
               {message.error_message && <p className="rounded bg-red-50 p-2 text-xs text-red-700 md:col-span-3">{message.error_message}</p>}
             </div>
           ))}

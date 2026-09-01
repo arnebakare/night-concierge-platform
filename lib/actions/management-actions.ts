@@ -163,6 +163,7 @@ const tableCostSchema = z.object({
 });
 
 const commissionRuleSchema = z.object({
+  ruleId: z.string().uuid().optional().or(z.literal("")),
   promoterId: z.string().uuid().optional().or(z.literal("")),
   clubId: z.string().uuid().optional().or(z.literal("")),
   requestType: z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"]).optional().or(z.literal("")),
@@ -273,6 +274,7 @@ export async function createDepositPayment(formData: FormData) {
 export async function saveCommissionRule(formData: FormData) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const parsed = commissionRuleSchema.safeParse({
+    ruleId: formData.get("ruleId") || "",
     promoterId: formData.get("promoterId") || "",
     clubId: formData.get("clubId") || "",
     requestType: formData.get("requestType") || "",
@@ -289,19 +291,22 @@ export async function saveCommissionRule(formData: FormData) {
 
   const supabase = await createClient();
   if (parsed.data.promoterId) await assertPromoterOwnership(supabase, profile, parsed.data.promoterId);
-  const { data, error } = await supabase.from("commission_rules").insert({
+  const values = {
     promoter_id: parsed.data.promoterId || null,
     club_id: parsed.data.clubId || null,
     request_type: parsed.data.requestType || null,
     rate_percent: parsed.data.ratePercent,
     flat_fee_cents: Math.round(parsed.data.flatFee * 100),
     created_by: profile.id
-  }).select("id").single();
+  };
+  const { data, error } = parsed.data.ruleId
+    ? await supabase.from("commission_rules").update(values).eq("id", parsed.data.ruleId).select("id").single()
+    : await supabase.from("commission_rules").insert(values).select("id").single();
   if (error || !data) throw new Error(error?.message ?? "Could not save commission rule.");
 
   await writeAuditLog(supabase, {
     userId: profile.id,
-    action: "COMMISSION_RULE_CREATED",
+    action: parsed.data.ruleId ? "COMMISSION_RULE_UPDATED" : "COMMISSION_RULE_CREATED",
     entityType: "commission_rules",
     entityId: data.id,
     metadata: parsed.data

@@ -765,11 +765,20 @@ export async function getNotificationHistory() {
 export async function getInboundWhatsAppHistory(): Promise<InboundWhatsAppMessage[]> {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("inbound_whatsapp_messages")
-      .select("id, provider, provider_message_id, from_number, to_number, profile_name, body, source_profile_id, matched_client_id, created_request_id, created_schedule_plan_id, status, parse_result, error_message, created_at")
+      .select("id, provider, provider_message_id, from_number, to_number, profile_name, body, source_profile_id, matched_client_id, created_request_id, created_schedule_plan_id, status, parse_result, error_message, alert_sent_at, created_at")
       .order("created_at", { ascending: false })
       .limit(80);
+    if (error && error.message.toLowerCase().includes("alert_sent_at")) {
+      const fallback = await supabase
+        .from("inbound_whatsapp_messages")
+        .select("id, provider, provider_message_id, from_number, to_number, profile_name, body, source_profile_id, matched_client_id, created_request_id, created_schedule_plan_id, status, parse_result, error_message, created_at")
+        .order("created_at", { ascending: false })
+        .limit(80);
+      data = fallback.data?.map((item) => ({ ...item, alert_sent_at: null })) ?? null;
+      error = fallback.error;
+    }
     if (error) throw error;
     return (data ?? []) as InboundWhatsAppMessage[];
   } catch (error) {

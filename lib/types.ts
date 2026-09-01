@@ -223,6 +223,8 @@ export type CommissionRule = {
   request_type: RequestType | null;
   rate_percent: number;
   flat_fee_cents: number;
+  label?: string | null;
+  notes?: string | null;
   active: boolean;
   created_by: string | null;
   created_at?: string;
@@ -246,5 +248,6 @@ export type InboundWhatsAppMessage = {
   status: "RECEIVED" | "CREATED" | "NEEDS_REVIEW" | "IGNORED" | "FAILED";
   parse_result: Record<string, unknown>;
   error_message: string | null;
+  alert_sent_at?: string | null;
   created_at: string;
 };
