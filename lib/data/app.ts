@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, Club, CommissionRule, ConciergeEvent, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -252,7 +252,7 @@ export type NoteFilters = {
 export async function getClientProfile(clientId: string, filters?: NoteFilters) {
   try {
     const supabase = await createClient();
-    const [{ data: client, error: clientError }, { data: notes, error: notesError }, { data: aliases, error: aliasError }, { data: history, error: historyError }] = await Promise.all([
+    const [{ data: client, error: clientError }, { data: notes, error: notesError }, { data: aliases, error: aliasError }, { data: history, error: historyError }, { data: outreach, error: outreachError }] = await Promise.all([
       supabase
         .from("clients")
         .select("id, name, phone, client_code, email, instagram, country, preferred_language, vip_level, status")
@@ -279,16 +279,25 @@ export async function getClientProfile(clientId: string, filters?: NoteFilters) 
         .order("requested_date", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(20)
+      ,
+      supabase
+        .from("retention_outreach")
+        .select("id, channel, destination, message, status, automatic, created_at, profiles(name, email)")
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false })
+        .limit(20)
     ]);
     if (clientError) throw clientError;
     if (notesError) throw notesError;
     if (aliasError) throw aliasError;
     if (historyError) throw historyError;
+    if (outreachError) throw outreachError;
     return {
       client: client as Client,
       notes: applyNoteFilters(normalizeNotes(notes), filters),
       aliases: (aliases ?? []) as ClientAlias[],
-      history: normalizeClientHistory(history)
+      history: normalizeClientHistory(history),
+      outreach: normalizeClientOutreach(outreach)
     };
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
@@ -313,7 +322,17 @@ export async function getClientProfile(clientId: string, filters?: NoteFilters) 
       notes: applyNoteFilters([
         { note_type: "PREFERENCE", visibility: "GLOBAL", content: "Prefers table near DJ booth and sparkling water on arrival." },
         { note_type: "RELIABILITY", visibility: "PRIVATE_TO_AUTHOR", content: "Usually confirms late but arrives with full group." }
-      ], filters)
+      ], filters),
+      outreach: [{
+        id: "outreach-demo-1",
+        channel: "WHATSAPP",
+        destination: "+34600000000",
+        message: "Hi Daniel, hope you are well. Are you back in Marbella soon?",
+        status: "SENT",
+        automatic: false,
+        created_at: new Date(Date.now() - 12 * 86400000).toISOString(),
+        profiles: { name: "Julia", email: "julia@casanis.es" }
+      }] satisfies ClientOutreachItem[]
     };
   }
 }
@@ -925,6 +944,13 @@ function normalizeClientHistory(data: unknown): ClientBookingHistoryItem[] {
     ...request,
     clubs: Array.isArray(request.clubs) ? request.clubs[0] : request.clubs,
     promoter: Array.isArray(request.promoter) ? request.promoter[0] : request.promoter
+  }));
+}
+
+function normalizeClientOutreach(data: unknown): ClientOutreachItem[] {
+  return ((data as Array<Omit<ClientOutreachItem, "profiles"> & { profiles?: ClientOutreachItem["profiles"] | ClientOutreachItem["profiles"][] | null }> | null) ?? []).map((item) => ({
+    ...item,
+    profiles: Array.isArray(item.profiles) ? item.profiles[0] ?? null : item.profiles ?? null
   }));
 }
 

@@ -16,7 +16,7 @@ export default async function ClientProfilePage({
   searchParams
 }: Readonly<{ params: Promise<{ id: string }>; searchParams: Promise<{ visibility?: string; type?: string }> }>) {
   const [profile, { id }, filters] = await Promise.all([requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]), params, searchParams]);
-  const [{ client, notes, aliases, history }, clubs] = await Promise.all([getClientProfile(id, filters), getActiveClubsForApp()]);
+  const [{ client, notes, aliases, history, outreach }, clubs] = await Promise.all([getClientProfile(id, filters), getActiveClubsForApp()]);
   const aliasNames = aliases.map((alias) => alias.name).filter((name) => name && name !== client.name);
 
   return (
@@ -37,7 +37,7 @@ export default async function ClientProfilePage({
           </div>
         </LuxuryCard>
         <ClientEditForm client={client} role={profile.role} />
-        <ClientLifecycleTimeline history={history} notes={notes} aliases={aliases} />
+        <ClientLifecycleTimeline history={history} notes={notes} aliases={aliases} outreach={outreach} />
         <ClientBookingHistory history={history} />
         <ClientNoteForm clientId={client.id} role={profile.role} clubs={clubs} />
         <ClientNoteFilters action={`/clients/${client.id}`} values={filters} />

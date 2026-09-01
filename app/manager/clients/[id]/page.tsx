@@ -17,7 +17,7 @@ export default async function ManagerClientDetailPage({
   searchParams
 }: Readonly<{ params: Promise<{ id: string }>; searchParams: Promise<{ visibility?: string; type?: string }> }>) {
   const [profile, { id }, filters] = await Promise.all([requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]), params, searchParams]);
-  const [{ client, notes, aliases, history }, clubs] = await Promise.all([getClientProfile(id, filters), getActiveClubsForApp()]);
+  const [{ client, notes, aliases, history, outreach }, clubs] = await Promise.all([getClientProfile(id, filters), getActiveClubsForApp()]);
   const aliasNames = aliases.map((alias) => alias.name).filter((name) => name && name !== client.name);
   const confirmed = history.filter((item) => ["CONFIRMED", "ARRIVED"].includes(item.status)).length;
   const totalGuests = history.reduce((sum, item) => sum + item.guest_count, 0);
@@ -57,7 +57,7 @@ export default async function ManagerClientDetailPage({
         </div>
       </details>
       <div className="mt-4">
-        <ClientLifecycleTimeline history={history} notes={notes} aliases={aliases} />
+        <ClientLifecycleTimeline history={history} notes={notes} aliases={aliases} outreach={outreach} />
       </div>
       <div className="mt-4">
         <ClientBookingHistory history={history} />

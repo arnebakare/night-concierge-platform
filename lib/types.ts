@@ -79,6 +79,17 @@ export type ClientBookingHistoryItem = {
   promoter?: Pick<Profile, "name" | "email"> | null;
 };
 
+export type ClientOutreachItem = {
+  id: string;
+  channel: "WHATSAPP" | "EMAIL";
+  destination: string;
+  message: string;
+  status: "PENDING" | "SENT" | "FAILED" | "SKIPPED";
+  automatic: boolean;
+  created_at: string;
+  profiles?: Pick<Profile, "name" | "email"> | null;
+};
+
 export type MessageTemplate = {
   id: string;
   key: string;

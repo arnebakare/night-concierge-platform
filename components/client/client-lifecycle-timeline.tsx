@@ -1,6 +1,6 @@
 import { CalendarDays, MessageSquareText, UserRound } from "lucide-react";
 import { LuxuryCard } from "@/components/ui/luxury-card";
-import type { ClientAlias, ClientBookingHistoryItem } from "@/lib/types";
+import type { ClientAlias, ClientBookingHistoryItem, ClientOutreachItem } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
 type NoteLike = {
@@ -25,8 +25,9 @@ type TimelineItem = {
 export function ClientLifecycleTimeline({
   history,
   notes,
-  aliases
-}: Readonly<{ history: ClientBookingHistoryItem[]; notes: NoteLike[]; aliases: ClientAlias[] }>) {
+  aliases,
+  outreach = []
+}: Readonly<{ history: ClientBookingHistoryItem[]; notes: NoteLike[]; aliases: ClientAlias[]; outreach?: ClientOutreachItem[] }>) {
   const items = [
     ...history.map((request) => ({
       id: `request-${request.id}`,
@@ -51,6 +52,14 @@ export function ClientLifecycleTimeline({
       detail: `${alias.name} · ${formatEnum(alias.source)}`,
       date: alias.created_at,
       tone: "alias" as const
+    })),
+    ...outreach.map((item) => ({
+      id: `outreach-${item.id}`,
+      icon: MessageSquareText,
+      label: `${item.channel === "WHATSAPP" ? "WhatsApp" : "Email"} follow-up ${item.status.toLowerCase()}`,
+      detail: `${item.message.slice(0, 120)}${item.message.length > 120 ? "..." : ""}`,
+      date: item.created_at,
+      tone: "note" as const
     }))
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 14);
 
