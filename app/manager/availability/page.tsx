@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Archive, CalendarDays, ChevronDown, Euro, Plus, Save, Users } from "lucide-react";
+import { CalendarDays, ChevronDown, Euro, Plus, Users } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
+import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,7 +96,7 @@ export default async function ManagerAvailabilityPage({
                 <Label>Internal note</Label>
                 <Textarea name="notes" placeholder="Deadline, who confirmed, conditions..." className="min-h-20" />
               </div>
-              <Button type="submit" className="md:col-span-2">Save option</Button>
+              <StatusSubmitButton label="Save option" pendingLabel="Saving" className="md:col-span-2" />
             </form>
           </details>
         </LuxuryCard>
@@ -165,10 +166,8 @@ function AvailabilityRow({ slot, clubs }: Readonly<{ slot: AvailabilitySlot; clu
             <Textarea name="notes" defaultValue={slot.notes ?? ""} className="min-h-20" />
           </div>
           <div className="grid grid-cols-2 gap-2 md:col-span-2">
-            <Button type="submit" size="sm" name="active" value="true"><Save className="size-4" />Save</Button>
-            <Button type="submit" size="sm" variant="secondary" name="active" value="false">
-              <Archive className="size-4" />Archive
-            </Button>
+            <StatusSubmitButton label="Save" pendingLabel="Saving" size="sm" name="active" value="true" />
+            <StatusSubmitButton label="Archive" pendingLabel="Saving" size="sm" variant="secondary" name="active" value="false" />
           </div>
         </form>
       </details>
@@ -181,9 +180,8 @@ function QuickSlotStatus({ slotId, status, active }: Readonly<{ slotId: string; 
     <form action={setAvailabilitySlotStatus}>
       <input type="hidden" name="slotId" value={slotId} />
       <input type="hidden" name="active" value="true" />
-      <Button type="submit" name="status" value={status} size="sm" variant={active ? "default" : "secondary"} className="h-7 min-h-7 px-2 text-[11px]">
-        {status === "SOLD_OUT" ? "Sold" : status.toLowerCase()}
-      </Button>
+      <StatusSubmitButton label={status === "SOLD_OUT" ? "Sold" : status.toLowerCase()} pendingLabel="..." value={status} size="sm" variant={active ? "default" : "secondary"} className="h-7 min-h-7 px-2 text-[11px]">
+      </StatusSubmitButton>
     </form>
   );
 }

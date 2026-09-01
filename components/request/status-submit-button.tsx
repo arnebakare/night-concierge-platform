@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 export function StatusSubmitButton({
   label,
   pendingLabel = "Updating",
+  name = "status",
   value,
   variant = "default",
   size = "default",
@@ -14,6 +15,7 @@ export function StatusSubmitButton({
   label: string;
   pendingLabel?: string;
   value?: string;
+  name?: string;
   variant?: "default" | "secondary" | "ghost" | "outline" | "destructive";
   size?: "default" | "sm" | "lg" | "icon";
   className?: string;
@@ -24,7 +26,7 @@ export function StatusSubmitButton({
     <Button
       className={className}
       type="submit"
-      {...(value ? { name: "status", value } : {})}
+      {...(value ? { name, value } : {})}
       variant={variant}
       size={size}
       disabled={pending}
