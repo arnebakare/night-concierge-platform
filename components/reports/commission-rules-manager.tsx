@@ -64,12 +64,13 @@ export function CommissionRulesManager({
       <div className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
         {rules.map((rule) => (
           <div key={rule.id} className={`p-3 text-sm text-slate-950 ${!rule.active ? "opacity-60" : ""}`}>
-            <div className="grid gap-2 md:grid-cols-[1.2fr_1fr_1fr_0.8fr_0.8fr_auto] md:items-center">
+            <div className="grid gap-2 md:grid-cols-[1.2fr_1fr_1fr_0.8fr_0.8fr_0.8fr_auto] md:items-center">
               <RuleCell label="Rule" value={rule.label ?? defaultRuleLabel(rule)} />
               <RuleCell label="Promoter" value={rule.profiles?.name ?? rule.profiles?.email ?? "Any promoter"} />
               <RuleCell label="Venue" value={rule.clubs?.name ?? "Any venue"} />
               <RuleCell label="Service" value={rule.request_type ? formatEnum(rule.request_type) : "Any service"} />
               <RuleCell label="Commission" value={`${Number(rule.rate_percent).toFixed(1)}% + ${formatMoney(rule.flat_fee_cents, "eur")}`} />
+              <RuleCell label="Example" value={formatMoney(estimatePayout(rule, 100000), "eur")} />
               <form action={setCommissionRuleActive} className="md:justify-self-end">
                 <input type="hidden" name="ruleId" value={rule.id} />
                 <input type="hidden" name="active" value={String(!rule.active)} />
@@ -77,6 +78,10 @@ export function CommissionRulesManager({
                   {rule.active ? "Archive" : "Restore"}
                 </Button>
               </form>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{scopeLabel(rule)}</span>
+              <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">Example on 1,000 euro spend</span>
             </div>
             {rule.notes && <p className="mt-2 rounded-md bg-slate-50 px-2.5 py-2 text-xs text-slate-500">{rule.notes}</p>}
             <details className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2">
@@ -146,4 +151,16 @@ function defaultRuleLabel(rule: CommissionRule) {
   const venue = rule.clubs?.name ?? "all venues";
   const service = rule.request_type ? formatEnum(rule.request_type).toLowerCase() : "all services";
   return `${promoter} · ${venue} · ${service}`;
+}
+
+function scopeLabel(rule: CommissionRule) {
+  const score = [rule.promoter_id, rule.club_id, rule.request_type].filter(Boolean).length;
+  if (score === 3) return "Most specific";
+  if (score === 2) return "Targeted rule";
+  if (score === 1) return "Broad rule";
+  return "Default rule";
+}
+
+function estimatePayout(rule: CommissionRule, spendCents: number) {
+  return Math.round(spendCents * (Number(rule.rate_percent) / 100)) + Number(rule.flat_fee_cents);
 }

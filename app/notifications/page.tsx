@@ -33,6 +33,7 @@ export default async function NotificationsPage({
   const inboundCreated = inboundMessages.filter((item) => item.status === "CREATED").length;
   const scheduleCommands = inboundMessages.filter((item) => getInboundKind(item.body) === "schedule").length;
   const leadMessages = inboundMessages.filter((item) => getInboundKind(item.body) === "lead").length;
+  const senderHealth = getSenderHealth(inboundMessages);
 
   return (
     <AppShell profile={profile} title="WhatsApp delivery" eyebrow="Operations">
@@ -119,6 +120,32 @@ export default async function NotificationsPage({
             </div>
           ))}
           {!filteredInboundMessages.length && <div className="p-6 text-center text-sm text-slate-500">No inbound WhatsApp messages match this filter.</div>}
+        </div>
+      </LuxuryCard>
+
+      <LuxuryCard className="mb-4 bg-white text-slate-950">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-champagne-700">Sender health</p>
+            <h2 className="mt-1 text-lg font-semibold">Who needs attention</h2>
+          </div>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{senderHealth.length} senders</span>
+        </div>
+        <div className="divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200">
+          {senderHealth.slice(0, 8).map((sender) => (
+            <div key={sender.from} className="grid gap-2 p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-slate-950">{sender.name ?? sender.from}</p>
+                <p className="mt-0.5 truncate text-xs text-slate-500">{sender.name ? sender.from : "Unknown sender"} · last {new Date(sender.last_at).toLocaleString()}</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5 sm:justify-end">
+                <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">{sender.created} created</span>
+                <span className={sender.review ? "rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800" : "rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500"}>{sender.review} review</span>
+                <span className={sender.failed ? "rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-700" : "rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500"}>{sender.failed} failed</span>
+              </div>
+            </div>
+          ))}
+          {!senderHealth.length && <div className="p-6 text-center text-sm text-slate-500">No inbound sender history yet.</div>}
         </div>
       </LuxuryCard>
 
@@ -278,4 +305,25 @@ function formatInboundKind(kind: ReturnType<typeof getInboundKind>) {
   if (kind === "schedule") return "schedule command";
   if (kind === "lead") return "lead message";
   return "message";
+}
+
+function getSenderHealth(messages: Awaited<ReturnType<typeof getInboundWhatsAppHistory>>) {
+  const grouped = messages.reduce<Record<string, { from: string; name: string | null; created: number; review: number; failed: number; last_at: string }>>((senders, message) => {
+    const current = senders[message.from_number] ?? {
+      from: message.from_number,
+      name: message.profile_name,
+      created: 0,
+      review: 0,
+      failed: 0,
+      last_at: message.created_at
+    };
+    if (message.profile_name) current.name = message.profile_name;
+    if (message.status === "CREATED") current.created += 1;
+    if (message.status === "NEEDS_REVIEW") current.review += 1;
+    if (message.status === "FAILED") current.failed += 1;
+    if (message.created_at > current.last_at) current.last_at = message.created_at;
+    senders[message.from_number] = current;
+    return senders;
+  }, {});
+  return Object.values(grouped).sort((a, b) => (b.failed + b.review) - (a.failed + a.review) || b.last_at.localeCompare(a.last_at));
 }
