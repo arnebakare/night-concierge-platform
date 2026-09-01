@@ -8,6 +8,7 @@ import { ClientEditForm } from "@/components/client/client-edit-form";
 import { ClientBookingHistory } from "@/components/client/client-booking-history";
 import { ClientFollowUpPanel } from "@/components/client/client-follow-up-panel";
 import { ClientLifecycleTimeline } from "@/components/client/client-lifecycle-timeline";
+import { ClientRelationshipSummary } from "@/components/client/client-relationship-summary";
 import { requireProfile } from "@/lib/auth";
 import { getActiveClubsForApp, getClientProfile, getTeamPromoters, getUsersForAdmin } from "@/lib/data/app";
 import { formatCustomerCode } from "@/lib/concierge/phone";
@@ -61,6 +62,9 @@ export default async function ManagerClientDetailPage({
         <ClientEditForm client={client} role={profile.role} />
         </div>
       </details>
+      <div className="mt-4">
+        <ClientRelationshipSummary history={history} tasks={tasks} outreach={outreach} />
+      </div>
       <div className="mt-4">
         <ClientFollowUpPanel clientId={client.id} tasks={tasks} assignees={assignees} />
       </div>

@@ -39,7 +39,7 @@ export function ClientCard({ client, href }: Readonly<{ client: Client; href: st
               <Languages className="size-3.5" />{(client.preferred_language ?? "en").toUpperCase()}
             </span>
           </div>
-          <span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+          <span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 sm:justify-self-end">
             <Crown className="mr-1 inline size-3" />{client.vip_level}
           </span>
         </div>
