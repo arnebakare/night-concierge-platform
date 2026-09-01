@@ -26,7 +26,7 @@ export default async function RequestDetailPage({
         {updated && <StatusNotice status={updated} />}
         <RequestDetail request={request} backHref="/requests" clientHref={`/clients/${request.client_id}`} statusReturnTo={`/requests/${request.id}`} templates={templates} />
         <AvailabilityOfferPanel request={request} slots={commerce.slots} offers={commerce.offers} canManageAvailability={profile.role === "SUPER_ADMIN"} templates={templates} />
-        <DepositPanel request={request} payments={commerce.payments} />
+        <DepositPanel request={request} payments={commerce.payments} returnTo={`/requests/${request.id}`} />
         <RequestActivityTimeline activity={activity} />
       </div>
     </AppShell>

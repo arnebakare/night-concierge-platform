@@ -2,8 +2,9 @@ import Link from "next/link";
 import { CheckCircle2, MessageCircle, ShieldCheck, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default async function ConfirmedPage({ searchParams }: Readonly<{ searchParams: Promise<{ id?: string }> }>) {
-  const { id } = await searchParams;
+export default async function ConfirmedPage({ searchParams }: Readonly<{ searchParams: Promise<{ id?: string; payment?: string }> }>) {
+  const { id, payment } = await searchParams;
+  const isPaymentSuccess = payment === "success";
   return (
     <main className="request-marina-bg relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,5,6,0.18)_0%,rgba(5,5,6,0.68)_42%,rgba(5,5,6,0.98)_100%)]" />
@@ -12,10 +13,12 @@ export default async function ConfirmedPage({ searchParams }: Readonly<{ searchP
         <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-champagne-400/40 bg-champagne-300/10 shadow-glow">
           <CheckCircle2 className="size-8 text-champagne-300" />
         </div>
-        <p className="mt-5 text-[11px] uppercase tracking-[0.24em] text-champagne-300">Request sent</p>
-        <h1 className="mt-2 font-serif text-[2.55rem] leading-[0.95]">We have your details.</h1>
+        <p className="mt-5 text-[11px] uppercase tracking-[0.24em] text-champagne-300">{isPaymentSuccess ? "Deposit received" : "Request sent"}</p>
+        <h1 className="mt-2 font-serif text-[2.55rem] leading-[0.95]">{isPaymentSuccess ? "Your booking is moving." : "We have your details."}</h1>
         <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
-          A host will check availability and reply personally on WhatsApp. Your phone number keeps future requests connected to the same client profile.
+          {isPaymentSuccess
+            ? "Thank you. Your host will confirm the final details personally on WhatsApp."
+            : "A host will check availability and reply personally on WhatsApp. Your phone number keeps future requests connected to the same client profile."}
         </p>
         <div className="mt-5 grid grid-cols-3 gap-2 text-left">
           <NextStep icon={MessageCircle} label="Reply" />

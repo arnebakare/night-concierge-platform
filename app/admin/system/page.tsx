@@ -35,6 +35,17 @@ export default async function AdminSystemPage() {
           </LuxuryCard>
         ))}
       </div>
+
+      <LuxuryCard className="mt-4 bg-white text-slate-950">
+        <p className="text-xs uppercase tracking-[0.18em] text-champagne-700">Payment setup</p>
+        <h2 className="mt-1 text-lg font-semibold">Stripe deposits checklist</h2>
+        <div className="mt-3 grid gap-2 text-sm text-slate-600">
+          <SetupLine text="Add STRIPE_SECRET_KEY in Vercel Production environment variables." />
+          <SetupLine text="Add a Stripe webhook endpoint pointing to /api/stripe/webhook." />
+          <SetupLine text="Add STRIPE_WEBHOOK_SECRET from that webhook signing secret." />
+          <SetupLine text="Redeploy, then create one test deposit from a request detail page." />
+        </div>
+      </LuxuryCard>
     </AppShell>
   );
 }
@@ -44,6 +55,15 @@ function Metric({ label, value }: Readonly<{ label: string; value: string }>) {
     <div className="p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-xl font-semibold tracking-tight">{value}</p>
+    </div>
+  );
+}
+
+function SetupLine({ text }: Readonly<{ text: string }>) {
+  return (
+    <div className="flex items-start gap-2 rounded-md border border-slate-200 bg-slate-50 p-2.5">
+      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+      <span>{text}</span>
     </div>
   );
 }

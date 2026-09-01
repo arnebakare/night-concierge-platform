@@ -140,6 +140,45 @@ export async function getRequestCommerce(request: ConciergeRequest) {
   }
 }
 
+export async function getPaymentsForProfile(profile: Profile): Promise<RequestPayment[]> {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("request_payments")
+      .select("id, request_id, client_id, created_by, provider, provider_checkout_session_id, provider_payment_intent_id, amount_cents, currency, description, status, checkout_url, paid_at, created_at, updated_at, profiles(name, email), requests(id, club_id, promoter_id, requested_date, clients(name, phone), clubs(name))")
+      .order("created_at", { ascending: false })
+      .limit(120);
+
+    if (profile.role === "PROMOTER") {
+      const { data: ownRequests } = await supabase.from("requests").select("id").eq("promoter_id", profile.id).limit(500);
+      const ids = (ownRequests ?? []).map((request) => request.id);
+      if (!ids.length) return [];
+      query = query.in("request_id", ids);
+    }
+
+    if (profile.role === "PROMOTER_MANAGER") {
+      const teamIds = await teamIdsCsv(profile.id);
+      const clubIds = await managerClubIdsCsv(profile.id);
+      const requestQuery = supabase.from("requests").select("id").or([
+        `assigned_manager_id.eq.${profile.id}`,
+        teamIds ? `promoter_id.in.(${teamIds})` : "",
+        clubIds ? `club_id.in.(${clubIds})` : ""
+      ].filter(Boolean).join(",")).limit(500);
+      const { data: scopedRequests } = await requestQuery;
+      const ids = (scopedRequests ?? []).map((request) => request.id);
+      if (!ids.length) return [];
+      query = query.in("request_id", ids);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return normalizeRequestPayments(data);
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return demoRequests.flatMap((request) => demoRequestPayments(request));
+  }
+}
+
 export async function getAvailabilitySlotsForProfile(profile: Profile, options?: { date?: string; clubId?: string }) {
   try {
     const supabase = await createClient();

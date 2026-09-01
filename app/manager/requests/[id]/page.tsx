@@ -31,7 +31,7 @@ export default async function ManagerRequestDetailPage({
         {updated && <StatusNotice status={updated} />}
         <RequestDetail request={request} backHref="/manager/requests" clientHref={`/manager/clients/${request.client_id}`} statusReturnTo={`/manager/requests/${request.id}`} templates={templates} />
         <AvailabilityOfferPanel request={request} slots={commerce.slots} offers={commerce.offers} canManageAvailability templates={templates} />
-        <DepositPanel request={request} payments={commerce.payments} />
+        <DepositPanel request={request} payments={commerce.payments} returnTo={`/manager/requests/${request.id}`} />
         <RequestActivityTimeline activity={activity} />
         <RequestAssignmentControl requestId={request.id} currentPromoterId={request.promoter_id} promoters={promoters} />
       </div>

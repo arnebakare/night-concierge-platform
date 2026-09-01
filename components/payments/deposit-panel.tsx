@@ -9,8 +9,9 @@ import type { ConciergeRequest, RequestPayment } from "@/lib/types";
 
 export function DepositPanel({
   request,
-  payments
-}: Readonly<{ request: ConciergeRequest; payments: RequestPayment[] }>) {
+  payments,
+  returnTo
+}: Readonly<{ request: ConciergeRequest; payments: RequestPayment[]; returnTo?: string }>) {
   const config = getStripeConfigStatus();
   const defaultAmount = extractAmount(request.budget) ?? 500;
   const destination = request.clients?.phone ? whatsAppHref(request.clients.phone) : "";
@@ -38,7 +39,7 @@ export function DepositPanel({
       <form action={createDepositPayment} className="grid gap-3 md:grid-cols-[0.7fr_0.7fr_1fr_auto] md:items-end">
         <input type="hidden" name="requestId" value={request.id} />
         <input type="hidden" name="clientId" value={request.client_id} />
-        <input type="hidden" name="returnTo" value={`/manager/requests/${request.id}`} />
+        <input type="hidden" name="returnTo" value={returnTo ?? `/manager/requests/${request.id}`} />
         <div className="space-y-1.5">
           <Label className="text-slate-700">Amount</Label>
           <Input name="amount" type="number" min={5} step="1" defaultValue={defaultAmount} className="bg-white text-slate-950" disabled={!config.ready} />
@@ -76,7 +77,7 @@ export function DepositPanel({
                 )}
                 {payment.checkout_url && destination && payment.status === "PENDING" && (
                   <Button asChild size="sm" className="bg-slate-950 text-white hover:bg-slate-800">
-                    <a href={`${destination}?text=${encodeURIComponent(`Here is the secure deposit link for your booking: ${payment.checkout_url}`)}`} target="_blank" rel="noreferrer">
+                    <a href={`${destination}?text=${encodeURIComponent(buildDepositMessage(request, payment))}`} target="_blank" rel="noreferrer">
                       WhatsApp
                     </a>
                   </Button>
@@ -104,4 +105,15 @@ function formatMoney(amountCents: number, currency: string) {
 
 function whatsAppHref(phone: string) {
   return `https://wa.me/${phone.replace(/\D/g, "")}`;
+}
+
+function buildDepositMessage(request: ConciergeRequest, payment: RequestPayment) {
+  const firstName = request.clients?.name?.split(" ")[0] ?? "there";
+  return [
+    `Hi ${firstName}, here is the secure deposit link for your ${request.clubs?.name ?? "booking"} request:`,
+    "",
+    payment.checkout_url,
+    "",
+    "Once it is done, I will keep everything connected to your booking."
+  ].join("\n");
 }

@@ -197,6 +197,12 @@ export type RequestPayment = {
   created_at: string;
   updated_at?: string;
   profiles?: Pick<Profile, "name" | "email"> | null;
+  requests?: {
+    id: string;
+    requested_date?: string | null;
+    clients?: Pick<Client, "name" | "phone"> | null;
+    clubs?: Pick<Club, "name"> | null;
+  } | null;
 };
 
 export type CommissionRule = {
