@@ -3,10 +3,12 @@ import { RetentionClientCard } from "@/components/client/retention-client-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LuxuryCard } from "@/components/ui/luxury-card";
+import { updateClientFollowUpTaskStatus } from "@/lib/actions/management-actions";
 import { requireProfile } from "@/lib/auth";
-import { getMessageTemplates, getRetentionClientsForProfile } from "@/lib/data/app";
+import { getMessageTemplates, getOpenFollowUpTasksForProfile, getRetentionClientsForProfile } from "@/lib/data/app";
 import { getEmailConfigStatus } from "@/lib/services/email";
 import { getWhatsAppConfigStatus } from "@/lib/services/whatsapp";
+import type { ClientFollowUpTask } from "@/lib/types";
 
 export default async function RetentionPage({
   searchParams
@@ -15,8 +17,9 @@ export default async function RetentionPage({
   const params = await searchParams;
   const days = Number.parseInt(params.days ?? "45", 10);
   const threshold = Number.isFinite(days) && days > 0 ? days : 45;
-  const [clients, templates, emailConfig] = await Promise.all([
+  const [clients, tasks, templates, emailConfig] = await Promise.all([
     getRetentionClientsForProfile(profile, threshold),
+    getOpenFollowUpTasksForProfile(profile),
     getMessageTemplates(),
     Promise.resolve(getEmailConfigStatus())
   ]);
@@ -42,6 +45,20 @@ export default async function RetentionPage({
         <ConfigCard label="Email" ready={emailConfig.ready} detail={emailConfig.ready ? `Sending from ${emailConfig.from}` : "Add RESEND_API_KEY and EMAIL_FROM in Vercel"} />
       </div>
 
+      <LuxuryCard className="mb-4 bg-white text-slate-950">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-champagne-700">Due follow-ups</p>
+            <h2 className="mt-1 text-lg font-semibold">What needs attention</h2>
+          </div>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{tasks.length} open</span>
+        </div>
+        <div className="divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200">
+          {tasks.slice(0, 12).map((task) => <TaskRow key={task.id} task={task} />)}
+          {!tasks.length && <div className="p-5 text-center text-sm text-slate-500">No open follow-ups right now.</div>}
+        </div>
+      </LuxuryCard>
+
       <div className="compact-list grid gap-2">
         {clients.length ? clients.map((client) => <RetentionClientCard key={client.id} client={client} templates={templates} />) : (
           <LuxuryCard className="text-center text-sm text-muted-foreground">
@@ -50,6 +67,28 @@ export default async function RetentionPage({
         )}
       </div>
     </AppShell>
+  );
+}
+
+function TaskRow({ task }: Readonly<{ task: ClientFollowUpTask }>) {
+  return (
+    <div className="grid gap-2 bg-white p-3 text-sm md:grid-cols-[1fr_auto_auto] md:items-center">
+      <div className="min-w-0">
+        <p className="truncate font-semibold text-slate-950">{task.title}</p>
+        <p className="mt-0.5 truncate text-xs text-slate-500">
+          {task.clients?.name ?? "Client"} · {task.due_date ? `Due ${task.due_date}` : "No due date"} · {task.assignee?.name ?? task.assignee?.email ?? "Unassigned"}
+        </p>
+      </div>
+      <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${task.priority === "HIGH" ? "border-red-200 bg-red-50 text-red-700" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
+        {task.priority.toLowerCase()}
+      </span>
+      <form action={updateClientFollowUpTaskStatus}>
+        <input type="hidden" name="taskId" value={task.id} />
+        <input type="hidden" name="clientId" value={task.client_id} />
+        <input type="hidden" name="status" value="DONE" />
+        <Button type="submit" size="sm" variant="secondary" className="bg-slate-100 text-slate-900 hover:bg-slate-200">Done</Button>
+      </form>
+    </div>
   );
 }
 

@@ -1,6 +1,6 @@
-import { CalendarDays, MessageSquareText, UserRound } from "lucide-react";
+import { CalendarDays, CheckCircle2, MessageSquareText, UserRound } from "lucide-react";
 import { LuxuryCard } from "@/components/ui/luxury-card";
-import type { ClientAlias, ClientBookingHistoryItem, ClientOutreachItem } from "@/lib/types";
+import type { ClientAlias, ClientBookingHistoryItem, ClientFollowUpTask, ClientOutreachItem } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
 type NoteLike = {
@@ -19,15 +19,16 @@ type TimelineItem = {
   label: string;
   detail: string;
   date: string;
-  tone: "booking" | "note" | "alias";
+  tone: "booking" | "note" | "alias" | "task";
 };
 
 export function ClientLifecycleTimeline({
   history,
   notes,
   aliases,
-  outreach = []
-}: Readonly<{ history: ClientBookingHistoryItem[]; notes: NoteLike[]; aliases: ClientAlias[]; outreach?: ClientOutreachItem[] }>) {
+  outreach = [],
+  tasks = []
+}: Readonly<{ history: ClientBookingHistoryItem[]; notes: NoteLike[]; aliases: ClientAlias[]; outreach?: ClientOutreachItem[]; tasks?: ClientFollowUpTask[] }>) {
   const items = [
     ...history.map((request) => ({
       id: `request-${request.id}`,
@@ -60,6 +61,14 @@ export function ClientLifecycleTimeline({
       detail: `${item.message.slice(0, 120)}${item.message.length > 120 ? "..." : ""}`,
       date: item.created_at,
       tone: "note" as const
+    })),
+    ...tasks.map((task) => ({
+      id: `task-${task.id}`,
+      icon: CheckCircle2,
+      label: task.status === "DONE" ? "Follow-up completed" : "Follow-up task",
+      detail: `${task.title}${task.due_date ? ` · due ${task.due_date}` : ""} · ${task.priority.toLowerCase()} priority`,
+      date: task.completed_at ?? task.created_at,
+      tone: "task" as const
     }))
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 14);
 
@@ -81,7 +90,7 @@ function TimelineRow({ item }: Readonly<{ item: TimelineItem }>) {
   const Icon = item.icon;
   return (
     <div className="grid grid-cols-[auto_1fr_auto] items-start gap-3 rounded-md border border-slate-200 bg-slate-50 p-3">
-      <div className={`mt-0.5 flex size-8 items-center justify-center rounded-md ${item.tone === "booking" ? "bg-slate-950 text-white" : item.tone === "note" ? "bg-champagne-100 text-champagne-900" : "bg-white text-slate-500"}`}>
+      <div className={`mt-0.5 flex size-8 items-center justify-center rounded-md ${item.tone === "booking" ? "bg-slate-950 text-white" : item.tone === "note" ? "bg-champagne-100 text-champagne-900" : item.tone === "task" ? "bg-emerald-50 text-emerald-700" : "bg-white text-slate-500"}`}>
         <Icon className="size-4" />
       </div>
       <div className="min-w-0">

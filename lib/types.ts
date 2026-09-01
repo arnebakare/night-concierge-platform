@@ -90,6 +90,23 @@ export type ClientOutreachItem = {
   profiles?: Pick<Profile, "name" | "email"> | null;
 };
 
+export type ClientFollowUpTask = {
+  id: string;
+  client_id: string;
+  assigned_to: string | null;
+  created_by: string | null;
+  title: string;
+  due_date: string | null;
+  priority: "LOW" | "NORMAL" | "HIGH";
+  status: "OPEN" | "DONE" | "CANCELLED";
+  completed_at: string | null;
+  created_at: string;
+  updated_at?: string;
+  assignee?: Pick<Profile, "name" | "email"> | null;
+  creator?: Pick<Profile, "name" | "email"> | null;
+  clients?: Pick<Client, "name" | "phone"> | null;
+};
+
 export type MessageTemplate = {
   id: string;
   key: string;

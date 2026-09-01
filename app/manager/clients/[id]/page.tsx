@@ -6,9 +6,10 @@ import { ClientNoteFilters } from "@/components/client/client-note-filters";
 import { ClientNoteForm } from "@/components/client/client-note-form";
 import { ClientEditForm } from "@/components/client/client-edit-form";
 import { ClientBookingHistory } from "@/components/client/client-booking-history";
+import { ClientFollowUpPanel } from "@/components/client/client-follow-up-panel";
 import { ClientLifecycleTimeline } from "@/components/client/client-lifecycle-timeline";
 import { requireProfile } from "@/lib/auth";
-import { getActiveClubsForApp, getClientProfile } from "@/lib/data/app";
+import { getActiveClubsForApp, getClientProfile, getTeamPromoters, getUsersForAdmin } from "@/lib/data/app";
 import { formatCustomerCode } from "@/lib/concierge/phone";
 import { formatEnum } from "@/lib/utils";
 
@@ -17,7 +18,11 @@ export default async function ManagerClientDetailPage({
   searchParams
 }: Readonly<{ params: Promise<{ id: string }>; searchParams: Promise<{ visibility?: string; type?: string }> }>) {
   const [profile, { id }, filters] = await Promise.all([requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]), params, searchParams]);
-  const [{ client, notes, aliases, history, outreach }, clubs] = await Promise.all([getClientProfile(id, filters), getActiveClubsForApp()]);
+  const [{ client, notes, aliases, history, outreach, tasks }, clubs, assignees] = await Promise.all([
+    getClientProfile(id, filters),
+    getActiveClubsForApp(),
+    profile.role === "SUPER_ADMIN" ? getUsersForAdmin({ active: "active" }) : getTeamPromoters(profile.id)
+  ]);
   const aliasNames = aliases.map((alias) => alias.name).filter((name) => name && name !== client.name);
   const confirmed = history.filter((item) => ["CONFIRMED", "ARRIVED"].includes(item.status)).length;
   const totalGuests = history.reduce((sum, item) => sum + item.guest_count, 0);
@@ -57,7 +62,10 @@ export default async function ManagerClientDetailPage({
         </div>
       </details>
       <div className="mt-4">
-        <ClientLifecycleTimeline history={history} notes={notes} aliases={aliases} outreach={outreach} />
+        <ClientFollowUpPanel clientId={client.id} tasks={tasks} assignees={assignees} />
+      </div>
+      <div className="mt-4">
+        <ClientLifecycleTimeline history={history} notes={notes} aliases={aliases} outreach={outreach} tasks={tasks} />
       </div>
       <div className="mt-4">
         <ClientBookingHistory history={history} />

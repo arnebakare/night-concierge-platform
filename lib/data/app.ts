@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -244,6 +244,40 @@ export async function getRetentionClientsForProfile(profile: Profile, days = 45)
   }
 }
 
+export async function getOpenFollowUpTasksForProfile(profile: Profile): Promise<ClientFollowUpTask[]> {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("client_follow_up_tasks")
+      .select("id, client_id, assigned_to, created_by, title, due_date, priority, status, completed_at, created_at, updated_at, assignee:profiles!client_follow_up_tasks_assigned_to_fkey(name, email), creator:profiles!client_follow_up_tasks_created_by_fkey(name, email), clients(name, phone)")
+      .eq("status", "OPEN")
+      .order("priority", { ascending: false })
+      .order("due_date", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (profile.role === "PROMOTER") query = query.eq("assigned_to", profile.id);
+    const { data, error } = await query;
+    if (error) throw error;
+    return normalizeClientFollowUpTasks(data);
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return [{
+      id: "task-demo-1",
+      client_id: "c1",
+      assigned_to: profile.id,
+      created_by: profile.id,
+      title: "Send weekend options",
+      due_date: new Date().toISOString().slice(0, 10),
+      priority: "HIGH",
+      status: "OPEN",
+      completed_at: null,
+      created_at: new Date().toISOString(),
+      assignee: { name: profile.name, email: profile.email },
+      creator: { name: profile.name, email: profile.email }
+    }];
+  }
+}
+
 export type NoteFilters = {
   visibility?: string;
   type?: string;
@@ -252,7 +286,7 @@ export type NoteFilters = {
 export async function getClientProfile(clientId: string, filters?: NoteFilters) {
   try {
     const supabase = await createClient();
-    const [{ data: client, error: clientError }, { data: notes, error: notesError }, { data: aliases, error: aliasError }, { data: history, error: historyError }, { data: outreach, error: outreachError }] = await Promise.all([
+    const [{ data: client, error: clientError }, { data: notes, error: notesError }, { data: aliases, error: aliasError }, { data: history, error: historyError }, { data: outreach, error: outreachError }, tasksResult] = await Promise.all([
       supabase
         .from("clients")
         .select("id, name, phone, client_code, email, instagram, country, preferred_language, vip_level, status")
@@ -286,6 +320,15 @@ export async function getClientProfile(clientId: string, filters?: NoteFilters) 
         .eq("client_id", clientId)
         .order("created_at", { ascending: false })
         .limit(20)
+      ,
+      supabase
+        .from("client_follow_up_tasks")
+        .select("id, client_id, assigned_to, created_by, title, due_date, priority, status, completed_at, created_at, updated_at, assignee:profiles!client_follow_up_tasks_assigned_to_fkey(name, email), creator:profiles!client_follow_up_tasks_created_by_fkey(name, email)")
+        .eq("client_id", clientId)
+        .order("status", { ascending: true })
+        .order("due_date", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(30)
     ]);
     if (clientError) throw clientError;
     if (notesError) throw notesError;
@@ -297,7 +340,8 @@ export async function getClientProfile(clientId: string, filters?: NoteFilters) 
       notes: applyNoteFilters(normalizeNotes(notes), filters),
       aliases: (aliases ?? []) as ClientAlias[],
       history: normalizeClientHistory(history),
-      outreach: normalizeClientOutreach(outreach)
+      outreach: normalizeClientOutreach(outreach),
+      tasks: tasksResult.error ? [] : normalizeClientFollowUpTasks(tasksResult.data)
     };
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
@@ -332,7 +376,21 @@ export async function getClientProfile(clientId: string, filters?: NoteFilters) 
         automatic: false,
         created_at: new Date(Date.now() - 12 * 86400000).toISOString(),
         profiles: { name: "Julia", email: "julia@casanis.es" }
-      }] satisfies ClientOutreachItem[]
+      }] satisfies ClientOutreachItem[],
+      tasks: [{
+        id: "task-demo-1",
+        client_id: clientId,
+        assigned_to: demoProfile.id,
+        created_by: demoProfile.id,
+        title: "Ask if they are coming back to Marbella this weekend",
+        due_date: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+        priority: "NORMAL",
+        status: "OPEN",
+        completed_at: null,
+        created_at: new Date().toISOString(),
+        assignee: { name: "Julia", email: "julia@casanis.es" },
+        creator: { name: "Julia", email: "julia@casanis.es" }
+      }] satisfies ClientFollowUpTask[]
     };
   }
 }
@@ -960,6 +1018,15 @@ function normalizeClientOutreach(data: unknown): ClientOutreachItem[] {
   return ((data as Array<Omit<ClientOutreachItem, "profiles"> & { profiles?: ClientOutreachItem["profiles"] | ClientOutreachItem["profiles"][] | null }> | null) ?? []).map((item) => ({
     ...item,
     profiles: Array.isArray(item.profiles) ? item.profiles[0] ?? null : item.profiles ?? null
+  }));
+}
+
+function normalizeClientFollowUpTasks(data: unknown): ClientFollowUpTask[] {
+  return ((data as Array<Omit<ClientFollowUpTask, "assignee" | "creator" | "clients"> & { assignee?: ClientFollowUpTask["assignee"] | ClientFollowUpTask["assignee"][] | null; creator?: ClientFollowUpTask["creator"] | ClientFollowUpTask["creator"][] | null; clients?: ClientFollowUpTask["clients"] | ClientFollowUpTask["clients"][] | null }> | null) ?? []).map((task) => ({
+    ...task,
+    assignee: Array.isArray(task.assignee) ? task.assignee[0] ?? null : task.assignee ?? null,
+    creator: Array.isArray(task.creator) ? task.creator[0] ?? null : task.creator ?? null,
+    clients: Array.isArray(task.clients) ? task.clients[0] ?? null : task.clients ?? null
   }));
 }
 

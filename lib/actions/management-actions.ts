@@ -1250,6 +1250,94 @@ const noteSchema = z.object({
   requestId: z.string().uuid().optional().or(z.literal(""))
 });
 
+const followUpTaskSchema = z.object({
+  clientId: z.string().min(1),
+  title: z.string().trim().min(3).max(180),
+  dueDate: z.string().optional().or(z.literal("")),
+  priority: z.enum(["LOW", "NORMAL", "HIGH"]),
+  assignedTo: z.string().uuid().optional().or(z.literal(""))
+});
+
+const followUpTaskStatusSchema = z.object({
+  taskId: z.string().uuid(),
+  clientId: z.string().min(1),
+  status: z.enum(["DONE", "CANCELLED"])
+});
+
+export async function createClientFollowUpTask(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = followUpTaskSchema.safeParse({
+    clientId: formData.get("clientId"),
+    title: formData.get("title"),
+    dueDate: formData.get("dueDate") || "",
+    priority: formData.get("priority") || "NORMAL",
+    assignedTo: formData.get("assignedTo") || ""
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath(`/clients/${parsed.data.clientId}`);
+    revalidatePath(`/manager/clients/${parsed.data.clientId}`);
+    return;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("client_follow_up_tasks").insert({
+    client_id: parsed.data.clientId,
+    title: parsed.data.title,
+    due_date: parsed.data.dueDate || null,
+    priority: parsed.data.priority,
+    assigned_to: parsed.data.assignedTo || profile.id,
+    created_by: profile.id
+  }).select("id").single();
+  if (error || !data) throw new Error(error?.message ?? "Could not create follow-up task. Apply migration 022 if this is the first time using tasks.");
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "CLIENT_FOLLOW_UP_TASK_CREATED",
+    entityType: "client_follow_up_tasks",
+    entityId: data.id,
+    metadata: { clientId: parsed.data.clientId, priority: parsed.data.priority, dueDate: parsed.data.dueDate || null }
+  });
+
+  revalidatePath(`/clients/${parsed.data.clientId}`);
+  revalidatePath(`/manager/clients/${parsed.data.clientId}`);
+}
+
+export async function updateClientFollowUpTaskStatus(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = followUpTaskStatusSchema.safeParse({
+    taskId: formData.get("taskId"),
+    clientId: formData.get("clientId"),
+    status: formData.get("status")
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath(`/clients/${parsed.data.clientId}`);
+    revalidatePath(`/manager/clients/${parsed.data.clientId}`);
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("client_follow_up_tasks").update({
+    status: parsed.data.status,
+    completed_at: parsed.data.status === "DONE" ? new Date().toISOString() : null
+  }).eq("id", parsed.data.taskId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "CLIENT_FOLLOW_UP_TASK_UPDATED",
+    entityType: "client_follow_up_tasks",
+    entityId: parsed.data.taskId,
+    metadata: { clientId: parsed.data.clientId, status: parsed.data.status }
+  });
+
+  revalidatePath(`/clients/${parsed.data.clientId}`);
+  revalidatePath(`/manager/clients/${parsed.data.clientId}`);
+}
+
 export async function addClientNote(formData: FormData) {
   const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const parsed = noteSchema.safeParse({
