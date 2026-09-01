@@ -61,6 +61,11 @@ export function CommissionRulesManager({
         </details>
       </LuxuryCard>
 
+      <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600">
+        <p className="font-semibold text-slate-950">Payout priority</p>
+        <p className="mt-1">Specific rules win first: promoter + venue + service, then targeted rules, then broad defaults. Big manual exceptions can be added as a named rule with a note.</p>
+      </div>
+
       <div className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
         {rules.map((rule) => (
           <div key={rule.id} className={`p-3 text-sm text-slate-950 ${!rule.active ? "opacity-60" : ""}`}>

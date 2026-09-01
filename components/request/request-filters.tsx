@@ -15,21 +15,21 @@ export function RequestFilters({
   promoters = []
 }: Readonly<{ action: string; values: { status?: string; type?: string; date?: string; q?: string; club?: string; promoter?: string }; clubs?: Club[]; promoters?: Profile[] }>) {
   return (
-    <details className="request-filter-panel mb-4 rounded-lg border border-champagne-700/35 bg-card/75 p-2.5 ring-1 ring-white/[0.025] backdrop-blur">
-      <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-champagne-100">
-        <span className="flex items-center gap-2"><Search className="size-4 text-champagne-300" /> Refine bookings</span>
-        <span className="text-xs font-normal text-muted-foreground">{compactFilterLabel(values)}</span>
+    <details className="request-filter-panel mb-4 rounded-lg border border-slate-200 bg-white p-2.5 text-slate-950 shadow-sm">
+      <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-950">
+        <span className="flex items-center gap-2"><Search className="size-4 text-champagne-700" /> Refine bookings</span>
+        <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-500">{compactFilterLabel(values)}</span>
       </summary>
       <form action={action} className="mt-3">
         <div className="request-filter-grid grid gap-3 md:grid-cols-3 xl:grid-cols-[1.4fr_repeat(5,1fr)_auto]">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-champagne-300" />
-            <Input name="q" defaultValue={values.q ?? ""} placeholder="Client, venue, phone..." className="pl-9" aria-label="Search bookings" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <Input name="q" defaultValue={values.q ?? ""} placeholder="Client, venue, phone..." className="border-slate-200 bg-white pl-9 text-slate-950" aria-label="Search bookings" />
           </div>
           <select
             name="status"
             defaultValue={values.status ?? ""}
-            className="h-10 rounded-md border bg-input px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">All statuses</option>
             {statuses.map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
@@ -37,14 +37,14 @@ export function RequestFilters({
           <select
             name="type"
             defaultValue={values.type ?? ""}
-            className="advanced-only h-10 rounded-md border bg-input px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            className="advanced-only h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">All types</option>
             {types.map((type) => <option key={type} value={type}>{formatEnum(type)}</option>)}
           </select>
-          <Input name="date" type="date" defaultValue={values.date ?? ""} />
-          {clubs.length > 0 && <select name="club" defaultValue={values.club ?? ""} className="advanced-only h-10 rounded-md border bg-input px-3 text-sm"><option value="">All clubs</option>{clubs.map((club) => <option key={club.id} value={club.id}>{club.name}</option>)}</select>}
-          {promoters.length > 0 && <select name="promoter" defaultValue={values.promoter ?? ""} className="advanced-only h-10 rounded-md border bg-input px-3 text-sm"><option value="">All promoters</option>{promoters.map((promoter) => <option key={promoter.id} value={promoter.id}>{promoter.name ?? promoter.email}</option>)}</select>}
+          <Input name="date" type="date" defaultValue={values.date ?? ""} className="border-slate-200 bg-white text-slate-950" />
+          {clubs.length > 0 && <select name="club" defaultValue={values.club ?? ""} className="advanced-only h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950"><option value="">All clubs</option>{clubs.map((club) => <option key={club.id} value={club.id}>{club.name}</option>)}</select>}
+          {promoters.length > 0 && <select name="promoter" defaultValue={values.promoter ?? ""} className="advanced-only h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950"><option value="">All promoters</option>{promoters.map((promoter) => <option key={promoter.id} value={promoter.id}>{promoter.name ?? promoter.email}</option>)}</select>}
           <div className="grid grid-cols-2 gap-2 md:flex">
             <Button type="submit" className="w-full">Apply</Button>
             <Button asChild variant="secondary" className="w-full">

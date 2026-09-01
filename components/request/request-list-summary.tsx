@@ -76,12 +76,12 @@ function Metric({
   hot
 }: Readonly<{ icon: typeof Sparkles; label: string; value: string; muted?: boolean; hot?: boolean }>) {
   return (
-    <div className="metric-cell bg-slate-50 p-3">
+    <div className="metric-cell bg-slate-50 px-3 py-2.5">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-slate-500">{label}</span>
         <Icon className={muted ? "size-4 text-slate-400" : hot ? "size-4 text-rose-500" : "size-4 text-champagne-700"} />
       </div>
-      <p className={hot ? "mt-2 text-2xl font-semibold leading-none tracking-tight text-rose-700" : "mt-2 text-2xl font-semibold leading-none tracking-tight"}>{value}</p>
+      <p className={hot ? "mt-1.5 text-xl font-semibold leading-none tracking-tight text-rose-700" : "mt-1.5 text-xl font-semibold leading-none tracking-tight"}>{value}</p>
     </div>
   );
 }
@@ -90,7 +90,7 @@ function QuickLink({ href, label }: Readonly<{ href: string; label: string }>) {
   return (
     <Link
       href={href}
-      className="whitespace-nowrap rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-600 transition hover:border-champagne-600 hover:text-ink-950"
+      className="whitespace-nowrap rounded-md border border-slate-200 bg-white px-3 py-1.5 text-slate-600 transition hover:border-champagne-600 hover:text-ink-950"
     >
       {label}
     </Link>
