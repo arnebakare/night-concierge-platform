@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { RetentionClientCard } from "@/components/client/retention-client-card";
+import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LuxuryCard } from "@/components/ui/luxury-card";
@@ -95,7 +96,7 @@ function TaskRow({ task }: Readonly<{ task: ClientFollowUpTask }>) {
         <input type="hidden" name="taskId" value={task.id} />
         <input type="hidden" name="clientId" value={task.client_id} />
         <input type="hidden" name="status" value="DONE" />
-        <Button type="submit" size="sm" variant="secondary" className="bg-slate-100 text-slate-900 hover:bg-slate-200">Done</Button>
+        <StatusSubmitButton label="Done" pendingLabel="Saving" size="sm" variant="secondary" className="bg-slate-100 text-slate-900 hover:bg-slate-200" />
       </form>
     </div>
   );

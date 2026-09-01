@@ -1,8 +1,8 @@
-import { CheckCircle2, Clock3, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Clock3, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LuxuryCard } from "@/components/ui/luxury-card";
+import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { createClientFollowUpTask, updateClientFollowUpTask, updateClientFollowUpTaskStatus } from "@/lib/actions/management-actions";
 import type { ClientFollowUpTask, Profile } from "@/lib/types";
 
@@ -47,7 +47,7 @@ export function ClientFollowUpPanel({
               {assignees.map((user) => <option key={user.id} value={user.id}>{user.name ?? user.email}</option>)}
             </select>
           </Field>
-          <Button type="submit" className="self-end bg-slate-950 text-white hover:bg-slate-800">Save</Button>
+          <StatusSubmitButton label="Save" pendingLabel="Saving" className="self-end bg-slate-950 text-white hover:bg-slate-800" />
         </form>
       </details>
 
@@ -78,17 +78,13 @@ function TaskRow({ task }: Readonly<{ task: ClientFollowUpTask }>) {
             <input type="hidden" name="taskId" value={task.id} />
             <input type="hidden" name="clientId" value={task.client_id} />
             <input type="hidden" name="status" value="DONE" />
-            <Button type="submit" size="sm" variant="secondary" className="bg-slate-100 text-slate-900 hover:bg-slate-200">
-              <CheckCircle2 className="size-4" /> Done
-            </Button>
+            <StatusSubmitButton label="Done" pendingLabel="Saving" size="sm" variant="secondary" className="bg-slate-100 text-slate-900 hover:bg-slate-200" />
           </form>
           <form action={updateClientFollowUpTaskStatus}>
             <input type="hidden" name="taskId" value={task.id} />
             <input type="hidden" name="clientId" value={task.client_id} />
             <input type="hidden" name="status" value="CANCELLED" />
-            <Button type="submit" size="sm" variant="secondary" className="bg-slate-100 text-slate-900 hover:bg-slate-200">
-              Cancel
-            </Button>
+            <StatusSubmitButton label="Cancel" pendingLabel="Cancelling" size="sm" variant="secondary" className="bg-slate-100 text-slate-900 hover:bg-slate-200" />
           </form>
         </div>
       )}
@@ -111,7 +107,7 @@ function TaskRow({ task }: Readonly<{ task: ClientFollowUpTask }>) {
                 <option value="HIGH">High</option>
               </select>
             </Field>
-            <Button type="submit" className="self-end bg-slate-950 text-white hover:bg-slate-800">Save</Button>
+            <StatusSubmitButton label="Save" pendingLabel="Saving" className="self-end bg-slate-950 text-white hover:bg-slate-800" />
           </form>
         </details>
       )}

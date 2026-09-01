@@ -3,14 +3,17 @@ import { ClientCard } from "@/components/client/client-card";
 import { ClientCreateForm } from "@/components/client/client-create-form";
 import { ClientSearchForm } from "@/components/client/client-search-form";
 import { requireProfile } from "@/lib/auth";
-import { getClientsForProfile } from "@/lib/data/app";
+import { getClientCareSignalsForProfile, getClientsForProfile } from "@/lib/data/app";
 
 export default async function ClientsPage({
   searchParams
 }: Readonly<{ searchParams: Promise<{ q?: string }> }>) {
   const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const filters = await searchParams;
-  const clients = await getClientsForProfile(profile, { q: filters.q });
+  const [clients, careSignals] = await Promise.all([
+    getClientsForProfile(profile, { q: filters.q }),
+    getClientCareSignalsForProfile(profile)
+  ]);
 
   return (
     <AppShell profile={profile} title="Clients" eyebrow="CRM">
@@ -18,7 +21,7 @@ export default async function ClientsPage({
         <ClientSearchForm action="/clients" value={filters.q} placeholder="Search by SKU, phone, name, Instagram" />
         <ClientCreateForm role={profile.role} />
         <div className="compact-list grid gap-2">
-          {clients.length ? clients.map((client) => <ClientCard key={client.id} client={client} href={`/clients/${client.id}`} />) : <EmptyState />}
+          {clients.length ? clients.map((client) => <ClientCard key={client.id} client={client} href={`/clients/${client.id}`} careSignal={careSignals[client.id]} />) : <EmptyState />}
         </div>
       </div>
     </AppShell>

@@ -8,19 +8,31 @@ import { requireProfile } from "@/lib/auth";
 import { getInboundWhatsAppHistory, getNotificationHistory, getPlatformSetting } from "@/lib/data/app";
 import { getWhatsAppConfigStatus } from "@/lib/services/whatsapp";
 
-export default async function NotificationsPage() {
+export default async function NotificationsPage({
+  searchParams
+}: Readonly<{ searchParams: Promise<{ inbound?: string }> }>) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const params = await searchParams;
   const [notifications, inboundMessages, storedDestination] = await Promise.all([
     getNotificationHistory(),
     getInboundWhatsAppHistory(),
     getPlatformSetting("whatsapp_destination_number")
   ]);
+  const inboundFilter = params.inbound === "failed" || params.inbound === "review" || params.inbound === "created" ? params.inbound : "all";
+  const filteredInboundMessages = inboundMessages.filter((item) => {
+    if (inboundFilter === "failed") return item.status === "FAILED";
+    if (inboundFilter === "review") return item.status === "NEEDS_REVIEW";
+    if (inboundFilter === "created") return item.status === "CREATED";
+    return true;
+  });
   const config = getWhatsAppConfigStatus(storedDestination);
   const sent = notifications.filter((item) => item.status === "SENT").length;
   const failed = notifications.length - sent;
   const inboundFailed = inboundMessages.filter((item) => item.status === "FAILED" || item.status === "NEEDS_REVIEW").length;
   const inboundNotAlerted = inboundMessages.filter((item) => (item.status === "FAILED" || item.status === "NEEDS_REVIEW") && !item.alert_sent_at).length;
   const inboundCreated = inboundMessages.filter((item) => item.status === "CREATED").length;
+  const scheduleCommands = inboundMessages.filter((item) => getInboundKind(item.body) === "schedule").length;
+  const leadMessages = inboundMessages.filter((item) => getInboundKind(item.body) === "lead").length;
 
   return (
     <AppShell profile={profile} title="WhatsApp delivery" eyebrow="Operations">
@@ -52,10 +64,12 @@ export default async function NotificationsPage() {
         </LuxuryCard>
       </div>
 
-      <div className="mb-4 grid grid-cols-3 gap-2">
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
         <AlertMetric label="Inbound created" value={String(inboundCreated)} tone="good" />
         <AlertMetric label="Needs review" value={String(inboundFailed)} tone={inboundFailed ? "bad" : "good"} />
         <AlertMetric label="Not alerted" value={String(inboundNotAlerted)} tone={inboundNotAlerted ? "warning" : "good"} />
+        <AlertMetric label="Schedules" value={String(scheduleCommands)} tone="good" />
+        <AlertMetric label="Leads" value={String(leadMessages)} tone="good" />
       </div>
 
       <LuxuryCard className="mb-4 bg-white text-slate-950">
@@ -66,8 +80,14 @@ export default async function NotificationsPage() {
           </div>
           <StatusPill ok={!inboundFailed} label={inboundFailed ? "Review" : "Healthy"} />
         </div>
+        <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+          <MonitorFilter href="/notifications" active={inboundFilter === "all"} label="All" />
+          <MonitorFilter href="/notifications?inbound=failed" active={inboundFilter === "failed"} label="Failed" />
+          <MonitorFilter href="/notifications?inbound=review" active={inboundFilter === "review"} label="Review" />
+          <MonitorFilter href="/notifications?inbound=created" active={inboundFilter === "created"} label="Created" />
+        </div>
         <div className="divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200">
-          {inboundMessages.slice(0, 8).map((message) => (
+          {filteredInboundMessages.slice(0, 12).map((message) => (
             <div key={message.id} className="grid gap-2 p-3 text-sm md:grid-cols-[0.8fr_1fr_auto] md:items-center">
               <div className="min-w-0">
                 <p className="truncate font-semibold text-slate-950">{message.profile_name ?? message.from_number}</p>
@@ -75,6 +95,9 @@ export default async function NotificationsPage() {
               </div>
               <p className="line-clamp-2 text-slate-600">{message.body}</p>
               <div className="flex flex-wrap gap-1.5 md:justify-end">
+                <span className="w-fit rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                  {formatInboundKind(getInboundKind(message.body))}
+                </span>
                 <StatusPill ok={message.status === "CREATED" || message.status === "RECEIVED"} label={message.status.toLowerCase().replaceAll("_", " ")} />
                 {(message.status === "FAILED" || message.status === "NEEDS_REVIEW") && (
                   <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${message.alert_sent_at ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
@@ -85,7 +108,7 @@ export default async function NotificationsPage() {
               {message.error_message && <p className="rounded bg-red-50 p-2 text-xs text-red-700 md:col-span-3">{message.error_message}</p>}
             </div>
           ))}
-          {!inboundMessages.length && <div className="p-6 text-center text-sm text-slate-500">No inbound WhatsApp messages yet.</div>}
+          {!filteredInboundMessages.length && <div className="p-6 text-center text-sm text-slate-500">No inbound WhatsApp messages match this filter.</div>}
         </div>
       </LuxuryCard>
 
@@ -176,6 +199,14 @@ function AlertMetric({ label, value, tone }: Readonly<{ label: string; value: st
   );
 }
 
+function MonitorFilter({ href, active, label }: Readonly<{ href: string; active: boolean; label: string }>) {
+  return (
+    <Button asChild size="sm" variant={active ? "default" : "secondary"} className={active ? "bg-slate-950 text-white hover:bg-slate-800" : "bg-slate-100 text-slate-900 hover:bg-slate-200"}>
+      <Link href={href}>{label}</Link>
+    </Button>
+  );
+}
+
 function ConfigLine({ label, ok, value }: Readonly<{ label: string; ok: boolean; value: string }>) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-secondary px-3 py-2">
@@ -224,4 +255,17 @@ function explainTwilioIssue(message: string) {
     title: "Delivery failed",
     detail: "Retry once. If it fails again, check the Twilio logs for this message and compare the sender, destination, and account."
   };
+}
+
+function getInboundKind(body: string) {
+  const normalized = body.trim().toLowerCase();
+  if (/^(schedule|plan)\b/.test(normalized)) return "schedule";
+  if (/(table|guestlist|vip|booking|book|guests?|personer|personas|people)/.test(normalized)) return "lead";
+  return "message";
+}
+
+function formatInboundKind(kind: ReturnType<typeof getInboundKind>) {
+  if (kind === "schedule") return "schedule command";
+  if (kind === "lead") return "lead message";
+  return "message";
 }

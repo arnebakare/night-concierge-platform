@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -277,6 +277,50 @@ export async function getOpenFollowUpTasksForProfile(profile: Profile, options?:
       assignee: { name: profile.name, email: profile.email },
       creator: { name: profile.name, email: profile.email }
     }];
+  }
+}
+
+export async function getClientCareSignalsForProfile(profile: Profile): Promise<Record<string, ClientCareSignal>> {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("client_follow_up_tasks")
+      .select("client_id, due_date, priority, status, assigned_to")
+      .eq("status", "OPEN")
+      .limit(500);
+    if (profile.role === "PROMOTER") query = query.eq("assigned_to", profile.id);
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const today = new Date().toISOString().slice(0, 10);
+    return ((data as Array<Pick<ClientFollowUpTask, "client_id" | "due_date" | "priority" | "status">> | null) ?? []).reduce<Record<string, ClientCareSignal>>((signals, task) => {
+      const existing = signals[task.client_id] ?? {
+        client_id: task.client_id,
+        open_tasks: 0,
+        overdue_tasks: 0,
+        high_priority_tasks: 0,
+        next_due_date: null
+      };
+      existing.open_tasks += 1;
+      if (task.due_date && task.due_date < today) existing.overdue_tasks += 1;
+      if (task.priority === "HIGH") existing.high_priority_tasks += 1;
+      if (task.due_date && (!existing.next_due_date || task.due_date < existing.next_due_date)) {
+        existing.next_due_date = task.due_date;
+      }
+      signals[task.client_id] = existing;
+      return signals;
+    }, {});
+  } catch (error) {
+    if (!isDemoAuthEnabled()) return {};
+    return {
+      c1: {
+        client_id: "c1",
+        open_tasks: 1,
+        overdue_tasks: 0,
+        high_priority_tasks: 1,
+        next_due_date: new Date().toISOString().slice(0, 10)
+      }
+    };
   }
 }
 

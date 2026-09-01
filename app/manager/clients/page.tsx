@@ -3,14 +3,17 @@ import { ClientCard } from "@/components/client/client-card";
 import { ClientCreateForm } from "@/components/client/client-create-form";
 import { ClientSearchForm } from "@/components/client/client-search-form";
 import { requireProfile } from "@/lib/auth";
-import { getClientsForProfile } from "@/lib/data/app";
+import { getClientCareSignalsForProfile, getClientsForProfile } from "@/lib/data/app";
 
 export default async function ManagerClientsPage({
   searchParams
 }: Readonly<{ searchParams: Promise<{ q?: string }> }>) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const filters = await searchParams;
-  const clients = await getClientsForProfile(profile, { q: filters.q });
+  const [clients, careSignals] = await Promise.all([
+    getClientsForProfile(profile, { q: filters.q }),
+    getClientCareSignalsForProfile(profile)
+  ]);
 
   return (
     <AppShell profile={profile} title="Client CRM" eyebrow="Manager">
@@ -18,7 +21,7 @@ export default async function ManagerClientsPage({
         <ClientSearchForm action="/manager/clients" value={filters.q} placeholder="Search by SKU, phone, name, Instagram, VIP level" />
         <ClientCreateForm role={profile.role} />
         <div className="compact-list grid gap-2">
-          {clients.length ? clients.map((client) => <ClientCard key={client.id} client={client} href={`/manager/clients/${client.id}`} />) : <EmptyState />}
+          {clients.length ? clients.map((client) => <ClientCard key={client.id} client={client} href={`/manager/clients/${client.id}`} careSignal={careSignals[client.id]} />) : <EmptyState />}
         </div>
       </div>
     </AppShell>

@@ -107,6 +107,14 @@ export type ClientFollowUpTask = {
   clients?: Pick<Client, "name" | "phone"> | null;
 };
 
+export type ClientCareSignal = {
+  client_id: string;
+  open_tasks: number;
+  overdue_tasks: number;
+  high_priority_tasks: number;
+  next_due_date: string | null;
+};
+
 export type MessageTemplate = {
   id: string;
   key: string;
