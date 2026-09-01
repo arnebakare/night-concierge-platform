@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { updateClubExperience } from "@/lib/actions/management-actions";
 import type { RequestType } from "@/lib/types";
 
@@ -55,9 +56,9 @@ export function ClubExperienceForm({
       <input type="hidden" name="clubId" value={clubId} />
       <input type="hidden" name="services" value={JSON.stringify(activeItems)} />
       <div className="grid gap-2 sm:grid-cols-3">
-        <div className="space-y-2"><Label>Monogram</Label><Input name="monogram" defaultValue={monogram} maxLength={8} placeholder="LP" /></div>
-        <div className="space-y-2 sm:col-span-2"><Label>Tagline</Label><Input name="tagline" defaultValue={tagline} placeholder="Beachfront lunch, sunset, VIP hosting" /></div>
-        <div className="space-y-2 sm:col-span-3"><Label>Mood label</Label><Input name="mood" defaultValue={mood} placeholder="Golden hour beach club" /></div>
+        <div className="space-y-2"><Label>Monogram</Label><Input name="monogram" defaultValue={monogram} maxLength={8} placeholder="LP" className="bg-white text-slate-950" /></div>
+        <div className="space-y-2 sm:col-span-2"><Label>Tagline</Label><Input name="tagline" defaultValue={tagline} placeholder="Beachfront lunch, sunset, VIP hosting" className="bg-white text-slate-950" /></div>
+        <div className="space-y-2 sm:col-span-3"><Label>Mood label</Label><Input name="mood" defaultValue={mood} placeholder="Golden hour beach club" className="bg-white text-slate-950" /></div>
       </div>
 
       <div className="space-y-3">
@@ -71,23 +72,23 @@ export function ClubExperienceForm({
         {items.map((service, index) => service.active && (
           <div key={service.id} className="rounded-md border border-slate-200 bg-white p-2.5">
             <div className="grid gap-2 sm:grid-cols-[1fr_160px_140px_auto]">
-              <Input value={service.label} onChange={(event) => updateService(index, { label: event.target.value })} aria-label="Service label" placeholder="VIP table" />
-              <select value={service.requestType} onChange={(event) => updateService(index, { requestType: event.target.value as RequestType })} className="h-12 rounded-md border bg-input px-3 text-sm">
+              <Input value={service.label} onChange={(event) => updateService(index, { label: event.target.value })} aria-label="Service label" placeholder="VIP table" className="bg-white text-slate-950" />
+              <select value={service.requestType} onChange={(event) => updateService(index, { requestType: event.target.value as RequestType })} className="h-12 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950">
                 {requestTypes.map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}
               </select>
-              <select value={service.icon} onChange={(event) => updateService(index, { icon: event.target.value })} className="h-12 rounded-md border bg-input px-3 text-sm">
+              <select value={service.icon} onChange={(event) => updateService(index, { icon: event.target.value })} className="h-12 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950">
                 {icons.map((icon) => <option key={icon} value={icon}>{icon}</option>)}
               </select>
               <Button type="button" variant="outline" onClick={() => updateService(index, { active: false })}><Trash2 className="size-4" /> Remove</Button>
-              <Input className="sm:col-span-2" value={service.description} onChange={(event) => updateService(index, { description: event.target.value })} aria-label="Service description" placeholder="Short description shown on the request form" />
-              <Input className="sm:col-span-2" value={service.priceHint ?? ""} onChange={(event) => updateService(index, { priceHint: event.target.value })} aria-label="Service price hint" placeholder="Example: Minimum spend confirmed first" />
+              <Input className="bg-white text-slate-950 sm:col-span-2" value={service.description} onChange={(event) => updateService(index, { description: event.target.value })} aria-label="Service description" placeholder="Short description shown on the request form" />
+              <Input className="bg-white text-slate-950 sm:col-span-2" value={service.priceHint ?? ""} onChange={(event) => updateService(index, { priceHint: event.target.value })} aria-label="Service price hint" placeholder="Example: Minimum spend confirmed first" />
             </div>
           </div>
         ))}
-        {!activeItems.length && <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-red-100">Add at least one service before saving.</p>}
+        {!activeItems.length && <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">Add at least one service before saving.</p>}
       </div>
 
-      <Button type="submit" variant="secondary" disabled={!activeItems.length}>Save request experience</Button>
+      {activeItems.length ? <StatusSubmitButton label="Save request experience" pendingLabel="Saving" variant="secondary" /> : <Button type="submit" variant="secondary" disabled>Save request experience</Button>}
     </form>
   );
 }

@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     getCommissionRulesForProfile(profile)
   ]);
   const rows = [
-    ["Date", "Client", "Phone", "Club", "Type", "Status", "Guests", "Budget", "Table cost EUR", "Commission rule", "Commission EUR", "Source", "Promoter"],
+    ["Date", "Client", "Phone", "Club", "Type", "Status", "Guests", "Budget", "Table cost EUR", "Commission rule", "Rule scope", "Commission EUR", "Source", "Promoter"],
     ...requests.map((item) => {
       const tableCost = parseMoney(item.budget);
       const rule = findCommissionRule(item, commissionRules);
@@ -26,7 +26,8 @@ export async function GET(request: Request) {
         String(item.guest_count),
         item.budget ?? "",
         tableCost ? String(tableCost) : "",
-        rule ? `${Number(rule.rate_percent).toFixed(1)}% + ${((rule.flat_fee_cents ?? 0) / 100).toFixed(0)}` : "10% default",
+        rule ? rule.label ?? `${Number(rule.rate_percent).toFixed(1)}% + ${((rule.flat_fee_cents ?? 0) / 100).toFixed(0)}` : "10% default",
+        rule ? scopeLabel(rule) : "Default",
         tableCost ? commission.toFixed(2) : "",
         item.source,
         item.promoter?.name ?? ""
@@ -56,4 +57,12 @@ function findCommissionRule(request: ConciergeRequest, rules: CommissionRule[]) 
 
 function specificity(rule: CommissionRule) {
   return Number(Boolean(rule.promoter_id)) + Number(Boolean(rule.club_id)) + Number(Boolean(rule.request_type));
+}
+
+function scopeLabel(rule: CommissionRule) {
+  const score = specificity(rule);
+  if (score === 3) return "Promoter + venue + service";
+  if (score === 2) return "Targeted";
+  if (score === 1) return "Broad";
+  return "Default";
 }

@@ -10,7 +10,8 @@ export function StatusSubmitButton({
   value,
   variant = "default",
   size = "default",
-  className
+  className,
+  form
 }: Readonly<{
   label: string;
   pendingLabel?: string;
@@ -19,6 +20,7 @@ export function StatusSubmitButton({
   variant?: "default" | "secondary" | "ghost" | "outline" | "destructive";
   size?: "default" | "sm" | "lg" | "icon";
   className?: string;
+  form?: string;
 }>) {
   const { pending } = useFormStatus();
 
@@ -26,6 +28,7 @@ export function StatusSubmitButton({
     <Button
       className={className}
       type="submit"
+      form={form}
       {...(value ? { name, value } : {})}
       variant={variant}
       size={size}
