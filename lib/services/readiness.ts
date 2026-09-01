@@ -9,6 +9,10 @@ export async function getSystemReadiness(): Promise<ReadinessCheck[]> {
     { label: "Supabase server connection", ok: hasSupabaseServiceEnv(), detail: hasSupabaseServiceEnv() ? "Configured" : "Service role key missing" },
     { label: "Public app URL", ok: isConfiguredValue(process.env.NEXT_PUBLIC_APP_URL), detail: isConfiguredValue(process.env.NEXT_PUBLIC_APP_URL) ? "Configured" : "Missing" },
     { label: "Twilio credentials", ok: Boolean(isConfiguredValue(process.env.TWILIO_ACCOUNT_SID) && isConfiguredValue(process.env.TWILIO_AUTH_TOKEN) && isConfiguredValue(process.env.TWILIO_WHATSAPP_FROM)), detail: "Account SID, token, and WhatsApp sender" },
+    { label: "Twilio inbound validation", ok: process.env.TWILIO_VALIDATE_WEBHOOKS === "false" || isConfiguredValue(process.env.TWILIO_AUTH_TOKEN), detail: process.env.TWILIO_VALIDATE_WEBHOOKS === "false" ? "Validation disabled" : "Uses Twilio auth token" },
+    { label: "Stripe deposits", ok: isConfiguredValue(process.env.STRIPE_SECRET_KEY), detail: isConfiguredValue(process.env.STRIPE_SECRET_KEY) ? "Checkout links enabled" : "Add STRIPE_SECRET_KEY" },
+    { label: "Stripe webhook", ok: isConfiguredValue(process.env.STRIPE_WEBHOOK_SECRET), detail: isConfiguredValue(process.env.STRIPE_WEBHOOK_SECRET) ? "Payment status sync enabled" : "Add STRIPE_WEBHOOK_SECRET" },
+    { label: "OpenAI schedule planner", ok: isConfiguredValue(process.env.OPENAI_API_KEY), detail: isConfiguredValue(process.env.OPENAI_API_KEY) ? "Configured" : "Missing OpenAI API key" },
     { label: "Production demo mode", ok: process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEMO_MODE !== "true", detail: process.env.NEXT_PUBLIC_DEMO_MODE === "true" ? "Demo mode enabled" : "Demo mode disabled" }
   ];
 
@@ -20,15 +24,19 @@ export async function getSystemReadiness(): Promise<ReadinessCheck[]> {
   }
 
   const admin = createAdminClient();
-  const [{ error: databaseError }, { error: clientMigrationError }, { error: rateLimitError }, { data: destination }] = await Promise.all([
+  const [{ error: databaseError }, { error: clientMigrationError }, { error: rateLimitError }, { error: paymentError }, { error: inboundError }, { data: destination }] = await Promise.all([
     admin.from("clubs").select("id", { head: true, count: "exact" }).limit(1),
     admin.from("clients").select("profile_id").limit(1),
     admin.from("public_request_rate_limits").select("fingerprint").limit(1),
+    admin.from("request_payments").select("id").limit(1),
+    admin.from("inbound_whatsapp_messages").select("id").limit(1),
     admin.from("platform_settings").select("value").eq("key", "whatsapp_destination_number").maybeSingle()
   ]);
   checks.push({ label: "Database access", ok: !databaseError, detail: databaseError ? "Connection failed" : "Connected" });
   checks.push({ label: "Client accounts migration", ok: !clientMigrationError, detail: clientMigrationError ? "Apply migration 004" : "Migration 004 detected" });
   checks.push({ label: "Public rate limiting", ok: !rateLimitError, detail: rateLimitError ? "Apply migration 005" : "Migration 005 detected" });
+  checks.push({ label: "Payment tables", ok: !paymentError, detail: paymentError ? "Apply migration 020" : "Migration 020 detected" });
+  checks.push({ label: "Inbound WhatsApp table", ok: !inboundError, detail: inboundError ? "Apply migration 012" : "Migration 012 detected" });
   checks.push({ label: "WhatsApp destination", ok: Boolean(destination?.value || process.env.WHATSAPP_DESTINATION_NUMBER), detail: destination?.value || process.env.WHATSAPP_DESTINATION_NUMBER ? "Configured" : "Missing" });
   return checks;
 }

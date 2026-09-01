@@ -5,7 +5,7 @@ import { Calculator, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { updateRequestTableCost } from "@/lib/actions/management-actions";
-import type { ConciergeRequest } from "@/lib/types";
+import type { CommissionRule, ConciergeRequest } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
 type SalaryRow = {
@@ -16,8 +16,9 @@ type SalaryRow = {
 export function SalaryReport({
   requests,
   from,
-  to
-}: Readonly<{ requests: ConciergeRequest[]; from?: string; to?: string }>) {
+  to,
+  commissionRules = []
+}: Readonly<{ requests: ConciergeRequest[]; from?: string; to?: string; commissionRules?: CommissionRule[] }>) {
   const reportableRequests = useMemo(
     () => requests.filter((request) => ["CONFIRMED", "ARRIVED"].includes(request.status)),
     [requests]
@@ -37,7 +38,12 @@ export function SalaryReport({
 
   const totalGuests = reportableRequests.reduce((total, request) => total + request.guest_count, 0);
   const totalCost = reportableRequests.reduce((total, request) => total + parseMoney(rows[request.id]?.tableCost), 0);
-  const commission = totalCost * (parseMoney(commissionRate) / 100);
+  const rulesCommission = reportableRequests.reduce((total, request) => {
+    const cost = parseMoney(rows[request.id]?.tableCost);
+    const rule = findCommissionRule(request, commissionRules);
+    return total + (cost * (rule?.rate_percent ?? parseMoney(commissionRate)) / 100) + ((rule?.flat_fee_cents ?? 0) / 100);
+  }, 0);
+  const commission = commissionRules.some((rule) => rule.active) ? rulesCommission : totalCost * (parseMoney(commissionRate) / 100);
   const rangeLabel = from && to ? `${from} to ${to}` : from ? `From ${from}` : to ? `Until ${to}` : "Current filtered period";
 
   function updateRow(requestId: string, patch: Partial<SalaryRow>) {
@@ -75,7 +81,7 @@ export function SalaryReport({
       <div className="mt-3 grid gap-2 rounded-lg border border-champagne-700/40 bg-ink-950/60 p-3 print:hidden sm:grid-cols-[1fr_auto] sm:items-center">
         <div>
           <p className="text-sm font-semibold">Commission estimate</p>
-          <p className="text-xs text-muted-foreground">Change the percentage for this report before printing.</p>
+          <p className="text-xs text-muted-foreground">{commissionRules.some((rule) => rule.active) ? "Using active commission rules. Manual rate applies where no rule matches." : "Change the percentage for this report before printing."}</p>
         </div>
         <label className="grid grid-cols-[auto_5.5rem] items-center gap-2 text-sm">
           <span className="text-muted-foreground">Rate</span>
@@ -100,11 +106,14 @@ export function SalaryReport({
               <th className="p-3">Guests</th>
               <th className="p-3">Promoter</th>
               <th className="p-3">Table cost</th>
+              <th className="p-3">Rule</th>
               <th className="p-3 print:hidden">Save</th>
             </tr>
           </thead>
           <tbody>
-            {reportableRequests.length ? reportableRequests.map((request) => (
+            {reportableRequests.length ? reportableRequests.map((request) => {
+              const rule = findCommissionRule(request, commissionRules);
+              return (
               <tr key={request.id} className="border-t border-champagne-700/30">
                 <td className="p-3">
                   <input
@@ -136,15 +145,17 @@ export function SalaryReport({
                     />
                   </form>
                 </td>
+                <td className="p-3 text-xs text-muted-foreground">{rule ? `${Number(rule.rate_percent).toFixed(1)}% + ${formatCurrency(rule.flat_fee_cents / 100)}` : `${commissionRate}%`}</td>
                 <td className="p-3 print:hidden">
                   <Button type="submit" form={`table-cost-${request.id}`} size="sm" variant="secondary">
                     Save
                   </Button>
                 </td>
               </tr>
-            )) : (
+              );
+            }) : (
               <tr>
-                <td className="p-6 text-center text-muted-foreground" colSpan={8}>No confirmed bookings in this period.</td>
+                <td className="p-6 text-center text-muted-foreground" colSpan={9}>No confirmed bookings in this period.</td>
               </tr>
             )}
           </tbody>
@@ -189,4 +200,17 @@ function parseMoney(value?: string) {
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
+}
+
+function findCommissionRule(request: ConciergeRequest, rules: CommissionRule[]) {
+  const active = rules.filter((rule) => rule.active);
+  return active
+    .filter((rule) => !rule.promoter_id || rule.promoter_id === request.promoter_id)
+    .filter((rule) => !rule.club_id || rule.club_id === request.club_id)
+    .filter((rule) => !rule.request_type || rule.request_type === request.request_type)
+    .sort((a, b) => specificity(b) - specificity(a))[0] ?? null;
+}
+
+function specificity(rule: CommissionRule) {
+  return Number(Boolean(rule.promoter_id)) + Number(Boolean(rule.club_id)) + Number(Boolean(rule.request_type));
 }

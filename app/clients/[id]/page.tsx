@@ -4,6 +4,7 @@ import { ClientNoteFilters } from "@/components/client/client-note-filters";
 import { ClientNoteForm } from "@/components/client/client-note-form";
 import { ClientEditForm } from "@/components/client/client-edit-form";
 import { ClientBookingHistory } from "@/components/client/client-booking-history";
+import { ClientLifecycleTimeline } from "@/components/client/client-lifecycle-timeline";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Button } from "@/components/ui/button";
 import { requireProfile } from "@/lib/auth";
@@ -36,6 +37,7 @@ export default async function ClientProfilePage({
           </div>
         </LuxuryCard>
         <ClientEditForm client={client} role={profile.role} />
+        <ClientLifecycleTimeline history={history} notes={notes} aliases={aliases} />
         <ClientBookingHistory history={history} />
         <ClientNoteForm clientId={client.id} role={profile.role} clubs={clubs} />
         <ClientNoteFilters action={`/clients/${client.id}`} values={filters} />

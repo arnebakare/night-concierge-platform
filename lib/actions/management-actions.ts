@@ -12,6 +12,7 @@ import { writeAuditLog } from "@/lib/services/audit";
 import { sendStoredWhatsApp } from "@/lib/services/whatsapp";
 import { sendStoredEmail } from "@/lib/services/email";
 import { importEventsFromConfiguredSources } from "@/lib/services/event-import";
+import { createStripeClient } from "@/lib/services/stripe";
 import { customerCodeFromPhone, normalizePhoneNumber } from "@/lib/concierge/phone";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -160,6 +161,156 @@ const tableCostSchema = z.object({
   requestId: z.string().min(1),
   tableCost: z.string().trim().max(100).optional().or(z.literal(""))
 });
+
+const commissionRuleSchema = z.object({
+  promoterId: z.string().uuid().optional().or(z.literal("")),
+  clubId: z.string().uuid().optional().or(z.literal("")),
+  requestType: z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"]).optional().or(z.literal("")),
+  ratePercent: z.coerce.number().min(0).max(100),
+  flatFee: z.coerce.number().min(0).max(100000)
+});
+
+const depositPaymentSchema = z.object({
+  requestId: z.string().min(1),
+  clientId: z.string().min(1),
+  amount: z.coerce.number().min(5).max(100000),
+  currency: z.string().trim().length(3).default("eur"),
+  description: z.string().trim().min(3).max(160),
+  returnTo: z.string().optional().or(z.literal(""))
+});
+
+export async function createDepositPayment(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = depositPaymentSchema.safeParse({
+    requestId: formData.get("requestId"),
+    clientId: formData.get("clientId"),
+    amount: formData.get("amount"),
+    currency: formData.get("currency") || "eur",
+    description: formData.get("description") || "Booking deposit",
+    returnTo: formData.get("returnTo") || ""
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+    revalidatePath(`/requests/${parsed.data.requestId}`);
+    return;
+  }
+
+  const supabase = await createClient();
+  const { data: request, error: requestError } = await supabase
+    .from("requests")
+    .select("id, requested_date, request_type, guest_count, clients(name, email), clubs(name)")
+    .eq("id", parsed.data.requestId)
+    .single();
+  if (requestError || !request) throw new Error(requestError?.message ?? "Request not found.");
+
+  const amountCents = Math.round(parsed.data.amount * 100);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:3001";
+  const stripe = createStripeClient();
+  const client = Array.isArray(request.clients) ? request.clients[0] : request.clients;
+  const club = Array.isArray(request.clubs) ? request.clubs[0] : request.clubs;
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    success_url: `${appUrl}/request/confirmed?id=${parsed.data.requestId}&payment=success`,
+    cancel_url: `${appUrl}${parsed.data.returnTo || `/manager/requests/${parsed.data.requestId}`}`,
+    customer_email: client?.email ?? undefined,
+    line_items: [{
+      quantity: 1,
+      price_data: {
+        currency: parsed.data.currency.toLowerCase(),
+        unit_amount: amountCents,
+        product_data: {
+          name: parsed.data.description,
+          description: `${club?.name ?? "Venue"} · ${request.requested_date} · ${request.guest_count} guests`
+        }
+      }
+    }],
+    metadata: {
+      request_id: parsed.data.requestId,
+      client_id: parsed.data.clientId,
+      created_by: profile.id
+    },
+    payment_intent_data: {
+      description: parsed.data.description,
+      metadata: {
+        request_id: parsed.data.requestId,
+        client_id: parsed.data.clientId
+      }
+    }
+  });
+
+  const { data: payment, error } = await supabase
+    .from("request_payments")
+    .insert({
+      request_id: parsed.data.requestId,
+      client_id: parsed.data.clientId,
+      created_by: profile.id,
+      provider_checkout_session_id: session.id,
+      amount_cents: amountCents,
+      currency: parsed.data.currency.toLowerCase(),
+      description: parsed.data.description,
+      checkout_url: session.url,
+      status: "PENDING"
+    })
+    .select("id")
+    .single();
+  if (error || !payment) throw new Error(error?.message ?? "Could not save deposit link.");
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "DEPOSIT_LINK_CREATED",
+    entityType: "request_payments",
+    entityId: payment.id,
+    metadata: { requestId: parsed.data.requestId, amountCents, currency: parsed.data.currency.toLowerCase() }
+  });
+
+  revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+  revalidatePath(`/requests/${parsed.data.requestId}`);
+  if (session.url) redirect(session.url);
+}
+
+export async function saveCommissionRule(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = commissionRuleSchema.safeParse({
+    promoterId: formData.get("promoterId") || "",
+    clubId: formData.get("clubId") || "",
+    requestType: formData.get("requestType") || "",
+    ratePercent: formData.get("ratePercent"),
+    flatFee: formData.get("flatFee")
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/admin/commissions");
+    revalidatePath("/manager/commissions");
+    return;
+  }
+
+  const supabase = await createClient();
+  if (parsed.data.promoterId) await assertPromoterOwnership(supabase, profile, parsed.data.promoterId);
+  const { data, error } = await supabase.from("commission_rules").insert({
+    promoter_id: parsed.data.promoterId || null,
+    club_id: parsed.data.clubId || null,
+    request_type: parsed.data.requestType || null,
+    rate_percent: parsed.data.ratePercent,
+    flat_fee_cents: Math.round(parsed.data.flatFee * 100),
+    created_by: profile.id
+  }).select("id").single();
+  if (error || !data) throw new Error(error?.message ?? "Could not save commission rule.");
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "COMMISSION_RULE_CREATED",
+    entityType: "commission_rules",
+    entityId: data.id,
+    metadata: parsed.data
+  });
+
+  revalidatePath("/admin/commissions");
+  revalidatePath("/manager/commissions");
+  revalidatePath("/reports");
+}
 
 const availabilitySlotSchema = z.object({
   requestId: z.string().optional().or(z.literal("")),
@@ -1677,6 +1828,31 @@ export async function setUserClubAssignment(formData: FormData) {
   }
   await writeAuditLog(supabase, { userId: profile.id, action: parsed.data.assigned ? "USER_CLUB_ASSIGNED" : "USER_CLUB_REMOVED", entityType: "profiles", entityId: parsed.data.userId, metadata: { clubId: parsed.data.clubId } });
   revalidatePath("/admin/users"); revalidatePath("/manager/clubs");
+}
+
+export async function setCommissionRuleActive(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = entityStatusSchema.safeParse({ entityId: formData.get("ruleId"), active: formData.get("active") });
+  if (!parsed.success) return;
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/admin/commissions");
+    revalidatePath("/manager/commissions");
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("commission_rules").update({ active: parsed.data.active }).eq("id", parsed.data.entityId);
+  if (error) throw new Error(error.message);
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: parsed.data.active ? "COMMISSION_RULE_RESTORED" : "COMMISSION_RULE_ARCHIVED",
+    entityType: "commission_rules",
+    entityId: parsed.data.entityId,
+    metadata: { active: parsed.data.active }
+  });
+  revalidatePath("/admin/commissions");
+  revalidatePath("/manager/commissions");
+  revalidatePath("/reports");
 }
 
 async function assertPromoterOwnership(supabase: SupabaseClient, profile: Awaited<ReturnType<typeof requireProfile>>, promoterId: string) {

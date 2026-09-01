@@ -179,3 +179,55 @@ export type RequestOffer = {
   updated_at?: string;
   profiles?: Pick<Profile, "name" | "email"> | null;
 };
+
+export type RequestPayment = {
+  id: string;
+  request_id: string;
+  client_id: string | null;
+  created_by: string | null;
+  provider: "stripe" | string;
+  provider_checkout_session_id: string | null;
+  provider_payment_intent_id: string | null;
+  amount_cents: number;
+  currency: string;
+  description: string;
+  status: "PENDING" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED";
+  checkout_url: string | null;
+  paid_at: string | null;
+  created_at: string;
+  updated_at?: string;
+  profiles?: Pick<Profile, "name" | "email"> | null;
+};
+
+export type CommissionRule = {
+  id: string;
+  promoter_id: string | null;
+  club_id: string | null;
+  request_type: RequestType | null;
+  rate_percent: number;
+  flat_fee_cents: number;
+  active: boolean;
+  created_by: string | null;
+  created_at?: string;
+  updated_at?: string;
+  profiles?: Pick<Profile, "name" | "email"> | null;
+  clubs?: Pick<Club, "name" | "slug"> | null;
+};
+
+export type InboundWhatsAppMessage = {
+  id: string;
+  provider: string;
+  provider_message_id: string | null;
+  from_number: string;
+  to_number: string | null;
+  profile_name: string | null;
+  body: string;
+  source_profile_id: string | null;
+  matched_client_id: string | null;
+  created_request_id: string | null;
+  created_schedule_plan_id?: string | null;
+  status: "RECEIVED" | "CREATED" | "NEEDS_REVIEW" | "IGNORED" | "FAILED";
+  parse_result: Record<string, unknown>;
+  error_message: string | null;
+  created_at: string;
+};

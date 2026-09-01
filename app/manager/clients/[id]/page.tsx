@@ -6,6 +6,7 @@ import { ClientNoteFilters } from "@/components/client/client-note-filters";
 import { ClientNoteForm } from "@/components/client/client-note-form";
 import { ClientEditForm } from "@/components/client/client-edit-form";
 import { ClientBookingHistory } from "@/components/client/client-booking-history";
+import { ClientLifecycleTimeline } from "@/components/client/client-lifecycle-timeline";
 import { requireProfile } from "@/lib/auth";
 import { getActiveClubsForApp, getClientProfile } from "@/lib/data/app";
 import { formatCustomerCode } from "@/lib/concierge/phone";
@@ -55,6 +56,9 @@ export default async function ManagerClientDetailPage({
         <ClientEditForm client={client} role={profile.role} />
         </div>
       </details>
+      <div className="mt-4">
+        <ClientLifecycleTimeline history={history} notes={notes} aliases={aliases} />
+      </div>
       <div className="mt-4">
         <ClientBookingHistory history={history} />
       </div>

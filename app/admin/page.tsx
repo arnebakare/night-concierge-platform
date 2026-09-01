@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Bell, BrainCircuit, Briefcase, Settings, Users, type LucideIcon } from "lucide-react";
+import { Activity, Bell, BrainCircuit, Briefcase, Percent, Settings, Users, type LucideIcon } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { requireProfile } from "@/lib/auth";
@@ -20,6 +20,7 @@ export default async function AdminPage() {
       <div className="compact-list grid gap-2">
         <AdminLink href="/admin/clubs" icon={Briefcase} title="Clubs" description="Create, edit, archive venues" />
         <AdminLink href="/admin/planner" icon={BrainCircuit} title="Planner rules" description="Tune AI venue weighting and local flow" />
+        <AdminLink href="/admin/commissions" icon={Percent} title="Commissions" description="Promoter, venue, and service rates" />
         <AdminLink href="/admin/users" icon={Users} title="Users" description="Managers, promoters, clients" />
         <AdminLink href="/notifications" icon={Bell} title="WhatsApp delivery" description="Sent and failed notification attempts" />
         <AdminLink href="/admin/settings" icon={Settings} title="Settings" description="Platform-wide controls" />

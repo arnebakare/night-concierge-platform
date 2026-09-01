@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Bell, BrainCircuit, Briefcase, CalendarDays, Crown, HeartHandshake, Home, Inbox, Link2, Settings, User, Users } from "lucide-react";
+import { Activity, Bell, BrainCircuit, Briefcase, CalendarDays, Crown, HeartHandshake, Home, Inbox, Link2, Percent, Settings, User, Users } from "lucide-react";
 import { useExperienceMode } from "@/components/layout/experience-mode";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/lib/types";
@@ -28,6 +28,7 @@ const items = {
     ["/manager/clients", "CRM", Users],
     ["/manager/promoters", "Team", Crown],
     ["/manager/retention", "Retention", HeartHandshake],
+    ["/manager/commissions", "Commissions", Percent, true],
     ["/links", "Links", Link2],
     ["/schedule", "Schedule", CalendarDays],
     ["/manager/clubs", "Clubs", Briefcase, true],
@@ -40,6 +41,7 @@ const items = {
     ["/admin", "Overview", Home],
     ["/admin/clubs", "Clubs", Briefcase],
     ["/admin/planner", "Planner rules", BrainCircuit],
+    ["/admin/commissions", "Commissions", Percent],
     ["/admin/users", "Users", Users],
     ["/manager/requests", "Requests", Inbox],
     ["/manager/availability", "Availability", CalendarDays],

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
+import { DepositPanel } from "@/components/payments/deposit-panel";
 import { AvailabilityOfferPanel } from "@/components/request/availability-offer-panel";
 import { RequestActivityTimeline } from "@/components/request/request-activity-timeline";
 import { RequestAssignmentControl } from "@/components/request/request-assignment-control";
@@ -30,6 +31,7 @@ export default async function ManagerRequestDetailPage({
         {updated && <StatusNotice status={updated} />}
         <RequestDetail request={request} backHref="/manager/requests" clientHref={`/manager/clients/${request.client_id}`} statusReturnTo={`/manager/requests/${request.id}`} templates={templates} />
         <AvailabilityOfferPanel request={request} slots={commerce.slots} offers={commerce.offers} canManageAvailability templates={templates} />
+        <DepositPanel request={request} payments={commerce.payments} />
         <RequestActivityTimeline activity={activity} />
         <RequestAssignmentControl requestId={request.id} currentPromoterId={request.promoter_id} promoters={promoters} />
       </div>

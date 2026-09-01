@@ -5,27 +5,30 @@ import { Button } from "@/components/ui/button";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { retryWhatsAppNotification } from "@/lib/actions/management-actions";
 import { requireProfile } from "@/lib/auth";
-import { getNotificationHistory, getPlatformSetting } from "@/lib/data/app";
+import { getInboundWhatsAppHistory, getNotificationHistory, getPlatformSetting } from "@/lib/data/app";
 import { getWhatsAppConfigStatus } from "@/lib/services/whatsapp";
 
 export default async function NotificationsPage() {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
-  const [notifications, storedDestination] = await Promise.all([
+  const [notifications, inboundMessages, storedDestination] = await Promise.all([
     getNotificationHistory(),
+    getInboundWhatsAppHistory(),
     getPlatformSetting("whatsapp_destination_number")
   ]);
   const config = getWhatsAppConfigStatus(storedDestination);
   const sent = notifications.filter((item) => item.status === "SENT").length;
   const failed = notifications.length - sent;
+  const inboundFailed = inboundMessages.filter((item) => item.status === "FAILED" || item.status === "NEEDS_REVIEW").length;
 
   return (
     <AppShell profile={profile} title="WhatsApp delivery" eyebrow="Operations">
       <div className="mb-4 grid gap-3 md:grid-cols-[0.75fr_1.25fr]">
         <LuxuryCard className="ops-summary">
           <p className="text-xs uppercase tracking-[0.18em] text-champagne-300">Delivery health</p>
-          <div className="mt-3 grid grid-cols-2 divide-x divide-border overflow-hidden rounded-md border border-border">
+          <div className="mt-3 grid grid-cols-3 divide-x divide-border overflow-hidden rounded-md border border-border">
             <Metric label="Sent" value={String(sent)} tone="good" />
             <Metric label="Failed" value={String(failed)} tone={failed ? "bad" : "good"} />
+            <Metric label="Inbound" value={String(inboundFailed)} tone={inboundFailed ? "bad" : "good"} />
           </div>
         </LuxuryCard>
 
@@ -46,6 +49,30 @@ export default async function NotificationsPage() {
           </div>
         </LuxuryCard>
       </div>
+
+      <LuxuryCard className="mb-4 bg-white text-slate-950">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-champagne-700">Inbound monitor</p>
+            <h2 className="mt-1 text-lg font-semibold">WhatsApp commands and pasted leads</h2>
+          </div>
+          <StatusPill ok={!inboundFailed} label={inboundFailed ? "Review" : "Healthy"} />
+        </div>
+        <div className="divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200">
+          {inboundMessages.slice(0, 8).map((message) => (
+            <div key={message.id} className="grid gap-2 p-3 text-sm md:grid-cols-[0.8fr_1fr_auto] md:items-center">
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-slate-950">{message.profile_name ?? message.from_number}</p>
+                <p className="mt-0.5 truncate text-xs text-slate-500">{new Date(message.created_at).toLocaleString()}</p>
+              </div>
+              <p className="line-clamp-2 text-slate-600">{message.body}</p>
+              <StatusPill ok={message.status === "CREATED" || message.status === "RECEIVED"} label={message.status.toLowerCase().replaceAll("_", " ")} />
+              {message.error_message && <p className="rounded bg-red-50 p-2 text-xs text-red-700 md:col-span-3">{message.error_message}</p>}
+            </div>
+          ))}
+          {!inboundMessages.length && <div className="p-6 text-center text-sm text-slate-500">No inbound WhatsApp messages yet.</div>}
+        </div>
+      </LuxuryCard>
 
       <div className="compact-list grid gap-2">
         {notifications.map((item) => <NotificationRow key={item.id} item={item} />)}

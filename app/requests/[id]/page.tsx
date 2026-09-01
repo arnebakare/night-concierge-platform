@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
+import { DepositPanel } from "@/components/payments/deposit-panel";
 import { AvailabilityOfferPanel } from "@/components/request/availability-offer-panel";
 import { RequestActivityTimeline } from "@/components/request/request-activity-timeline";
 import { RequestDetail } from "@/components/request/request-detail";
@@ -25,6 +26,7 @@ export default async function RequestDetailPage({
         {updated && <StatusNotice status={updated} />}
         <RequestDetail request={request} backHref="/requests" clientHref={`/clients/${request.client_id}`} statusReturnTo={`/requests/${request.id}`} templates={templates} />
         <AvailabilityOfferPanel request={request} slots={commerce.slots} offers={commerce.offers} canManageAvailability={profile.role === "SUPER_ADMIN"} templates={templates} />
+        <DepositPanel request={request} payments={commerce.payments} />
         <RequestActivityTimeline activity={activity} />
       </div>
     </AppShell>

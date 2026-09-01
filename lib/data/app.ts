@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, Club, ConciergeEvent, ConciergeRequest, MessageTemplate, Profile, RequestOffer, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, Club, CommissionRule, ConciergeEvent, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -104,7 +104,7 @@ export async function getRequestDetail(requestId: string) {
 export async function getRequestCommerce(request: ConciergeRequest) {
   try {
     const supabase = await createClient();
-    const [{ data: slots, error: slotsError }, { data: offers, error: offersError }] = await Promise.all([
+    const [{ data: slots, error: slotsError }, { data: offers, error: offersError }, { data: payments, error: paymentsError }] = await Promise.all([
       supabase
         .from("availability_slots")
         .select("id, club_id, service_type, slot_date, title, area, min_spend, capacity, status, notes, active, created_by, created_at, updated_at, clubs(name, city, slug)")
@@ -117,18 +117,25 @@ export async function getRequestCommerce(request: ConciergeRequest) {
         .from("request_offers")
         .select("id, request_id, availability_slot_id, created_by, offer_status, venue_name, offer_date, service_label, arrival_time, guest_count, min_spend, message, sent_at, created_at, updated_at, profiles(name, email)")
         .eq("request_id", request.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("request_payments")
+        .select("id, request_id, client_id, created_by, provider, provider_checkout_session_id, provider_payment_intent_id, amount_cents, currency, description, status, checkout_url, paid_at, created_at, updated_at, profiles(name, email)")
+        .eq("request_id", request.id)
         .order("created_at", { ascending: false })
     ]);
-    if (slotsError || offersError) throw slotsError ?? offersError;
+    if (slotsError || offersError || paymentsError) throw slotsError ?? offersError ?? paymentsError;
     return {
       slots: normalizeAvailabilitySlots(slots),
-      offers: normalizeRequestOffers(offers)
+      offers: normalizeRequestOffers(offers),
+      payments: normalizeRequestPayments(payments)
     };
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
     return {
       slots: demoAvailabilitySlots(request),
-      offers: demoRequestOffers(request)
+      offers: demoRequestOffers(request),
+      payments: demoRequestPayments(request)
     };
   }
 }
@@ -480,6 +487,34 @@ export async function getUsersForAdmin(filters?: { q?: string; role?: string; ac
   }
 }
 
+export async function getCommissionRulesForProfile(profile: Profile): Promise<CommissionRule[]> {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("commission_rules")
+      .select("id, promoter_id, club_id, request_type, rate_percent, flat_fee_cents, active, created_by, created_at, updated_at, profiles(name, email), clubs(name, slug)")
+      .order("active", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (profile.role === "PROMOTER_MANAGER") {
+      const teamIds = await teamIdsCsv(profile.id);
+      const scopedRules = ["promoter_id.is.null"];
+      if (teamIds) scopedRules.push(`promoter_id.in.(${teamIds})`);
+      query = query.or(scopedRules.join(","));
+    }
+
+    const { data, error } = await query.limit(100);
+    if (error) throw error;
+    return normalizeCommissionRules(data);
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return [
+      { id: "rule-demo-1", promoter_id: null, club_id: null, request_type: "TABLE", rate_percent: 10, flat_fee_cents: 0, active: true, created_by: demoProfile.id, profiles: null, clubs: null },
+      { id: "rule-demo-2", promoter_id: "demo-promoter-2", club_id: null, request_type: "VIP_SERVICE", rate_percent: 12.5, flat_fee_cents: 5000, active: true, created_by: demoProfile.id, profiles: { name: "Daniel", email: "daniel@casanis.es" }, clubs: null }
+    ];
+  }
+}
+
 export async function getProfileById(profileId: string) {
   try {
     const supabase = await createClient();
@@ -669,10 +704,44 @@ export async function getNotificationHistory() {
   }
 }
 
+export async function getInboundWhatsAppHistory(): Promise<InboundWhatsAppMessage[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("inbound_whatsapp_messages")
+      .select("id, provider, provider_message_id, from_number, to_number, profile_name, body, source_profile_id, matched_client_id, created_request_id, created_schedule_plan_id, status, parse_result, error_message, created_at")
+      .order("created_at", { ascending: false })
+      .limit(80);
+    if (error) throw error;
+    return (data ?? []) as InboundWhatsAppMessage[];
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return [
+      {
+        id: "inbound-demo-1",
+        provider: "twilio",
+        provider_message_id: "SM_inbound_demo",
+        from_number: "whatsapp:+46700000000",
+        to_number: "whatsapp:+14155238886",
+        profile_name: "Julia",
+        body: "schedule 6-9 aug high spend",
+        source_profile_id: demoProfile.id,
+        matched_client_id: null,
+        created_request_id: null,
+        created_schedule_plan_id: "demo-plan",
+        status: "CREATED",
+        parse_result: { command: "schedule" },
+        error_message: null,
+        created_at: new Date().toISOString()
+      }
+    ];
+  }
+}
+
 export async function getRequestActivity(requestId: string): Promise<RequestActivityItem[]> {
   try {
     const supabase = await createClient();
-    const [{ data: logs, error: logError }, { data: notifications, error: notificationError }, { data: offers, error: offerError }] = await Promise.all([
+    const [{ data: logs, error: logError }, { data: notifications, error: notificationError }, { data: offers, error: offerError }, { data: payments, error: paymentError }] = await Promise.all([
       supabase
         .from("audit_logs")
         .select("id, action, metadata, created_at, profiles(name, email)")
@@ -691,19 +760,27 @@ export async function getRequestActivity(requestId: string): Promise<RequestActi
         .select("id, offer_status, service_label, min_spend, sent_at, created_at, profiles(name, email)")
         .eq("request_id", requestId)
         .order("created_at", { ascending: false })
+        .limit(20),
+      supabase
+        .from("request_payments")
+        .select("id, amount_cents, currency, description, status, paid_at, created_at, profiles(name, email)")
+        .eq("request_id", requestId)
+        .order("created_at", { ascending: false })
         .limit(20)
     ]);
-    if (logError || notificationError || offerError) throw logError ?? notificationError ?? offerError;
+    if (logError || notificationError || offerError || paymentError) throw logError ?? notificationError ?? offerError ?? paymentError;
     return [
       ...normalizeActivityLogs(logs),
       ...normalizeActivityNotifications(notifications),
-      ...normalizeActivityOffers(offers)
+      ...normalizeActivityOffers(offers),
+      ...normalizeActivityPayments(payments)
     ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 12);
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
     return [
       { id: "activity-1", type: "status", label: "Status updated", detail: "Moved to confirmed by Julia", created_at: new Date().toISOString(), tone: "good" },
-      { id: "activity-2", type: "whatsapp", label: "WhatsApp sent", detail: "Notification sent to manager", created_at: new Date(Date.now() - 18 * 60000).toISOString(), tone: "good" }
+      { id: "activity-2", type: "offer", label: "Deposit link created", detail: "€500 booking deposit", created_at: new Date(Date.now() - 10 * 60000).toISOString(), tone: "neutral" },
+      { id: "activity-3", type: "whatsapp", label: "WhatsApp sent", detail: "Notification sent to manager", created_at: new Date(Date.now() - 18 * 60000).toISOString(), tone: "good" }
     ];
   }
 }
@@ -780,12 +857,28 @@ function normalizeActivityOffers(data: unknown): RequestActivityItem[] {
     }));
 }
 
+function normalizeActivityPayments(data: unknown): RequestActivityItem[] {
+  return ((data as Array<{ id: string; amount_cents: number; currency: string; description: string; status: string; paid_at?: string | null; created_at: string; profiles?: { name?: string | null; email?: string | null } | null }> | null) ?? [])
+    .map((payment) => ({
+      id: `payment-${payment.id}`,
+      type: "offer",
+      label: payment.status === "PAID" ? "Deposit paid" : payment.status === "FAILED" ? "Deposit failed" : payment.status === "CANCELLED" ? "Deposit cancelled" : "Deposit link created",
+      detail: `${formatMoney(payment.amount_cents, payment.currency)} · ${payment.description} · ${payment.profiles?.name ?? payment.profiles?.email ?? "Team"}`,
+      created_at: payment.paid_at ?? payment.created_at,
+      tone: payment.status === "PAID" ? "good" : payment.status === "FAILED" || payment.status === "CANCELLED" ? "bad" : "neutral"
+    }));
+}
+
 function activityLabel(action: string) {
   if (action === "REQUEST_STATUS_UPDATED") return "Status updated";
   if (action === "PUBLIC_REQUEST_CREATED") return "Request created";
   if (action === "REQUEST_CLIENT_CONTACT_UPDATED") return "Contact updated";
   if (action === "REQUEST_ASSIGNED") return "Promoter assigned";
   return action.toLowerCase().replaceAll("_", " ");
+}
+
+function formatMoney(amountCents: number, currency: string) {
+  return new Intl.NumberFormat("en-GB", { style: "currency", currency: currency.toUpperCase(), maximumFractionDigits: 0 }).format(amountCents / 100);
 }
 
 function normalizeClientHistory(data: unknown): ClientBookingHistoryItem[] {
@@ -944,6 +1037,23 @@ function normalizeRequestOffers(data: unknown): RequestOffer[] {
   }));
 }
 
+function normalizeRequestPayments(data: unknown): RequestPayment[] {
+  return ((data as Array<Omit<RequestPayment, "profiles"> & { profiles?: RequestPayment["profiles"] | RequestPayment["profiles"][] | null }> | null) ?? []).map((payment) => ({
+    ...payment,
+    profiles: Array.isArray(payment.profiles) ? payment.profiles[0] ?? null : payment.profiles ?? null
+  }));
+}
+
+function normalizeCommissionRules(data: unknown): CommissionRule[] {
+  return ((data as Array<Omit<CommissionRule, "profiles" | "clubs"> & { profiles?: CommissionRule["profiles"] | CommissionRule["profiles"][] | null; clubs?: CommissionRule["clubs"] | CommissionRule["clubs"][] | null }> | null) ?? []).map((rule) => ({
+    ...rule,
+    rate_percent: Number(rule.rate_percent),
+    flat_fee_cents: Number(rule.flat_fee_cents),
+    profiles: Array.isArray(rule.profiles) ? rule.profiles[0] ?? null : rule.profiles ?? null,
+    clubs: Array.isArray(rule.clubs) ? rule.clubs[0] ?? null : rule.clubs ?? null
+  }));
+}
+
 function demoAvailabilitySlots(request: ConciergeRequest): AvailabilitySlot[] {
   return [
     {
@@ -994,6 +1104,26 @@ function demoRequestOffers(request: ConciergeRequest): RequestOffer[] {
     min_spend: request.budget || "From 1k",
     message: buildDemoOfferMessage(request),
     sent_at: null,
+    created_at: new Date().toISOString(),
+    profiles: { name: demoProfile.name, email: demoProfile.email }
+  }];
+}
+
+function demoRequestPayments(request: ConciergeRequest): RequestPayment[] {
+  return [{
+    id: "demo-payment-1",
+    request_id: request.id,
+    client_id: request.client_id,
+    created_by: demoProfile.id,
+    provider: "stripe",
+    provider_checkout_session_id: "cs_demo",
+    provider_payment_intent_id: null,
+    amount_cents: 50000,
+    currency: "eur",
+    description: "Demo booking deposit",
+    status: "PENDING",
+    checkout_url: null,
+    paid_at: null,
     created_at: new Date().toISOString(),
     profiles: { name: demoProfile.name, email: demoProfile.email }
   }];
