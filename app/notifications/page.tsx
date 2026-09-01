@@ -19,6 +19,8 @@ export default async function NotificationsPage() {
   const sent = notifications.filter((item) => item.status === "SENT").length;
   const failed = notifications.length - sent;
   const inboundFailed = inboundMessages.filter((item) => item.status === "FAILED" || item.status === "NEEDS_REVIEW").length;
+  const inboundNotAlerted = inboundMessages.filter((item) => (item.status === "FAILED" || item.status === "NEEDS_REVIEW") && !item.alert_sent_at).length;
+  const inboundCreated = inboundMessages.filter((item) => item.status === "CREATED").length;
 
   return (
     <AppShell profile={profile} title="WhatsApp delivery" eyebrow="Operations">
@@ -48,6 +50,12 @@ export default async function NotificationsPage() {
             <ConfigLine label="Destination" ok={config.destinationConfigured} value={config.destination || "Missing"} />
           </div>
         </LuxuryCard>
+      </div>
+
+      <div className="mb-4 grid grid-cols-3 gap-2">
+        <AlertMetric label="Inbound created" value={String(inboundCreated)} tone="good" />
+        <AlertMetric label="Needs review" value={String(inboundFailed)} tone={inboundFailed ? "bad" : "good"} />
+        <AlertMetric label="Not alerted" value={String(inboundNotAlerted)} tone={inboundNotAlerted ? "warning" : "good"} />
       </div>
 
       <LuxuryCard className="mb-4 bg-white text-slate-950">
@@ -154,6 +162,16 @@ function Metric({ label, value, tone }: Readonly<{ label: string; value: string;
         {tone === "good" ? <CheckCircle2 className="size-4 text-emerald-400" /> : <AlertCircle className="size-4 text-red-300" />}
       </div>
       <p className="mt-2 text-2xl font-semibold leading-none tracking-tight">{value}</p>
+    </div>
+  );
+}
+
+function AlertMetric({ label, value, tone }: Readonly<{ label: string; value: string; tone: "good" | "warning" | "bad" }>) {
+  const styles = tone === "good" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-800" : "border-red-200 bg-red-50 text-red-700";
+  return (
+    <div className={`rounded-lg border p-3 ${styles}`}>
+      <p className="text-[11px] font-medium">{label}</p>
+      <p className="mt-1 text-xl font-semibold leading-none">{value}</p>
     </div>
   );
 }

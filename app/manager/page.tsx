@@ -5,13 +5,16 @@ import { RequestLeadRow } from "@/components/request/request-lead-row";
 import { ActionTile } from "@/components/ui/action-tile";
 import { CalendarDays, CheckCircle2, HeartHandshake, Inbox, ListPlus, MessageCircle, UserRoundSearch, Users } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
-import { getRequestsForProfile } from "@/lib/data/app";
+import { getOpenFollowUpTasksForProfile, getRequestsForProfile } from "@/lib/data/app";
 import { fullDateLabel, isMissingRequestContact, requestPriority, requestServiceLabel } from "@/lib/concierge/requests";
-import type { ConciergeRequest } from "@/lib/types";
+import type { ClientFollowUpTask, ConciergeRequest } from "@/lib/types";
 
 export default async function ManagerPage() {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
-  const requests = await getRequestsForProfile(profile, { limit: 8 });
+  const [requests, followUps] = await Promise.all([
+    getRequestsForProfile(profile, { limit: 8 }),
+    getOpenFollowUpTasksForProfile(profile)
+  ]);
   const newRequests = requests.filter((request) => request.status === "NEW").length;
   const confirmed = requests.filter((request) => ["CONFIRMED", "ARRIVED"].includes(request.status)).length;
   const completed = requests.filter((request) => request.status === "ARRIVED").length;
@@ -42,6 +45,7 @@ export default async function ManagerPage() {
             <ActionTile href="/manager/retention" label="Client care" icon={HeartHandshake} />
           </div>
         </section>
+        <TodayCare tasks={followUps.slice(0, 4)} />
         <ManagerBriefing requests={requests} missingContact={missingContact.length} />
       </div>
       <div className="advanced-only grid overflow-hidden rounded-lg border border-border bg-card md:grid-cols-3 md:divide-x md:divide-border">
@@ -70,7 +74,37 @@ export default async function ManagerPage() {
           )) : <p className="text-sm text-muted-foreground">Nothing needs attention right now.</p>}
         </div>
       </section>
+      <section className="advanced-only mt-5">
+        <TodayCare tasks={followUps.slice(0, 6)} />
+      </section>
     </AppShell>
+  );
+}
+
+function TodayCare({ tasks }: Readonly<{ tasks: ClientFollowUpTask[] }>) {
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-3 text-ink-950 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.16em] text-champagne-700">Client care</p>
+          <h2 className="mt-1 text-base font-semibold">Follow-ups due</h2>
+        </div>
+        <Button asChild size="sm" variant="secondary"><Link href="/manager/retention">Open care</Link></Button>
+      </div>
+      <div className="mt-3 grid gap-2">
+        {tasks.length ? tasks.map((task) => (
+          <Link key={task.id} href={`/manager/clients/${task.client_id}`} className="grid grid-cols-[1fr_auto] gap-2 rounded-md border border-slate-200 p-2.5 transition hover:bg-slate-50">
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold">{task.clients?.name ?? "Client"} · {task.title}</span>
+              <span className="block truncate text-xs text-slate-500">{task.due_date ? `Due ${task.due_date}` : "No due date"} · {task.assignee?.name ?? task.assignee?.email ?? "Unassigned"}</span>
+            </span>
+            <span className={task.priority === "HIGH" ? "rounded-full bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700" : "rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600"}>
+              {task.priority.toLowerCase()}
+            </span>
+          </Link>
+        )) : <p className="text-sm text-slate-500">No open follow-ups right now.</p>}
+      </div>
+    </section>
   );
 }
 

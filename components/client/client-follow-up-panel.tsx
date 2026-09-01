@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LuxuryCard } from "@/components/ui/luxury-card";
-import { createClientFollowUpTask, updateClientFollowUpTaskStatus } from "@/lib/actions/management-actions";
+import { createClientFollowUpTask, updateClientFollowUpTask, updateClientFollowUpTaskStatus } from "@/lib/actions/management-actions";
 import type { ClientFollowUpTask, Profile } from "@/lib/types";
 
 export function ClientFollowUpPanel({
@@ -73,14 +73,47 @@ function TaskRow({ task }: Readonly<{ task: ClientFollowUpTask }>) {
         <Clock3 className="size-3.5" /> {task.priority.toLowerCase()}
       </span>
       {!done && (
-        <form action={updateClientFollowUpTaskStatus}>
-          <input type="hidden" name="taskId" value={task.id} />
-          <input type="hidden" name="clientId" value={task.client_id} />
-          <input type="hidden" name="status" value="DONE" />
-          <Button type="submit" size="sm" variant="secondary" className="bg-slate-100 text-slate-900 hover:bg-slate-200">
-            <CheckCircle2 className="size-4" /> Done
-          </Button>
-        </form>
+        <div className="flex flex-wrap gap-2 md:justify-end">
+          <form action={updateClientFollowUpTaskStatus}>
+            <input type="hidden" name="taskId" value={task.id} />
+            <input type="hidden" name="clientId" value={task.client_id} />
+            <input type="hidden" name="status" value="DONE" />
+            <Button type="submit" size="sm" variant="secondary" className="bg-slate-100 text-slate-900 hover:bg-slate-200">
+              <CheckCircle2 className="size-4" /> Done
+            </Button>
+          </form>
+          <form action={updateClientFollowUpTaskStatus}>
+            <input type="hidden" name="taskId" value={task.id} />
+            <input type="hidden" name="clientId" value={task.client_id} />
+            <input type="hidden" name="status" value="CANCELLED" />
+            <Button type="submit" size="sm" variant="secondary" className="bg-slate-100 text-slate-900 hover:bg-slate-200">
+              Cancel
+            </Button>
+          </form>
+        </div>
+      )}
+      {!done && (
+        <details className="rounded-md border border-slate-200 bg-slate-50 p-2 md:col-span-3">
+          <summary className="cursor-pointer text-xs font-semibold text-slate-600">Edit</summary>
+          <form action={updateClientFollowUpTask} className="mt-3 grid gap-2 md:grid-cols-[1fr_150px_150px_auto]">
+            <input type="hidden" name="taskId" value={task.id} />
+            <input type="hidden" name="clientId" value={task.client_id} />
+            <Field label="Task">
+              <Input name="title" defaultValue={task.title} required minLength={3} className="bg-white text-slate-950" />
+            </Field>
+            <Field label="Due">
+              <Input name="dueDate" type="date" defaultValue={task.due_date ?? ""} className="bg-white text-slate-950" />
+            </Field>
+            <Field label="Priority">
+              <select name="priority" defaultValue={task.priority} className="h-12 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
+                <option value="LOW">Low</option>
+                <option value="NORMAL">Normal</option>
+                <option value="HIGH">High</option>
+              </select>
+            </Field>
+            <Button type="submit" className="self-end bg-slate-950 text-white hover:bg-slate-800">Save</Button>
+          </form>
+        </details>
       )}
     </div>
   );

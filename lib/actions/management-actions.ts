@@ -1258,6 +1258,10 @@ const followUpTaskSchema = z.object({
   assignedTo: z.string().uuid().optional().or(z.literal(""))
 });
 
+const followUpTaskUpdateSchema = followUpTaskSchema.extend({
+  taskId: z.string().uuid()
+});
+
 const followUpTaskStatusSchema = z.object({
   taskId: z.string().uuid(),
   clientId: z.string().min(1),
@@ -1302,6 +1306,8 @@ export async function createClientFollowUpTask(formData: FormData) {
 
   revalidatePath(`/clients/${parsed.data.clientId}`);
   revalidatePath(`/manager/clients/${parsed.data.clientId}`);
+  revalidatePath("/manager");
+  revalidatePath("/manager/retention");
 }
 
 export async function updateClientFollowUpTaskStatus(formData: FormData) {
@@ -1336,6 +1342,51 @@ export async function updateClientFollowUpTaskStatus(formData: FormData) {
 
   revalidatePath(`/clients/${parsed.data.clientId}`);
   revalidatePath(`/manager/clients/${parsed.data.clientId}`);
+  revalidatePath("/manager");
+  revalidatePath("/manager/retention");
+}
+
+export async function updateClientFollowUpTask(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER", "PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = followUpTaskUpdateSchema.safeParse({
+    taskId: formData.get("taskId"),
+    clientId: formData.get("clientId"),
+    title: formData.get("title"),
+    dueDate: formData.get("dueDate") || "",
+    priority: formData.get("priority") || "NORMAL",
+    assignedTo: formData.get("assignedTo") || ""
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath(`/clients/${parsed.data.clientId}`);
+    revalidatePath(`/manager/clients/${parsed.data.clientId}`);
+    revalidatePath("/manager");
+    revalidatePath("/manager/retention");
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("client_follow_up_tasks").update({
+    title: parsed.data.title,
+    due_date: parsed.data.dueDate || null,
+    priority: parsed.data.priority,
+    assigned_to: parsed.data.assignedTo || profile.id
+  }).eq("id", parsed.data.taskId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "CLIENT_FOLLOW_UP_TASK_EDITED",
+    entityType: "client_follow_up_tasks",
+    entityId: parsed.data.taskId,
+    metadata: { clientId: parsed.data.clientId, priority: parsed.data.priority, dueDate: parsed.data.dueDate || null }
+  });
+
+  revalidatePath(`/clients/${parsed.data.clientId}`);
+  revalidatePath(`/manager/clients/${parsed.data.clientId}`);
+  revalidatePath("/manager");
+  revalidatePath("/manager/retention");
 }
 
 export async function addClientNote(formData: FormData) {
