@@ -16,15 +16,16 @@ export default async function ManagerRequestDetailPage({
   searchParams
 }: Readonly<{ params: Promise<{ id: string }>; searchParams: Promise<{ updated?: string }> }>) {
   const [profile, { id }, query] = await Promise.all([requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]), params, searchParams]);
-  const [request, promoters, templates, eligibility] = await Promise.all([
-    getRequestDetailForStaff(id, profile),
-    profile.role === "SUPER_ADMIN" ? getUsersForAdmin({ role: "PROMOTER", active: "active" }) : getTeamPromoters(profile.id),
-    getMessageTemplates(),
-    getPromoterServiceEligibilityForProfile(profile)
-  ]);
-
+  const request = await getRequestDetailForStaff(id, profile);
   if (!request) notFound();
-  const [commerce, activity] = await Promise.all([getRequestCommerce(request), getRequestActivity(request.id)]);
+
+  const [promoters, templates, eligibility, commerce, activity] = await Promise.all([
+    safePanelData(profile.role === "SUPER_ADMIN" ? getUsersForAdmin({ role: "PROMOTER", active: "active" }) : getTeamPromoters(profile.id), []),
+    safePanelData(getMessageTemplates(), []),
+    safePanelData(getPromoterServiceEligibilityForProfile(profile), []),
+    safePanelData(getRequestCommerce(request), { slots: [], offers: [], payments: [] }),
+    safePanelData(getRequestActivity(request.id), [])
+  ]);
   const updated = parseStatus(query.updated);
   const excludedPromoters = new Set(eligibility.filter((item) => item.request_type === request.request_type && !item.eligible).map((item) => item.promoter_id));
   const eligiblePromoters = promoters.filter((promoter) => promoter.id === request.promoter_id || !excludedPromoters.has(promoter.id));
@@ -47,6 +48,14 @@ export default async function ManagerRequestDetailPage({
       </div>
     </AppShell>
   );
+}
+
+async function safePanelData<T>(promise: Promise<T>, fallback: T) {
+  try {
+    return await promise;
+  } catch {
+    return fallback;
+  }
 }
 
 function parseStatus(value?: string): RequestStatus | null {

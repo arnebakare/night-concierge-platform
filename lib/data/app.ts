@@ -5,7 +5,7 @@ import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
 const requestSelect =
-  "id, client_id, club_id, promoter_id, assigned_manager_id, source, request_type, status, requested_date, requested_date_end, arrival_time, guest_count, budget, message, internal_summary, created_at, removed_at, removed_by, removal_reason, clients(name, phone, client_code, country, preferred_language, vip_level, status), clubs(name, city, slug), promoter:profiles!requests_promoter_id_fkey(name, email)";
+  "id, client_id, club_id, promoter_id, assigned_manager_id, source, request_type, status, requested_date, requested_date_end, arrival_time, guest_count, budget, message, internal_summary, created_at, removed_at, removed_by, removal_reason, clients(name, phone, client_code, country, preferred_language, vip_level, status, removed_at), clubs(name, city, slug), promoter:profiles!requests_promoter_id_fkey(name, email)";
 
 export type RequestFilters = {
   status?: RequestStatus;
@@ -139,14 +139,14 @@ async function fetchRequestDetailWithFallback(supabase: ReturnType<typeof create
   if (!request) return null;
 
   const [{ data: client }, { data: club }, { data: promoter }] = await Promise.all([
-    supabase.from("clients").select("name, phone, client_code, country, preferred_language, vip_level, status").eq("id", request.client_id).maybeSingle(),
+    supabase.from("clients").select("name, phone, client_code, country, preferred_language, vip_level, status, removed_at").eq("id", request.client_id).maybeSingle(),
     supabase.from("clubs").select("name, city, slug").eq("id", request.club_id).maybeSingle(),
     request.promoter_id ? supabase.from("profiles").select("name, email").eq("id", request.promoter_id).maybeSingle() : Promise.resolve({ data: null })
   ]);
 
   return {
     ...request,
-    clients: client ?? { name: "Removed customer", phone: "", client_code: null, country: null, preferred_language: "en", vip_level: "STANDARD", status: "NORMAL" },
+    clients: client ?? { name: "Removed customer", phone: "", client_code: null, country: null, preferred_language: "en", vip_level: "STANDARD", status: "NORMAL", removed_at: new Date().toISOString() },
     clubs: club ?? { name: "Removed venue", city: "", slug: "" },
     promoter: promoter ?? null
   } as ConciergeRequest;

@@ -166,7 +166,7 @@ export type ConciergeRequest = {
   removed_at?: string | null;
   removed_by?: string | null;
   removal_reason?: string | null;
-  clients?: Pick<Client, "name" | "phone" | "client_code" | "country" | "preferred_language" | "vip_level" | "status"> | null;
+  clients?: Pick<Client, "name" | "phone" | "client_code" | "country" | "preferred_language" | "vip_level" | "status" | "removed_at"> | null;
   clubs?: Pick<Club, "name" | "city" | "slug"> | null;
   promoter?: Pick<Profile, "name" | "email"> | null;
 };
