@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, Check, ChevronLeft, Clock, ConciergeBell, Minus, MapPin, Plus, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { CalendarDays, CalendarRange, Car, Check, ChevronLeft, Clock, Flag, Hotel, MapPin, Minus, Moon, Package, Plus, ShieldCheck, ShipWheel, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,21 +15,38 @@ import { cn, formatEnum } from "@/lib/utils";
 import { getClubVenueExperience } from "@/components/request/venue-experience";
 
 const featuredVenueSlugs = ["le-jade", "la-plage-casanis", "mamzel"];
+const conciergeRequestTypes = ["BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE"] as const;
+export type RequestCategory = "nightlife" | "boat" | "golf" | "villa" | "transfer" | "schedule" | "package";
+
+const categoryCards: { id: RequestCategory; title: string; description: string; requestType?: typeof conciergeRequestTypes[number]; icon: typeof Moon }[] = [
+  { id: "nightlife", title: "Nightlife", description: "Beach clubs, restaurants, guestlists, VIP tables, and DJs.", icon: Moon },
+  { id: "boat", title: "Boats & yachts", description: "Private boats, yachts, routes, skipper, and onboard requests.", requestType: "BOAT", icon: ShipWheel },
+  { id: "golf", title: "Golf", description: "Tee times, courses, buggies, club rental, and lunch after.", requestType: "GOLF", icon: Flag },
+  { id: "villa", title: "Hotels & villas", description: "Suites, private villas, hosted stays, chefs, and special needs.", requestType: "VILLA", icon: Hotel },
+  { id: "transfer", title: "Transfers", description: "Airport pickup, chauffeurs, drivers by the hour, and night movement.", requestType: "TRANSFER", icon: Car },
+  { id: "schedule", title: "Full schedule", description: "A complete Marbella trail across days, venues, DJs, and movement.", requestType: "SCHEDULE", icon: CalendarRange },
+  { id: "package", title: "Packages", description: "Ready-made or tailored stay packages for your group.", requestType: "PACKAGE", icon: Package }
+];
 
 export function RequestFormSteps({
   clubs,
   events = [],
   promoterSlug,
   magicToken,
+  initialCategory,
+  startAtStep,
   defaults
 }: Readonly<{
   clubs: Club[];
   events?: ConciergeEvent[];
   promoterSlug?: string;
   magicToken?: string;
+  initialCategory?: RequestCategory;
+  startAtStep?: number;
   defaults?: Partial<PublicRequestInput>;
 }>) {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(Math.min(6, Math.max(1, startAtStep ?? (initialCategory ? 2 : 1))));
+  const [category, setCategory] = useState<RequestCategory | null>(initialCategory ?? inferInitialCategory(defaults?.requestType));
   const flowRef = useRef<HTMLElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAllVenues, setShowAllVenues] = useState(false);
@@ -41,15 +58,23 @@ export function RequestFormSteps({
     const remaining = clubs.filter((club) => !featuredVenueSlugs.includes(club.slug));
     return [...featured, ...remaining];
   }, [clubs]);
-  const visibleClubs = showAllVenues ? orderedClubs : orderedClubs.slice(0, 3);
-  const hasMoreVenues = orderedClubs.length > visibleClubs.length;
   const conciergeClub = useMemo(() => orderedClubs.find((club) => club.slug === "marbella-concierge"), [orderedClubs]);
-  const initialClub = orderedClubs[0];
-  const initialService = initialClub ? getClubVenueExperience(initialClub).services[0] : undefined;
+  const nightlifeClubs = useMemo(() => orderedClubs.filter((club) => club.slug !== "marbella-concierge"), [orderedClubs]);
+  const venueChoices = category === "nightlife" || !category ? nightlifeClubs : conciergeClub ? [conciergeClub] : orderedClubs;
+  const visibleClubs = showAllVenues ? venueChoices : venueChoices.slice(0, 3);
+  const hasMoreVenues = venueChoices.length > visibleClubs.length;
+  const initialClub = (defaults?.clubId ? orderedClubs.find((club) => club.id === defaults.clubId) : category && category !== "nightlife" ? conciergeClub : orderedClubs[0]) ?? orderedClubs[0];
+  const initialCategoryCard = categoryCards.find((item) => item.id === category);
+  const initialServices = initialClub ? getClubVenueExperience(initialClub).services : [];
+  const initialService = defaults?.requestType
+    ? initialServices.find((service) => service.requestType === defaults.requestType) ?? initialServices[0]
+    : initialCategoryCard?.requestType
+      ? initialServices.find((service) => service.requestType === initialCategoryCard.requestType) ?? initialServices[0]
+      : initialServices[0];
   const form = useForm<PublicRequestInput>({
     resolver: zodResolver(publicRequestSchema),
     defaultValues: {
-      clubId: defaults?.clubId ?? orderedClubs[0]?.id ?? "",
+      clubId: defaults?.clubId ?? initialClub?.id ?? "",
       requestType: defaults?.requestType ?? initialService?.requestType ?? "GUESTLIST",
       serviceLabel: defaults?.serviceLabel ?? initialService?.label ?? "",
       name: defaults?.name ?? "",
@@ -80,8 +105,8 @@ export function RequestFormSteps({
     () => selectedClubEvents.find((event) => event.id === values.occasionId),
     [selectedClubEvents, values.occasionId]
   );
-  const stepTitles = ["Venue", "Experience", "Guest", "Details", "Review"];
-  const nextLabel = step === 1 ? "Choose experience" : step === 2 ? "Add contact" : step === 3 ? "Add details" : "Review request";
+  const stepTitles = ["Request", "Venue", "Experience", "Guest", "Details", "Review"];
+  const nextLabel = step === 1 ? "Choose place" : step === 2 ? "Choose experience" : step === 3 ? "Add contact" : step === 4 ? "Add details" : "Review request";
 
   useEffect(() => {
     const serviceExists = selectedExperience.services.some((service) => service.label === values.serviceLabel && service.requestType === values.requestType);
@@ -111,6 +136,25 @@ export function RequestFormSteps({
     }
   }
 
+  function selectCategory(nextCategory: RequestCategory) {
+    setCategory(nextCategory);
+    setShowAllVenues(false);
+    const option = categoryCards.find((item) => item.id === nextCategory);
+    const nextClub = option?.requestType ? conciergeClub : nightlifeClubs[0] ?? orderedClubs[0];
+    if (nextClub) {
+      selectClub(nextClub);
+      if (option?.requestType) selectServiceByType(nextClub, option.requestType);
+    }
+    setStep(2);
+  }
+
+  function selectServiceByType(club: Club, requestType: typeof conciergeRequestTypes[number]) {
+    const service = getClubVenueExperience(club).services.find((item) => item.requestType === requestType);
+    if (!service) return;
+    form.setValue("requestType", service.requestType, { shouldValidate: true });
+    form.setValue("serviceLabel", service.label, { shouldValidate: true });
+  }
+
   function selectOccasion(event: ConciergeEvent | null) {
     form.setValue("occasionId", event?.id ?? "", { shouldValidate: true });
     form.setValue("occasionName", event?.name ?? "", { shouldValidate: true });
@@ -124,10 +168,14 @@ export function RequestFormSteps({
 
   async function next() {
     const fieldsByStep: Record<number, (keyof PublicRequestInput)[]> = {
-      1: ["clubId"], 2: ["requestType"], 3: ["name", "phone", "email", "instagram"], 4: ["requestedDate", "guestCount", "arrivalTime", "budget", "message"]
+      2: ["clubId"], 3: ["requestType"], 4: ["name", "phone", "email", "instagram"], 5: ["requestedDate", "guestCount", "arrivalTime", "budget", "message"]
     };
+    if (step === 1 && !category) {
+      setError("Choose what you need first.");
+      return;
+    }
     const valid = await form.trigger(fieldsByStep[step]);
-    if (valid) { setError(null); setStep((current) => Math.min(current + 1, 5)); }
+    if (valid) { setError(null); setStep((current) => Math.min(current + 1, 6)); }
     else setError("Please check the highlighted details before continuing.");
   }
 
@@ -150,15 +198,15 @@ export function RequestFormSteps({
       <div className="space-y-3 border-b border-champagne-700/24 bg-ink-950/50 px-4 pb-3 pt-4">
         <div className="flex items-center justify-between">
           <p className="text-xs uppercase tracking-[0.22em] text-champagne-300">{stepTitles[step - 1]}</p>
-          <p className="text-sm font-medium text-champagne-100">{step}/5</p>
+          <p className="text-sm font-medium text-champagne-100">{step}/6</p>
         </div>
-        <div className="grid grid-cols-5 gap-1">
-          {[1, 2, 3, 4, 5].map((item) => (
+        <div className="grid grid-cols-6 gap-1">
+          {[1, 2, 3, 4, 5, 6].map((item) => (
             <span key={item} className={cn("h-1.5 rounded-full bg-secondary transition", item <= step && "bg-champagne-300 shadow-glow")} />
           ))}
         </div>
-        {selectedClub && step > 1 && (
-          <button type="button" onClick={() => setStep(1)} className="flex w-full items-center gap-3 rounded-xl border border-champagne-700/28 bg-white/[0.045] p-2.5 text-left transition hover:border-champagne-300/55">
+        {selectedClub && step > 2 && (
+          <button type="button" onClick={() => setStep(2)} className="flex w-full items-center gap-3 rounded-xl border border-champagne-700/28 bg-white/[0.045] p-2.5 text-left transition hover:border-champagne-300/55">
             <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="md" />
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold text-champagne-50">{selectedExperience.wordmark}</span>
@@ -172,6 +220,38 @@ export function RequestFormSteps({
       <div className="space-y-5 px-4 py-4 pb-24">
 
       {step === 1 && (
+        <div className="space-y-3">
+          <StepIntro title="What do you need?" description="Start with the service. We will only show the choices that fit." />
+          <div className="grid gap-2">
+            {categoryCards.map((item) => {
+              const Icon = item.icon;
+              const active = category === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => selectCategory(item.id)}
+                  className={cn(
+                    "group flex min-h-[4.65rem] items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]",
+                    active ? "border-champagne-300 bg-champagne-300/14 shadow-glow" : "border-champagne-700/28 bg-ink-950/48 hover:border-champagne-300/55"
+                  )}
+                >
+                  <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.055] text-champagne-300", active && "bg-champagne-300 text-ink-950")}>
+                    <Icon className="size-5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-semibold text-champagne-50">{item.title}</span>
+                    <span className="mt-1 block text-[13px] leading-snug text-champagne-100/72">{item.description}</span>
+                  </span>
+                  {active && <Check className="ml-auto size-4 shrink-0 text-champagne-300" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {step === 2 && (
         <div className="space-y-3">
           <StepIntro title="Where are you going?" description="Start with the place. Services adapt to each venue." />
           <div className="grid gap-3">
@@ -208,25 +288,6 @@ export function RequestFormSteps({
               );
             })}
           </div>
-          {!showAllVenues && conciergeClub && !visibleClubs.some((club) => club.id === conciergeClub.id) && (
-            <button
-              type="button"
-              onClick={() => {
-                selectClub(conciergeClub);
-                setStep(2);
-              }}
-              className="group flex min-h-[4.9rem] w-full items-center gap-3 rounded-2xl border border-champagne-700/30 bg-white/[0.055] p-3 text-left transition hover:border-champagne-300/55 active:scale-[0.99]"
-            >
-              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-champagne-300 text-ink-950 shadow-glow">
-                <ConciergeBell className="size-5" />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-semibold text-champagne-50">Plan the full stay</span>
-                <span className="mt-1 block text-[13px] leading-snug text-champagne-100/74">Yachts, golf, villas, chauffeurs, packages, and full schedules.</span>
-              </span>
-              <span className="ml-auto text-xs font-semibold text-champagne-300">Open</span>
-            </button>
-          )}
           {hasMoreVenues && (
             <Button type="button" variant="secondary" className="w-full rounded-xl" onClick={() => setShowAllVenues(true)}>
               Show more venues
@@ -240,7 +301,7 @@ export function RequestFormSteps({
         </div>
       )}
 
-      {step === 2 && (
+      {step === 3 && (
         <div className="space-y-3">
           <div className="rounded-2xl border border-champagne-700/28 bg-[radial-gradient(circle_at_top_right,rgba(216,183,100,0.14),transparent_36%),rgba(255,255,255,0.045)] p-3.5">
             <div className="flex items-center gap-3">
@@ -323,7 +384,7 @@ export function RequestFormSteps({
         </div>
       )}
 
-      {step === 3 && (
+      {step === 4 && (
         <div className="space-y-4">
           <StepIntro title="Who should we contact?" description="Your WhatsApp number is required so your host can reply and keep future requests connected." />
           <div className="flex items-start gap-2 rounded-xl border border-champagne-700/24 bg-white/[0.045] p-3 text-xs leading-5 text-muted-foreground">
@@ -348,7 +409,7 @@ export function RequestFormSteps({
         </div>
       )}
 
-      {step === 4 && (
+      {step === 5 && (
         <div className="space-y-4">
           <StepIntro title="When are you going?" description="Approximate times are fine. Add anything we should know." />
           <div className="grid grid-cols-2 gap-3">
@@ -407,7 +468,7 @@ export function RequestFormSteps({
         </div>
       )}
 
-      {step === 5 && (
+      {step === 6 && (
         <div className="space-y-4">
           <StepIntro title="Ready to send" description="Your host receives this and checks availability personally." />
           <div className="rounded-2xl border border-champagne-700/28 bg-white/[0.055] p-3.5 text-sm shadow-panel">
@@ -448,7 +509,7 @@ export function RequestFormSteps({
             <ChevronLeft className="size-5" />
           </Button>
         )}
-        {step < 5 ? (
+        {step < 6 ? (
           <Button type="button" className="flex-1 rounded-xl" size="lg" onClick={next} disabled={!clubs.length}>
             {nextLabel}
           </Button>
@@ -553,4 +614,15 @@ function nextWeekendDate() {
   const daysUntilSaturday = (6 - day + 7) % 7 || 7;
   date.setDate(date.getDate() + daysUntilSaturday);
   return date.toISOString().slice(0, 10);
+}
+
+function inferInitialCategory(requestType?: string): RequestCategory | null {
+  if (!requestType) return null;
+  if (requestType === "BOAT") return "boat";
+  if (requestType === "GOLF") return "golf";
+  if (requestType === "VILLA") return "villa";
+  if (requestType === "TRANSFER") return "transfer";
+  if (requestType === "SCHEDULE") return "schedule";
+  if (requestType === "PACKAGE") return "package";
+  return "nightlife";
 }

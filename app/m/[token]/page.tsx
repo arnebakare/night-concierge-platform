@@ -4,10 +4,14 @@ import { PublicRequestShell } from "@/components/request/public-request-shell";
 import { getActiveClubs, getMagicLink, getPublicUpcomingEvents } from "@/lib/data/public";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Button } from "@/components/ui/button";
+import { resolveRequestDeepLink } from "@/lib/request/deep-link";
 
 export const dynamic = "force-dynamic";
 
-export default async function MagicLinkPage({ params }: Readonly<{ params: Promise<{ token: string }> }>) {
+export default async function MagicLinkPage({
+  params,
+  searchParams
+}: Readonly<{ params: Promise<{ token: string }>; searchParams?: Promise<Record<string, string | string[] | undefined>> }>) {
   const { token } = await params;
   const [clubs, link, events] = await Promise.all([getActiveClubs(), getMagicLink(token), getPublicUpcomingEvents()]);
 
@@ -21,6 +25,8 @@ export default async function MagicLinkPage({ params }: Readonly<{ params: Promi
   const hostName = promoter?.name ?? "your concierge host";
   const promoterWhatsAppHref = whatsAppHref(promoter?.phone, `Hi ${hostName}, I opened my private VIP link and have a special request.`);
   const availableClubs = link.club_id ? clubs.filter((club) => club.id === link.club_id) : clubs;
+  const linkDefaults = resolveRequestDeepLink(availableClubs, await searchParams);
+  const startAtStep = linkDefaults.startAtStep ?? (link.club_id ? 3 : undefined);
 
   return (
     <PublicRequestShell
@@ -56,7 +62,10 @@ export default async function MagicLinkPage({ params }: Readonly<{ params: Promi
         clubs={availableClubs}
         events={events}
         magicToken={token}
+        initialCategory={linkDefaults.initialCategory}
+        startAtStep={startAtStep}
         defaults={{
+          ...linkDefaults.defaults,
           name: client?.name ?? "",
           phone: client?.phone ?? "",
           email: client?.email ?? "",

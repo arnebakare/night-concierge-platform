@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { setMagicLinkActive } from "@/lib/actions/management-actions";
 
+const linkOptions = [
+  ["nightlife", "Nightlife"],
+  ["boat", "Boats"],
+  ["golf", "Golf"],
+  ["villa", "Villas"],
+  ["transfer", "Transfers"],
+  ["schedule", "Schedule"],
+  ["package", "Packages"]
+] as const;
+
 type MagicLinkCardProps = {
   id: string;
   url: string;
@@ -37,6 +47,21 @@ export function MagicLinkCard({ id, url, clubName, active, useCount, maxUses, ex
           <Button type="submit" variant="outline" size="sm" className="w-full">{active ? <ShieldOff className="size-4" /> : <Link2 className="size-4" />}{active ? "Revoke" : "Restore"}</Button>
         </form>
       </div>
+      <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+        <summary className="cursor-pointer list-none text-sm font-semibold text-ink-950">
+          Direct service links
+        </summary>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {linkOptions.map(([option, label]) => {
+            const optionUrl = withOption(url, option);
+            return (
+              <Button key={option} type="button" variant="outline" size="sm" className="justify-start bg-white" onClick={() => navigator.clipboard.writeText(optionUrl)}>
+                <Copy className="size-3.5" /> {label}
+              </Button>
+            );
+          })}
+        </div>
+      </details>
       {promoterWhatsApp ? (
         <Button asChild variant="ghost" size="sm" className="mt-2 w-full">
           <a href={promoterWhatsApp} target="_blank" rel="noreferrer">
@@ -49,6 +74,12 @@ export function MagicLinkCard({ id, url, clubName, active, useCount, maxUses, ex
       )}
     </LuxuryCard>
   );
+}
+
+function withOption(url: string, option: string) {
+  const nextUrl = new URL(url);
+  nextUrl.searchParams.set("option", option);
+  return nextUrl.toString();
 }
 
 function whatsAppHref(phone?: string | null) {
