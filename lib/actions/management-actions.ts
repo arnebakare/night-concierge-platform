@@ -106,7 +106,7 @@ export async function updateRequestClientContact(formData: FormData) {
   const { error } = await supabase
     .from("clients")
     .update({
-      name: phoneOwner?.id && !/^unknown guest$/i.test(phoneOwner.name) ? phoneOwner.name : parsed.data.name,
+      name: parsed.data.name,
       phone: normalizedPhone,
       client_code: clientCode,
       country: parsed.data.country || null,
@@ -1664,7 +1664,7 @@ export async function updateClientRecord(formData: FormData) {
     await mergeClientPortfolio(supabase, parsed.data.clientId, targetClientId);
   }
   const updates: Record<string, string | null> = {
-      name: phoneOwner?.id && !/^unknown guest$/i.test(phoneOwner.name) ? phoneOwner.name : parsed.data.name,
+      name: parsed.data.name,
       phone: normalizedPhone,
       client_code: clientCode,
       email: parsed.data.email || null,

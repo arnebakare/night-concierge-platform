@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergePackage, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, PromoterServiceEligibility, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule, ServiceRoutingRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
@@ -96,6 +97,28 @@ export async function getRequestDetail(requestId: string) {
     if (error) throw error;
     const [request] = normalizeRequests([data]);
     return request ?? null;
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return demoRequests.find((request) => request.id === requestId) ?? demoRequests[0] ?? null;
+  }
+}
+
+export async function getRequestDetailForStaff(requestId: string, profile: Profile) {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase.from("requests").select(requestSelect).eq("id", requestId).maybeSingle();
+    if (error) throw error;
+    const [request] = normalizeRequests(data ? [data] : []);
+    if (!request) return null;
+    if (profile.role === "SUPER_ADMIN") return request;
+    if (profile.role === "PROMOTER" && request.promoter_id === profile.id) return request;
+    if (profile.role === "PROMOTER_MANAGER") {
+      if (request.assigned_manager_id === profile.id) return request;
+      const [teamIds, clubIds] = await Promise.all([teamIdsCsv(profile.id), managerClubIdsCsv(profile.id)]);
+      if (teamIds.split(",").filter(Boolean).includes(request.promoter_id ?? "")) return request;
+      if (clubIds.split(",").filter(Boolean).includes(request.club_id)) return request;
+    }
+    return null;
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
     return demoRequests.find((request) => request.id === requestId) ?? demoRequests[0] ?? null;

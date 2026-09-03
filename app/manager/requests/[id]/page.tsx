@@ -7,7 +7,7 @@ import { RequestActivityTimeline } from "@/components/request/request-activity-t
 import { RequestAssignmentControl } from "@/components/request/request-assignment-control";
 import { RequestDetail } from "@/components/request/request-detail";
 import { requireProfile } from "@/lib/auth";
-import { getMessageTemplates, getPromoterServiceEligibilityForProfile, getRequestActivity, getRequestCommerce, getRequestDetail, getTeamPromoters, getUsersForAdmin } from "@/lib/data/app";
+import { getMessageTemplates, getPromoterServiceEligibilityForProfile, getRequestActivity, getRequestCommerce, getRequestDetailForStaff, getTeamPromoters, getUsersForAdmin } from "@/lib/data/app";
 import type { RequestStatus } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
@@ -17,7 +17,7 @@ export default async function ManagerRequestDetailPage({
 }: Readonly<{ params: Promise<{ id: string }>; searchParams: Promise<{ updated?: string }> }>) {
   const [profile, { id }, query] = await Promise.all([requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]), params, searchParams]);
   const [request, promoters, templates, eligibility] = await Promise.all([
-    getRequestDetail(id),
+    getRequestDetailForStaff(id, profile),
     profile.role === "SUPER_ADMIN" ? getUsersForAdmin({ role: "PROMOTER", active: "active" }) : getTeamPromoters(profile.id),
     getMessageTemplates(),
     getPromoterServiceEligibilityForProfile(profile)

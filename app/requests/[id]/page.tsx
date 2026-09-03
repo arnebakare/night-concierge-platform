@@ -5,7 +5,7 @@ import { AvailabilityOfferPanel } from "@/components/request/availability-offer-
 import { RequestActivityTimeline } from "@/components/request/request-activity-timeline";
 import { RequestDetail } from "@/components/request/request-detail";
 import { requireProfile } from "@/lib/auth";
-import { getMessageTemplates, getRequestActivity, getRequestCommerce, getRequestDetail } from "@/lib/data/app";
+import { getMessageTemplates, getRequestActivity, getRequestCommerce, getRequestDetailForStaff } from "@/lib/data/app";
 import type { RequestStatus } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
@@ -14,7 +14,7 @@ export default async function RequestDetailPage({
   searchParams
 }: Readonly<{ params: Promise<{ id: string }>; searchParams: Promise<{ updated?: string }> }>) {
   const [profile, { id }, query] = await Promise.all([requireProfile(["PROMOTER", "SUPER_ADMIN"]), params, searchParams]);
-  const [request, templates] = await Promise.all([getRequestDetail(id), getMessageTemplates()]);
+  const [request, templates] = await Promise.all([getRequestDetailForStaff(id, profile), getMessageTemplates()]);
 
   if (!request) notFound();
   const [commerce, activity] = await Promise.all([getRequestCommerce(request), getRequestActivity(request.id)]);
