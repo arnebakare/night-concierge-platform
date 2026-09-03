@@ -852,7 +852,7 @@ export async function getCommissionRulesForProfile(profile: Profile): Promise<Co
     const supabase = await createClient();
     let query = supabase
       .from("commission_rules")
-      .select("id, promoter_id, club_id, request_type, rate_percent, flat_fee_cents, label, notes, active, created_by, created_at, updated_at, profiles(name, email), clubs(name, slug)")
+      .select("id, promoter_id, club_id, request_type, rate_percent, flat_fee_cents, label, notes, active, created_by, created_at, updated_at, profiles!commission_rules_promoter_id_fkey(name, email), clubs(name, slug)")
       .order("active", { ascending: false })
       .order("created_at", { ascending: false });
 
@@ -867,7 +867,7 @@ export async function getCommissionRulesForProfile(profile: Profile): Promise<Co
     if (error && /label|notes/i.test(error.message)) {
       const fallback = await supabase
         .from("commission_rules")
-        .select("id, promoter_id, club_id, request_type, rate_percent, flat_fee_cents, active, created_by, created_at, updated_at, profiles(name, email), clubs(name, slug)")
+        .select("id, promoter_id, club_id, request_type, rate_percent, flat_fee_cents, active, created_by, created_at, updated_at, profiles!commission_rules_promoter_id_fkey(name, email), clubs(name, slug)")
         .order("active", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(100);
@@ -1189,6 +1189,7 @@ export async function getRequestActivity(requestId: string): Promise<RequestActi
       ...normalizeActivityPayments(payments)
     ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 12);
   } catch (error) {
+    if (/schema cache|request_activity|request_offers|request_payments/i.test(errorMessage(error))) return [];
     if (!isDemoAuthEnabled()) throw error;
     return [
       { id: "activity-1", type: "status", label: "Status updated", detail: "Moved to confirmed by Julia", created_at: new Date().toISOString(), tone: "good" },
@@ -1668,4 +1669,10 @@ function applyNoteFilters(
     if (filters?.type && note.note_type !== filters.type) return false;
     return true;
   });
+}
+
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error && "message" in error) return String((error as { message?: unknown }).message ?? "");
+  return String(error ?? "");
 }
