@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Bell, BrainCircuit, Briefcase, CalendarDays, CreditCard, Crown, HeartHandshake, Home, Inbox, Link2, Package, Percent, Settings, User, Users } from "lucide-react";
+import { Activity, ArchiveRestore, Bell, BrainCircuit, Briefcase, CalendarDays, CreditCard, Crown, HeartHandshake, Home, Inbox, Link2, Package, Percent, Settings, User, Users } from "lucide-react";
 import { useExperienceMode } from "@/components/layout/experience-mode";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/lib/types";
@@ -49,6 +49,8 @@ const items = {
     ["/admin/commissions", "Commissions", Percent],
     ["/admin/users", "Users", Users],
     ["/manager/requests", "Requests", Inbox],
+    ["/manager/clients", "CRM", Users],
+    ["/admin/removed", "Removed", ArchiveRestore],
     ["/manager/availability", "Availability", CalendarDays],
     ["/manager/payments", "Payments", CreditCard],
     ["/manager/retention", "Retention", HeartHandshake],

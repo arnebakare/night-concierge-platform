@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Bell, BrainCircuit, Briefcase, Percent, Settings, Users, type LucideIcon } from "lucide-react";
+import { Activity, ArchiveRestore, Bell, BrainCircuit, Briefcase, Inbox, Percent, Settings, Users, type LucideIcon } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { requireProfile } from "@/lib/auth";
@@ -22,6 +22,9 @@ export default async function AdminPage() {
         <AdminLink href="/admin/planner" icon={BrainCircuit} title="Planner rules" description="Tune AI venue weighting and local flow" />
         <AdminLink href="/admin/commissions" icon={Percent} title="Commissions" description="Promoter, venue, and service rates" />
         <AdminLink href="/admin/users" icon={Users} title="Users" description="Managers, promoters, clients" />
+        <AdminLink href="/manager/requests" icon={Inbox} title="Requests" description="View, archive, or remove booking requests" />
+        <AdminLink href="/manager/clients" icon={Users} title="CRM" description="Open customer profiles and remove customers" />
+        <AdminLink href="/admin/removed" icon={ArchiveRestore} title="Removed records" description="Review and restore hidden customers or requests" />
         <AdminLink href="/notifications" icon={Bell} title="WhatsApp delivery" description="Sent and failed notification attempts" />
         <AdminLink href="/admin/settings" icon={Settings} title="Settings" description="Platform-wide controls" />
         <AdminLink href="/admin/audit" icon={Activity} title="Audit logs" description="Sensitive changes and operational trail" />

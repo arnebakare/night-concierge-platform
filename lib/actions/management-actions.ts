@@ -1782,6 +1782,45 @@ export async function removeClientFromCrm(formData: FormData) {
   redirect("/manager/clients?removed=client");
 }
 
+const restoreCrmRecordSchema = z.object({
+  recordId: z.string().uuid(),
+  recordType: z.enum(["client", "request"])
+});
+
+export async function restoreCrmRecord(formData: FormData) {
+  const profile = await requireProfile(["SUPER_ADMIN"]);
+  const parsed = restoreCrmRecordSchema.safeParse({
+    recordId: formData.get("recordId"),
+    recordType: formData.get("recordType")
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/admin/removed");
+    return;
+  }
+
+  const supabase = createAdminClient();
+  const table = parsed.data.recordType === "client" ? "clients" : "requests";
+  const { error } = await supabase
+    .from(table)
+    .update({ removed_at: null, removed_by: null, removal_reason: null })
+    .eq("id", parsed.data.recordId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: parsed.data.recordType === "client" ? "CLIENT_RESTORED_TO_CRM" : "REQUEST_RESTORED_TO_CRM",
+    entityType: table,
+    entityId: parsed.data.recordId,
+    metadata: { restored: true }
+  });
+
+  revalidatePath("/admin/removed");
+  revalidatePath("/manager/clients");
+  revalidatePath("/manager/requests");
+}
+
 async function rememberClientAlias(supabase: ReturnType<typeof createAdminClient>, clientId: string, name: string, source: string) {
   const cleanName = name.trim();
   if (!cleanName || /^unknown guest$/i.test(cleanName)) return;

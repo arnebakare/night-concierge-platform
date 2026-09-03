@@ -651,6 +651,37 @@ export async function getServiceRoutingStatsForProfile(profile: Profile): Promis
   }
 }
 
+export async function getRemovedCrmRecordsForAdmin() {
+  try {
+    const supabase = await createClient();
+    const [{ data: clients, error: clientError }, { data: requests, error: requestError }] = await Promise.all([
+      supabase
+        .from("clients")
+        .select("id, name, phone, client_code, email, instagram, country, preferred_language, vip_level, status, removed_at, removed_by, removal_reason")
+        .not("removed_at", "is", null)
+        .order("removed_at", { ascending: false })
+        .limit(80),
+      supabase
+        .from("requests")
+        .select(requestSelect)
+        .not("removed_at", "is", null)
+        .order("removed_at", { ascending: false })
+        .limit(80)
+    ]);
+    if (clientError || requestError) throw clientError ?? requestError;
+    return {
+      clients: (clients ?? []) as Client[],
+      requests: normalizeRequests(requests)
+    };
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return {
+      clients: demoClients.slice(0, 1).map((client) => ({ ...client, removed_at: new Date().toISOString(), removal_reason: "Demo removed record", removed_by: demoProfile.id })),
+      requests: demoRequests.slice(0, 1).map((request) => ({ ...request, removed_at: new Date().toISOString(), removal_reason: "Demo removed request", removed_by: demoProfile.id }))
+    };
+  }
+}
+
 export async function getPromoterPerformance(promoterId: string) {
   try {
     const supabase = await createClient();
