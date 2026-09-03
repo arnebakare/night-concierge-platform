@@ -1900,6 +1900,71 @@ const promoterServiceEligibilitySchema = z.object({
   eligible: z.enum(["true", "false"]).transform((value) => value === "true")
 });
 
+const serviceRoutingRuleSchema = z.object({
+  requestType: z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE"]),
+  defaultPromoterId: z.string().uuid().optional().or(z.literal("")),
+  fallbackPromoterId: z.string().uuid().optional().or(z.literal("")),
+  managerId: z.string().uuid().optional().or(z.literal("")),
+  active: z.enum(["true", "false"]).transform((value) => value === "true"),
+  notes: z.string().trim().max(400).optional().or(z.literal(""))
+});
+
+export async function saveServiceRoutingRule(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = serviceRoutingRuleSchema.safeParse({
+    requestType: formData.get("requestType"),
+    defaultPromoterId: formData.get("defaultPromoterId") || "",
+    fallbackPromoterId: formData.get("fallbackPromoterId") || "",
+    managerId: formData.get("managerId") || "",
+    active: formData.get("active") || "false",
+    notes: formData.get("notes") || ""
+  });
+  if (!parsed.success) return;
+  if (isDemoAuthEnabled()) { revalidatePath("/admin/routing"); revalidatePath("/manager/routing"); return; }
+
+  const supabase = await createClient();
+  const defaultPromoterId = parsed.data.defaultPromoterId || null;
+  const fallbackPromoterId = parsed.data.fallbackPromoterId || null;
+  if (defaultPromoterId) await assertPromoterOwnership(supabase, profile, defaultPromoterId);
+  if (fallbackPromoterId) await assertPromoterOwnership(supabase, profile, fallbackPromoterId);
+  const managerId = profile.role === "PROMOTER_MANAGER" ? profile.id : parsed.data.managerId || null;
+  if (managerId && profile.role === "SUPER_ADMIN") {
+    const { data: manager } = await supabase.from("profiles").select("id").eq("id", managerId).eq("role", "PROMOTER_MANAGER").maybeSingle();
+    if (!manager) throw new Error("Selected manager is not a promoter manager.");
+  }
+
+  const { data, error } = await supabase
+    .from("service_routing_rules")
+    .upsert({
+      request_type: parsed.data.requestType,
+      default_promoter_id: defaultPromoterId,
+      fallback_promoter_id: fallbackPromoterId,
+      manager_id: managerId,
+      active: parsed.data.active,
+      notes: parsed.data.notes || null,
+      created_by: profile.id
+    }, { onConflict: "request_type" })
+    .select("id")
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "Could not save routing rule.");
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "SERVICE_ROUTING_RULE_SAVED",
+    entityType: "service_routing_rules",
+    entityId: data.id,
+    metadata: {
+      requestType: parsed.data.requestType,
+      defaultPromoterId,
+      fallbackPromoterId,
+      managerId,
+      active: parsed.data.active
+    }
+  });
+  revalidatePath("/admin/routing");
+  revalidatePath("/manager/routing");
+}
+
 export async function setPromoterServiceEligibility(formData: FormData) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const parsed = promoterServiceEligibilitySchema.safeParse({

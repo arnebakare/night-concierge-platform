@@ -177,6 +177,22 @@ export type PromoterServiceEligibility = {
   profiles?: Pick<Profile, "name" | "email"> | null;
 };
 
+export type ServiceRoutingRule = {
+  id: string;
+  request_type: RequestType;
+  default_promoter_id: string | null;
+  fallback_promoter_id: string | null;
+  manager_id: string | null;
+  active: boolean;
+  notes: string | null;
+  created_by: string | null;
+  created_at?: string;
+  updated_at?: string;
+  default_promoter?: Pick<Profile, "name" | "email"> | null;
+  fallback_promoter?: Pick<Profile, "name" | "email"> | null;
+  manager?: Pick<Profile, "name" | "email"> | null;
+};
+
 export type SchedulePlan = {
   id: string;
   user_id: string | null;

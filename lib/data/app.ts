@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergePackage, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, PromoterServiceEligibility, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergePackage, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, PromoterServiceEligibility, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule, ServiceRoutingRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -586,6 +586,32 @@ export async function getPromoterServiceEligibilityForProfile(profile: Profile):
     if (error instanceof Error && /promoter_service_eligibility/i.test(error.message)) return [];
     if (!isDemoAuthEnabled()) throw error;
     return [];
+  }
+}
+
+export async function getServiceRoutingRulesForProfile(profile: Profile): Promise<ServiceRoutingRule[]> {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("service_routing_rules")
+      .select("id, request_type, default_promoter_id, fallback_promoter_id, manager_id, active, notes, created_by, created_at, updated_at, default_promoter:profiles!service_routing_rules_default_promoter_id_fkey(name, email), fallback_promoter:profiles!service_routing_rules_fallback_promoter_id_fkey(name, email), manager:profiles!service_routing_rules_manager_id_fkey(name, email)")
+      .order("request_type");
+    if (profile.role === "PROMOTER_MANAGER") {
+      const teamIds = await teamIdsCsv(profile.id);
+      const scopedRules = [`manager_id.is.null`, `manager_id.eq.${profile.id}`];
+      if (teamIds) {
+        scopedRules.push(`default_promoter_id.is.null`, `default_promoter_id.in.(${teamIds})`);
+        scopedRules.push(`fallback_promoter_id.is.null`, `fallback_promoter_id.in.(${teamIds})`);
+      }
+      query = query.or(scopedRules.join(","));
+    }
+    const { data, error } = await query.limit(40);
+    if (error) throw error;
+    return normalizeServiceRoutingRules(data);
+  } catch (error) {
+    if (error instanceof Error && /service_routing_rules/i.test(error.message)) return [];
+    if (!isDemoAuthEnabled()) throw error;
+    return demoServiceRoutingRules();
   }
 }
 
@@ -1274,6 +1300,37 @@ function normalizePromoterEligibility(data: unknown): PromoterServiceEligibility
   return ((data as Array<Omit<PromoterServiceEligibility, "profiles"> & { profiles?: PromoterServiceEligibility["profiles"] | PromoterServiceEligibility["profiles"][] | null }> | null) ?? []).map((item) => ({
     ...item,
     profiles: Array.isArray(item.profiles) ? item.profiles[0] ?? null : item.profiles ?? null
+  }));
+}
+
+function normalizeServiceRoutingRules(data: unknown): ServiceRoutingRule[] {
+  type RawRule = Omit<ServiceRoutingRule, "default_promoter" | "fallback_promoter" | "manager"> & {
+    default_promoter?: ServiceRoutingRule["default_promoter"] | ServiceRoutingRule["default_promoter"][] | null;
+    fallback_promoter?: ServiceRoutingRule["fallback_promoter"] | ServiceRoutingRule["fallback_promoter"][] | null;
+    manager?: ServiceRoutingRule["manager"] | ServiceRoutingRule["manager"][] | null;
+  };
+
+  return ((data as RawRule[] | null) ?? []).map((item) => ({
+    ...item,
+    default_promoter: Array.isArray(item.default_promoter) ? item.default_promoter[0] ?? null : item.default_promoter ?? null,
+    fallback_promoter: Array.isArray(item.fallback_promoter) ? item.fallback_promoter[0] ?? null : item.fallback_promoter ?? null,
+    manager: Array.isArray(item.manager) ? item.manager[0] ?? null : item.manager ?? null
+  }));
+}
+
+function demoServiceRoutingRules(): ServiceRoutingRule[] {
+  return (["TABLE", "GUESTLIST", "VIP_SERVICE", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE", "GENERAL"] as RequestType[]).map((requestType, index) => ({
+    id: `demo-routing-${index}`,
+    request_type: requestType,
+    default_promoter_id: requestType === "GOLF" ? "demo-promoter-2" : null,
+    fallback_promoter_id: null,
+    manager_id: demoProfile.id,
+    active: true,
+    notes: requestType === "GOLF" ? "Daniel handles golf first." : null,
+    created_by: demoProfile.id,
+    default_promoter: requestType === "GOLF" ? { name: "Daniel", email: "daniel@casanis.es" } : null,
+    fallback_promoter: null,
+    manager: { name: "Julia Casanis", email: "julia@casanis.es" }
   }));
 }
 

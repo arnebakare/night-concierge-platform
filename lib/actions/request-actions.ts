@@ -38,7 +38,15 @@ export async function submitPublicRequest(input: PublicRequestInput): Promise<Re
     serviceLabel: data.serviceLabel,
     occasionName: data.occasionName,
     occasionDate: data.occasionDate,
-    requestedDateEnd: data.requestedDateEnd
+    requestedDateEnd: data.requestedDateEnd,
+    preferredArea: data.preferredArea,
+    occasion: data.occasion,
+    boatStyle: data.boatStyle,
+    teeTimePreference: data.teeTimePreference,
+    bedrooms: data.bedrooms,
+    pickupLocation: data.pickupLocation,
+    dropoffLocation: data.dropoffLocation,
+    packageStyle: data.packageStyle
   });
   const fingerprint = createHash("sha256").update(normalizedPhone).digest("hex");
   const { data: allowed, error: rateError } = await supabase.rpc("consume_public_request_slot", { p_fingerprint: fingerprint, p_limit: 5, p_window_minutes: 10 });
@@ -53,8 +61,9 @@ export async function submitPublicRequest(input: PublicRequestInput): Promise<Re
   if (attribution.promoterId && !(await isPromoterEligibleForService(supabase, attribution.promoterId, data.requestType))) {
     return { ok: false, message: "This private link is not available for that service. Please choose another option or contact the concierge team." };
   }
-  const routedPromoterId = attribution.promoterId ?? await resolveSingleEligiblePromoterForService(supabase, data.requestType);
-  const assignedManagerId = attribution.managerId ?? await resolveDefaultManagerForClub(supabase, data.clubId);
+  const routingRule = await resolveServiceRoutingRule(supabase, data.requestType);
+  const routedPromoterId = attribution.promoterId ?? await resolvePromoterFromRouting(supabase, routingRule, data.requestType) ?? await resolveSingleEligiblePromoterForService(supabase, data.requestType);
+  const assignedManagerId = attribution.managerId ?? routingRule?.manager_id ?? await resolveDefaultManagerForClub(supabase, data.clubId);
   const { clientId, status: clientStatus } = await upsertClient(supabase, {
     name: data.name,
     phone: normalizedPhone,
@@ -91,7 +100,7 @@ export async function submitPublicRequest(input: PublicRequestInput): Promise<Re
 
   if (error || !request) return { ok: false, message: error?.message ?? "Could not create request." };
 
-  await supabase.from("audit_logs").insert({ user_id: routedPromoterId, action: "PUBLIC_REQUEST_CREATED", entity_type: "requests", entity_id: request.id, metadata: { source: attribution.source, routedByService: !attribution.promoterId && Boolean(routedPromoterId) } });
+  await supabase.from("audit_logs").insert({ user_id: routedPromoterId, action: "PUBLIC_REQUEST_CREATED", entity_type: "requests", entity_id: request.id, metadata: { source: attribution.source, routedByService: !attribution.promoterId && Boolean(routedPromoterId), routingRuleId: routingRule?.id ?? null } });
 
   await sendRequestWhatsApp(supabase, {
     requestId: request.id,
@@ -135,7 +144,15 @@ export async function createManualRequest(input: unknown): Promise<RequestAction
     serviceLabel: data.serviceLabel,
     occasionName: data.occasionName,
     occasionDate: data.occasionDate,
-    requestedDateEnd: data.requestedDateEnd
+    requestedDateEnd: data.requestedDateEnd,
+    preferredArea: data.preferredArea,
+    occasion: data.occasion,
+    boatStyle: data.boatStyle,
+    teeTimePreference: data.teeTimePreference,
+    bedrooms: data.bedrooms,
+    pickupLocation: data.pickupLocation,
+    dropoffLocation: data.dropoffLocation,
+    packageStyle: data.packageStyle
   });
   const { clientId, status: clientStatus } = await upsertClient(supabase, {
     name: data.name,
@@ -245,12 +262,33 @@ const normalizePhone = normalizePhoneNumber;
 
 function withRequestContext(
   message: string,
-  context: { serviceLabel?: string; occasionName?: string; occasionDate?: string; requestedDateEnd?: string }
+  context: {
+    serviceLabel?: string;
+    occasionName?: string;
+    occasionDate?: string;
+    requestedDateEnd?: string;
+    preferredArea?: string;
+    occasion?: string;
+    boatStyle?: string;
+    teeTimePreference?: string;
+    bedrooms?: string;
+    pickupLocation?: string;
+    dropoffLocation?: string;
+    packageStyle?: string;
+  }
 ) {
   const contextLines = [
     context.serviceLabel?.trim() ? `Selected service: ${context.serviceLabel.trim()}` : null,
     context.occasionName?.trim() ? `Selected occasion: ${context.occasionName.trim()}${context.occasionDate?.trim() ? ` (${context.occasionDate.trim()})` : ""}` : null,
-    context.requestedDateEnd?.trim() ? `End date: ${context.requestedDateEnd.trim()}` : null
+    context.requestedDateEnd?.trim() ? `End date: ${context.requestedDateEnd.trim()}` : null,
+    context.preferredArea?.trim() ? `Preferred area: ${context.preferredArea.trim()}` : null,
+    context.occasion?.trim() ? `Occasion: ${context.occasion.trim()}` : null,
+    context.boatStyle?.trim() ? `Boat style: ${context.boatStyle.trim()}` : null,
+    context.teeTimePreference?.trim() ? `Tee time preference: ${context.teeTimePreference.trim()}` : null,
+    context.bedrooms?.trim() ? `Bedrooms: ${context.bedrooms.trim()}` : null,
+    context.pickupLocation?.trim() ? `Pickup: ${context.pickupLocation.trim()}` : null,
+    context.dropoffLocation?.trim() ? `Drop-off: ${context.dropoffLocation.trim()}` : null,
+    context.packageStyle?.trim() ? `Package style: ${context.packageStyle.trim()}` : null
   ].filter(Boolean);
   const cleanMessage = message.trim();
   if (!contextLines.length) return cleanMessage;
@@ -348,4 +386,32 @@ async function resolveSingleEligiblePromoterForService(supabase: ReturnType<type
   const excluded = new Set((exclusions ?? []).map((item) => item.promoter_id));
   const eligible = promoterIds.filter((id) => !excluded.has(id));
   return eligible.length === 1 ? eligible[0] : null;
+}
+
+async function resolveServiceRoutingRule(supabase: ReturnType<typeof createAdminClient>, requestType: string) {
+  const { data, error } = await supabase
+    .from("service_routing_rules")
+    .select("id, request_type, default_promoter_id, fallback_promoter_id, manager_id, active")
+    .eq("request_type", requestType)
+    .eq("active", true)
+    .maybeSingle();
+  if (error && /service_routing_rules/i.test(error.message)) return null;
+  if (error) throw new Error(error.message);
+  return data as { id: string; default_promoter_id: string | null; fallback_promoter_id: string | null; manager_id: string | null } | null;
+}
+
+async function resolvePromoterFromRouting(
+  supabase: ReturnType<typeof createAdminClient>,
+  routingRule: { default_promoter_id: string | null; fallback_promoter_id: string | null } | null,
+  requestType: string
+) {
+  const candidates = [routingRule?.default_promoter_id, routingRule?.fallback_promoter_id].filter((id): id is string => Boolean(id));
+  for (const promoterId of candidates) {
+    const [{ data: promoter }, eligible] = await Promise.all([
+      supabase.from("profiles").select("id, active, role").eq("id", promoterId).maybeSingle(),
+      isPromoterEligibleForService(supabase, promoterId, requestType)
+    ]);
+    if (promoter?.active !== false && promoter?.role === "PROMOTER" && eligible) return promoterId;
+  }
+  return null;
 }

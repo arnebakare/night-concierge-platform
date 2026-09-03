@@ -87,6 +87,14 @@ export function RequestFormSteps({
       guestCount: defaults?.guestCount ?? 2,
       budget: defaults?.budget ?? "",
       message: defaults?.message ?? "",
+      preferredArea: defaults?.preferredArea ?? "",
+      occasion: defaults?.occasion ?? "",
+      boatStyle: defaults?.boatStyle ?? "",
+      teeTimePreference: defaults?.teeTimePreference ?? "",
+      bedrooms: defaults?.bedrooms ?? "",
+      pickupLocation: defaults?.pickupLocation ?? "",
+      dropoffLocation: defaults?.dropoffLocation ?? "",
+      packageStyle: defaults?.packageStyle ?? "",
       occasionId: defaults?.occasionId ?? "",
       occasionName: defaults?.occasionName ?? "",
       occasionDate: defaults?.occasionDate ?? "",
@@ -170,7 +178,7 @@ export function RequestFormSteps({
 
   async function next() {
     const fieldsByStep: Record<number, (keyof PublicRequestInput)[]> = {
-      2: ["clubId"], 3: ["requestType"], 4: ["name", "phone", "email", "instagram"], 5: ["requestedDate", "requestedDateEnd", "guestCount", "arrivalTime", "budget", "message"]
+      2: ["clubId"], 3: ["requestType"], 4: ["name", "phone", "email", "instagram"], 5: ["requestedDate", "requestedDateEnd", "guestCount", "arrivalTime", "budget", "message", "preferredArea", "occasion", "boatStyle", "teeTimePreference", "bedrooms", "pickupLocation", "dropoffLocation", "packageStyle"]
     };
     if (step === 1 && !category) {
       setError("Choose what you need first.");
@@ -473,6 +481,7 @@ export function RequestFormSteps({
           <Field label="Message optional">
             <Textarea {...form.register("message")} placeholder="Occasion, preferred area, special requests..." />
           </Field>
+          <ServiceDetailsFields requestType={values.requestType} form={form} />
           <div className="grid grid-cols-2 gap-2">
             {["Birthday", "Best table possible", "Flexible timing", "Need fast reply"].map((note) => (
               <QuickPick
@@ -556,6 +565,87 @@ function StepIntro({ title, description }: Readonly<{ title: string; description
 
 function selectedServiceHint(services: ReturnType<typeof getClubVenueExperience>["services"], serviceLabel?: string) {
   return services.find((service) => service.label === serviceLabel)?.priceHint ?? "";
+}
+
+function ServiceDetailsFields({
+  requestType,
+  form
+}: Readonly<{ requestType: PublicRequestInput["requestType"]; form: ReturnType<typeof useForm<PublicRequestInput>> }>) {
+  if (requestType === "BOAT") {
+    return (
+      <div className="grid gap-3 rounded-2xl border border-champagne-700/24 bg-white/[0.04] p-3">
+        <Field label="Boat style optional">
+          <Input {...form.register("boatStyle")} placeholder="Day boat, yacht, sunset, with skipper..." />
+        </Field>
+        <Field label="Preferred route or marina optional">
+          <Input {...form.register("preferredArea")} placeholder="Puerto Banus, Marbella, swim stops..." />
+        </Field>
+      </div>
+    );
+  }
+
+  if (requestType === "GOLF") {
+    return (
+      <div className="grid gap-3 rounded-2xl border border-champagne-700/24 bg-white/[0.04] p-3">
+        <Field label="Preferred tee time optional">
+          <Input {...form.register("teeTimePreference")} placeholder="Morning, afternoon, exact time..." />
+        </Field>
+        <Field label="Preferred course or area optional">
+          <Input {...form.register("preferredArea")} placeholder="Marbella Club, Los Naranjos, any premium course..." />
+        </Field>
+      </div>
+    );
+  }
+
+  if (requestType === "VILLA") {
+    return (
+      <div className="grid gap-3 rounded-2xl border border-champagne-700/24 bg-white/[0.04] p-3">
+        <Field label="Bedrooms optional">
+          <Input {...form.register("bedrooms")} placeholder="4 bedrooms, 6 bedrooms, flexible..." inputMode="numeric" />
+        </Field>
+        <Field label="Preferred area optional">
+          <Input {...form.register("preferredArea")} placeholder="Golden Mile, Puente Romano, Nueva Andalucia..." />
+        </Field>
+      </div>
+    );
+  }
+
+  if (requestType === "TRANSFER") {
+    return (
+      <div className="grid gap-3 rounded-2xl border border-champagne-700/24 bg-white/[0.04] p-3">
+        <Field label="Pickup optional">
+          <Input {...form.register("pickupLocation")} placeholder="Airport, hotel, villa, venue..." />
+        </Field>
+        <Field label="Drop-off optional">
+          <Input {...form.register("dropoffLocation")} placeholder="Hotel, villa, club, restaurant..." />
+        </Field>
+      </div>
+    );
+  }
+
+  if (requestType === "SCHEDULE" || requestType === "PACKAGE") {
+    return (
+      <div className="grid gap-3 rounded-2xl border border-champagne-700/24 bg-white/[0.04] p-3">
+        <Field label={requestType === "SCHEDULE" ? "Style optional" : "Package style optional"}>
+          <Input {...form.register("packageStyle")} placeholder="Party focused, relaxed, high spend, family, mixed..." />
+        </Field>
+        <Field label="Occasion optional">
+          <Input {...form.register("occasion")} placeholder="Birthday, bachelor trip, couples, client hosting..." />
+        </Field>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3 rounded-2xl border border-champagne-700/24 bg-white/[0.04] p-3">
+      <Field label="Occasion optional">
+        <Input {...form.register("occasion")} placeholder="Birthday, celebration, hosting clients..." />
+      </Field>
+      <Field label="Preferred area optional">
+        <Input {...form.register("preferredArea")} placeholder="Inside, terrace, close to DJ, flexible..." />
+      </Field>
+    </div>
+  );
 }
 
 function VenueLogo({ club, monogram, size = "md" }: Readonly<{ club?: Club | null; monogram: string; size?: "md" | "lg" | "xl" }>) {

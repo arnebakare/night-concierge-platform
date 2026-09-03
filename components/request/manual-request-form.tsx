@@ -33,6 +33,14 @@ export function ManualRequestForm({ clubs, clients }: Readonly<{ clubs: Club[]; 
       arrivalTime: "",
       budget: "",
       message: "",
+      preferredArea: "",
+      occasion: "",
+      boatStyle: "",
+      teeTimePreference: "",
+      bedrooms: "",
+      pickupLocation: "",
+      dropoffLocation: "",
+      packageStyle: "",
       internalNote: ""
     }
   });
@@ -105,6 +113,7 @@ export function ManualRequestForm({ clubs, clients }: Readonly<{ clubs: Club[]; 
             <Input {...form.register("budget")} placeholder="Optional" />
           </Field>
         </div>
+        <ServiceDetailsFields requestType={values.requestType} form={form} />
         <div className="grid grid-cols-3 gap-2">
           <QuickPick icon={CalendarDays} label="Today" onClick={() => form.setValue("requestedDate", dateString(0), { shouldValidate: true })} />
           <QuickPick icon={CalendarDays} label="Tomorrow" onClick={() => form.setValue("requestedDate", dateString(1), { shouldValidate: true })} />
@@ -134,6 +143,87 @@ export function ManualRequestForm({ clubs, clients }: Readonly<{ clubs: Club[]; 
       </Button>
       {form.formState.errors.root && <p className="text-sm text-red-200">{form.formState.errors.root.message}</p>}
     </form>
+  );
+}
+
+function ServiceDetailsFields({
+  requestType,
+  form
+}: Readonly<{ requestType: ManualRequestInput["requestType"]; form: ReturnType<typeof useForm<ManualRequestInput>> }>) {
+  if (requestType === "BOAT") {
+    return (
+      <div className="grid grid-cols-2 gap-3 rounded-md border border-champagne-700/25 bg-secondary/50 p-3">
+        <Field label="Boat style">
+          <Input {...form.register("boatStyle")} placeholder="Yacht, sunset, day boat..." />
+        </Field>
+        <Field label="Route / marina">
+          <Input {...form.register("preferredArea")} placeholder="Puerto Banus, swim stops..." />
+        </Field>
+      </div>
+    );
+  }
+
+  if (requestType === "GOLF") {
+    return (
+      <div className="grid grid-cols-2 gap-3 rounded-md border border-champagne-700/25 bg-secondary/50 p-3">
+        <Field label="Tee time">
+          <Input {...form.register("teeTimePreference")} placeholder="Morning, afternoon..." />
+        </Field>
+        <Field label="Course / area">
+          <Input {...form.register("preferredArea")} placeholder="Los Naranjos, Marbella Club..." />
+        </Field>
+      </div>
+    );
+  }
+
+  if (requestType === "VILLA") {
+    return (
+      <div className="grid grid-cols-2 gap-3 rounded-md border border-champagne-700/25 bg-secondary/50 p-3">
+        <Field label="Bedrooms">
+          <Input {...form.register("bedrooms")} placeholder="4, 6, flexible..." />
+        </Field>
+        <Field label="Area">
+          <Input {...form.register("preferredArea")} placeholder="Golden Mile, Puente Romano..." />
+        </Field>
+      </div>
+    );
+  }
+
+  if (requestType === "TRANSFER") {
+    return (
+      <div className="grid grid-cols-2 gap-3 rounded-md border border-champagne-700/25 bg-secondary/50 p-3">
+        <Field label="Pickup">
+          <Input {...form.register("pickupLocation")} placeholder="Airport, villa, venue..." />
+        </Field>
+        <Field label="Drop-off">
+          <Input {...form.register("dropoffLocation")} placeholder="Hotel, club, restaurant..." />
+        </Field>
+      </div>
+    );
+  }
+
+  if (requestType === "SCHEDULE" || requestType === "PACKAGE") {
+    return (
+      <div className="grid grid-cols-2 gap-3 rounded-md border border-champagne-700/25 bg-secondary/50 p-3">
+        <Field label="Style">
+          <Input {...form.register("packageStyle")} placeholder="Party, relaxed, high spend..." />
+        </Field>
+        <Field label="Occasion">
+          <Input {...form.register("occasion")} placeholder="Birthday, client hosting..." />
+        </Field>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-3 rounded-md border border-champagne-700/25 bg-secondary/50 p-3">
+      <Field label="Occasion">
+        <Input {...form.register("occasion")} placeholder="Birthday, celebration..." />
+      </Field>
+      <Field label="Area / preference">
+        <Input {...form.register("preferredArea")} placeholder="Terrace, near DJ, flexible..." />
+      </Field>
+    </div>
   );
 }
 
