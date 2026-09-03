@@ -275,6 +275,22 @@ export async function getClientsForProfile(profile: Profile, filters?: ClientFil
   }
 }
 
+export async function getClientCountForProfile(profile: Profile) {
+  try {
+    const supabase = await createClient();
+    const { count, error } = await supabase
+      .from("clients")
+      .select("id", { count: "exact", head: true })
+      .is("removed_at", null);
+    if (error) throw error;
+    return count ?? 0;
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    if (profile.role === "CLIENT") return 1;
+    return demoClients.length;
+  }
+}
+
 export async function getRetentionClientsForProfile(profile: Profile, days = 45): Promise<RetentionClient[]> {
   const today = new Date();
   try {

@@ -73,7 +73,7 @@ export type Client = {
   instagram: string | null;
   country?: string | null;
   preferred_language?: "en" | "es" | "sv" | null;
-  vip_level: "STANDARD" | "SILVER" | "GOLD" | "PLATINUM";
+  vip_level: "STANDARD" | "SILVER" | "GOLD" | "PLATINUM" | "INVITATION";
   status: "NORMAL" | "WATCHLIST" | "MANAGER_APPROVAL_REQUIRED" | "BLOCKED";
   removed_at?: string | null;
   removed_by?: string | null;

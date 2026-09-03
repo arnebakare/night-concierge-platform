@@ -1567,7 +1567,7 @@ const clientSchema = z.object({
   instagram: z.string().optional().or(z.literal("")),
   country: z.string().trim().max(80).optional().or(z.literal("")),
   preferredLanguage: z.enum(["en", "es", "sv"]).default("en"),
-  vipLevel: z.enum(["STANDARD", "SILVER", "GOLD", "PLATINUM"]),
+  vipLevel: z.enum(["STANDARD", "INVITATION", "SILVER", "GOLD", "PLATINUM"]),
   status: z.enum(["NORMAL", "WATCHLIST", "MANAGER_APPROVAL_REQUIRED", "BLOCKED"])
 });
 

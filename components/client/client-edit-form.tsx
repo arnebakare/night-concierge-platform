@@ -7,7 +7,7 @@ import { updateClientRecord } from "@/lib/actions/management-actions";
 import type { Client, Role } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
-const vipLevels = ["STANDARD", "SILVER", "GOLD", "PLATINUM"];
+const vipLevels = ["STANDARD", "INVITATION", "SILVER", "GOLD", "PLATINUM"];
 const clientStatuses = ["NORMAL", "WATCHLIST", "MANAGER_APPROVAL_REQUIRED", "BLOCKED"];
 const languages = [
   ["en", "English"],
