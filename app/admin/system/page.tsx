@@ -29,7 +29,7 @@ export default async function AdminSystemPage() {
           <BuildLine label="Environment" value={build.environment} />
           <BuildLine label="Message" value={build.commitMessage} />
         </div>
-        <p className="mt-3 text-xs text-slate-500">You can also open `/api/build` to compare the live commit with the latest commit I give you here.</p>
+        <p className="mt-3 text-xs text-slate-500">You can also open `/version` or `/api/version` to compare the live commit with the latest commit I give you here.</p>
       </LuxuryCard>
 
       <div className="compact-list grid gap-2">
