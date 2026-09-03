@@ -168,7 +168,7 @@ const commissionRuleSchema = z.object({
   notes: z.string().trim().max(240).optional().or(z.literal("")),
   promoterId: z.string().uuid().optional().or(z.literal("")),
   clubId: z.string().uuid().optional().or(z.literal("")),
-  requestType: z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"]).optional().or(z.literal("")),
+  requestType: z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE"]).optional().or(z.literal("")),
   ratePercent: z.coerce.number().min(0).max(100),
   flatFee: z.coerce.number().min(0).max(100000)
 });
@@ -343,7 +343,7 @@ const availabilitySlotSchema = z.object({
   requestId: z.string().optional().or(z.literal("")),
   clubId: z.string().min(1),
   slotDate: z.string().min(1),
-  serviceType: z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"]),
+  serviceType: z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE"]),
   title: z.string().trim().min(2).max(120),
   area: z.string().trim().max(120).optional().or(z.literal("")),
   minSpend: z.string().trim().max(100).optional().or(z.literal("")),
@@ -834,6 +834,98 @@ const messageTemplateSchema = z.object({
   active: z.enum(["true", "false"]).transform((value) => value === "true")
 });
 
+const packageSchema = z.object({
+  packageId: z.string().uuid().optional().or(z.literal("")),
+  title: z.string().trim().min(2).max(120),
+  slug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/),
+  description: z.string().trim().max(800).optional().or(z.literal("")),
+  requestType: z.enum(["BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE", "VIP_SERVICE", "GENERAL"]),
+  priceHint: z.string().trim().max(160).optional().or(z.literal("")),
+  tailoredClientId: z.string().uuid().optional().or(z.literal("")),
+  packageItems: z.string().trim().max(1200).optional().or(z.literal(""))
+});
+
+export async function saveConciergePackage(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = packageSchema.safeParse({
+    packageId: formData.get("packageId") || "",
+    title: formData.get("title"),
+    slug: formData.get("slug"),
+    description: formData.get("description") || "",
+    requestType: formData.get("requestType") || "PACKAGE",
+    priceHint: formData.get("priceHint") || "",
+    tailoredClientId: formData.get("tailoredClientId") || "",
+    packageItems: formData.get("packageItems") || ""
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/admin/packages");
+    return;
+  }
+
+  const supabase = await createClient();
+  const values = {
+    title: parsed.data.title,
+    slug: parsed.data.slug,
+    description: parsed.data.description || null,
+    request_type: parsed.data.requestType,
+    price_hint: parsed.data.priceHint || null,
+    tailored_client_id: parsed.data.tailoredClientId || null,
+    package_items: (parsed.data.packageItems ?? "").split("\n").map((item) => item.trim()).filter(Boolean),
+    created_by: profile.id
+  };
+  const { data, error } = parsed.data.packageId
+    ? await supabase.from("concierge_packages").update(values).eq("id", parsed.data.packageId).select("id").single()
+    : await supabase.from("concierge_packages").insert(values).select("id").single();
+  if (error || !data) throw new Error(error?.message ?? "Could not save package.");
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: parsed.data.packageId ? "CONCIERGE_PACKAGE_UPDATED" : "CONCIERGE_PACKAGE_CREATED",
+    entityType: "concierge_packages",
+    entityId: data.id,
+    metadata: { slug: parsed.data.slug, requestType: parsed.data.requestType }
+  });
+
+  revalidatePath("/admin/packages");
+  revalidatePath("/request");
+}
+
+const packageActiveSchema = z.object({
+  packageId: z.string().uuid(),
+  active: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
+export async function setConciergePackageActive(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = packageActiveSchema.safeParse({
+    packageId: formData.get("packageId"),
+    active: formData.get("active")
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/admin/packages");
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("concierge_packages").update({ active: parsed.data.active }).eq("id", parsed.data.packageId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: parsed.data.active ? "CONCIERGE_PACKAGE_REACTIVATED" : "CONCIERGE_PACKAGE_ARCHIVED",
+    entityType: "concierge_packages",
+    entityId: parsed.data.packageId,
+    metadata: { active: parsed.data.active }
+  });
+
+  revalidatePath("/admin/packages");
+  revalidatePath("/request");
+}
+
 export async function saveMessageTemplate(formData: FormData) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const parsed = messageTemplateSchema.safeParse({
@@ -1071,8 +1163,8 @@ export async function setScheduleVenueRuleActive(formData: FormData) {
   revalidatePath("/schedule");
 }
 
-const requestTypesForServices = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"] as const;
-const serviceIconNames = ["Calendar", "Crown", "GlassWater", "Music2", "Sparkles", "Sun", "Utensils", "Users", "Waves"] as const;
+const requestTypesForServices = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE"] as const;
+const serviceIconNames = ["Calendar", "CalendarRange", "Car", "Crown", "Flag", "GlassWater", "Hotel", "Music2", "Package", "ShipWheel", "Sparkles", "Sun", "Utensils", "Users", "Waves"] as const;
 const clubExperienceSchema = z.object({
   clubId: z.string().min(1),
   monogram: z.string().trim().max(8).optional(),

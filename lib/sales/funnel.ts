@@ -172,6 +172,11 @@ export function buildUpsellIdeas(request: SalesRequest) {
 
   if (request.request_type === "GUESTLIST") ideas.push("Mention a small table if they want it easier");
   if (request.request_type === "TABLE" || request.request_type === "VIP_SERVICE") ideas.push("Ask if they want any drinks ready");
+  if (request.request_type === "BOAT") ideas.push("Ask if they need pickup and lunch after the boat");
+  if (request.request_type === "GOLF") ideas.push("Ask if they need transfers, club rental, or lunch after golf");
+  if (request.request_type === "VILLA") ideas.push("Ask if they want chef, security, or driver support");
+  if (request.request_type === "TRANSFER") ideas.push("Ask if they need the driver for the full night");
+  if (request.request_type === "SCHEDULE" || request.request_type === "PACKAGE") ideas.push("Ask if the plan should be normal or high spend");
   if (text.includes("birthday") || text.includes("cumple") || text.includes("födelsedag")) ideas.push("Ask if they want anything simple arranged for the birthday");
   if ((request.clubs?.name ?? "").toLowerCase().includes("plage")) ideas.push("Mention Le Jade later if they want to continue");
   ideas.push("Ask if they need help before or after the booking");
@@ -210,6 +215,12 @@ export function isTemporaryPhone(phone?: string | null) {
 }
 
 function inferRequestType(lower: string): RequestType {
+  if (/\b(boat|yacht|yachts|catamaran|skipper|marina|puerto banus|puerto banús)\b/.test(lower)) return "BOAT";
+  if (/\b(golf|tee|tee time|golf course|buggy|clubs)\b/.test(lower)) return "GOLF";
+  if (/\b(villa|hotel|suite|accommodation|private chef|stay|rooms?)\b/.test(lower)) return "VILLA";
+  if (/\b(transfer|chauffeur|driver|pickup|pick up|airport|car service|ride)\b/.test(lower)) return "TRANSFER";
+  if (/\b(schedule|itinerary|plan my stay|full plan|trail|program|agenda)\b/.test(lower)) return "SCHEDULE";
+  if (/\b(package|bundle|whole trip|full stay|tailored package)\b/.test(lower)) return "PACKAGE";
   if (/\b(table|mesa|bord|vip table|minimum spend|min spend|minimum|cabana|sofa)\b/.test(lower)) return "TABLE";
   if (/\b(vip|bottle|botella|service|bottles|champagne)\b/.test(lower)) return "VIP_SERVICE";
   if (/\b(guestlist|guest list|lista|gästlista)\b/.test(lower)) return "GUESTLIST";

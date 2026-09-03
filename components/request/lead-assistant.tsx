@@ -13,7 +13,7 @@ import { buildAvailabilityMessageFromTemplate, buildClientReplyFromTemplate, fin
 import type { Client, Club, MessageTemplate, RequestType } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
-const requestTypes: RequestType[] = ["TABLE", "GUESTLIST", "VIP_SERVICE", "GENERAL"];
+const requestTypes: RequestType[] = ["TABLE", "GUESTLIST", "VIP_SERVICE", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE", "GENERAL"];
 
 export function LeadAssistant({ clubs, clients, templates = [] }: Readonly<{ clubs: Club[]; clients: Client[]; templates?: MessageTemplate[] }>) {
   const [pending, startTransition] = useTransition();

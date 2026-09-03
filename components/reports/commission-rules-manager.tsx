@@ -8,7 +8,7 @@ import { saveCommissionRule, setCommissionRuleActive } from "@/lib/actions/manag
 import type { Club, CommissionRule, Profile, RequestType } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
-const requestTypes: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"];
+const requestTypes: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE", "GENERAL"];
 
 export function CommissionRulesManager({
   rules,

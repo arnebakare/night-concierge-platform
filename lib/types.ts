@@ -8,7 +8,7 @@ export type RequestStatus =
   | "NO_SHOW"
   | "DECLINED"
   | "CANCELLED";
-export type RequestType = "GUESTLIST" | "TABLE" | "VIP_SERVICE" | "GENERAL";
+export type RequestType = "GUESTLIST" | "TABLE" | "VIP_SERVICE" | "GENERAL" | "BOAT" | "GOLF" | "VILLA" | "TRANSFER" | "SCHEDULE" | "PACKAGE";
 export type RequestSource = "PUBLIC_FORM" | "PROMOTER_LINK" | "MAGIC_LINK" | "MANUAL_ENTRY" | "ADMIN_CREATED";
 
 export type Profile = {
@@ -29,8 +29,25 @@ export type Club = {
   address: string | null;
   image_url: string | null;
   active: boolean;
+  venue_kind?: string | null;
   brand_config?: Record<string, unknown> | null;
   service_config?: unknown[] | null;
+};
+
+export type ConciergePackage = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  request_type: RequestType;
+  price_hint: string | null;
+  tailored_client_id: string | null;
+  active: boolean;
+  package_items: string[];
+  created_by: string | null;
+  created_at: string;
+  updated_at?: string;
+  clients?: Pick<Client, "name" | "phone"> | null;
 };
 
 export type ConciergeEvent = {

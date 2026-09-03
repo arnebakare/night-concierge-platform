@@ -13,7 +13,7 @@ import { manualRequestSchema, type ManualRequestInput } from "@/lib/validation/r
 import type { Client, Club } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
-const requestTypes = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"] as const;
+const requestTypes = ["GUESTLIST", "TABLE", "VIP_SERVICE", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE", "GENERAL"] as const;
 
 export function ManualRequestForm({ clubs, clients }: Readonly<{ clubs: Club[]; clients: Client[] }>) {
   const [pending, startTransition] = useTransition();
@@ -146,6 +146,12 @@ function QuickPick({ label, icon: Icon, active, onClick }: Readonly<{ label: str
 function shortType(type: typeof requestTypes[number]) {
   if (type === "GUESTLIST") return "Guestlist";
   if (type === "VIP_SERVICE") return "VIP";
+  if (type === "BOAT") return "Boat";
+  if (type === "GOLF") return "Golf";
+  if (type === "VILLA") return "Villa";
+  if (type === "TRANSFER") return "Transfer";
+  if (type === "SCHEDULE") return "Schedule";
+  if (type === "PACKAGE") return "Package";
   if (type === "GENERAL") return "General";
   return "Table";
 }

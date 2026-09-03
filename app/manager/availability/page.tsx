@@ -13,7 +13,7 @@ import { getActiveClubsForApp, getAvailabilitySlotsForProfile } from "@/lib/data
 import type { AvailabilitySlot, RequestType } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
-const requestTypes: RequestType[] = ["TABLE", "GUESTLIST", "VIP_SERVICE", "GENERAL"];
+const requestTypes: RequestType[] = ["TABLE", "GUESTLIST", "VIP_SERVICE", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE", "GENERAL"];
 
 export default async function ManagerAvailabilityPage({
   searchParams

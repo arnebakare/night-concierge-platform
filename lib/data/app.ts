@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergePackage, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -466,11 +466,20 @@ export async function getPromoterLinks(profile: Profile) {
 export async function getActiveClubsForApp() {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("clubs")
-      .select("id, name, slug, city, address, image_url, active, brand_config, service_config")
+      .select("id, name, slug, city, address, image_url, active, venue_kind, brand_config, service_config")
       .eq("active", true)
       .order("name");
+    if (error && /venue_kind/i.test(error.message)) {
+      const fallback = await supabase
+        .from("clubs")
+        .select("id, name, slug, city, address, image_url, active, brand_config, service_config")
+        .eq("active", true)
+        .order("name");
+      data = fallback.data?.map((club) => ({ ...club, venue_kind: "VENUE" })) ?? null;
+      error = fallback.error;
+    }
     if (error) throw error;
     return (data ?? []) as Club[];
   } catch (error) {
@@ -491,11 +500,20 @@ export async function getActiveClubsForApp() {
 export async function getClubsForAdmin() {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("clubs")
-      .select("id, name, slug, city, address, image_url, active, brand_config, service_config")
+      .select("id, name, slug, city, address, image_url, active, venue_kind, brand_config, service_config")
       .order("active", { ascending: false })
       .order("name");
+    if (error && /venue_kind/i.test(error.message)) {
+      const fallback = await supabase
+        .from("clubs")
+        .select("id, name, slug, city, address, image_url, active, brand_config, service_config")
+        .order("active", { ascending: false })
+        .order("name");
+      data = fallback.data?.map((club) => ({ ...club, venue_kind: "VENUE" })) ?? null;
+      error = fallback.error;
+    }
     if (error) throw error;
     return (data ?? []) as Club[];
   } catch (error) {
@@ -569,10 +587,24 @@ export async function getPromoterPerformance(promoterId: string) {
 export async function getManagerClubAssignments(managerId: string) {
   try {
     const supabase = await createClient();
-    const [{ data: clubs, error: clubError }, { data: assignments, error: assignmentError }] = await Promise.all([
-      supabase.from("clubs").select("id, name, slug, city, address, image_url, active").eq("active", true).order("name"),
-      supabase.from("club_users").select("id, club_id, user_id, role_at_club").eq("user_id", managerId)
-    ]);
+    let { data: clubs, error: clubError } = await supabase
+      .from("clubs")
+      .select("id, name, slug, city, address, image_url, active, venue_kind")
+      .eq("active", true)
+      .order("name");
+    if (clubError && /venue_kind/i.test(clubError.message)) {
+      const fallback = await supabase
+        .from("clubs")
+        .select("id, name, slug, city, address, image_url, active")
+        .eq("active", true)
+        .order("name");
+      clubs = fallback.data?.map((club) => ({ ...club, venue_kind: "VENUE" })) ?? null;
+      clubError = fallback.error;
+    }
+    const { data: assignments, error: assignmentError } = await supabase
+      .from("club_users")
+      .select("id, club_id, user_id, role_at_club")
+      .eq("user_id", managerId);
     if (clubError || assignmentError) throw clubError ?? assignmentError;
     const assigned = new Set((assignments ?? []).map((item) => item.club_id));
     return ((clubs ?? []) as Club[]).map((club) => ({ ...club, assigned: assigned.has(club.id) }));
@@ -683,6 +715,40 @@ export async function getCommissionRulesForProfile(profile: Profile): Promise<Co
     return [
       { id: "rule-demo-1", promoter_id: null, club_id: null, request_type: "TABLE", rate_percent: 10, flat_fee_cents: 0, active: true, created_by: demoProfile.id, profiles: null, clubs: null },
       { id: "rule-demo-2", promoter_id: "demo-promoter-2", club_id: null, request_type: "VIP_SERVICE", rate_percent: 12.5, flat_fee_cents: 5000, active: true, created_by: demoProfile.id, profiles: { name: "Daniel", email: "daniel@casanis.es" }, clubs: null }
+    ];
+  }
+}
+
+export async function getConciergePackagesForProfile(profile: Profile): Promise<ConciergePackage[]> {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("concierge_packages")
+      .select("id, title, slug, description, request_type, price_hint, tailored_client_id, active, package_items, created_by, created_at, updated_at, clients(name, phone)")
+      .order("active", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (profile.role === "PROMOTER") query = query.eq("active", true);
+    const { data, error } = await query.limit(100);
+    if (error) throw error;
+    return normalizeConciergePackages(data);
+  } catch (error) {
+    if (error instanceof Error && /concierge_packages/i.test(error.message)) return [];
+    if (!isDemoAuthEnabled()) throw error;
+    return [
+      {
+        id: "package-demo-1",
+        title: "Marbella Weekend Starter",
+        slug: "marbella-weekend-starter",
+        description: "Beach club, dinner, nightlife, and transfers.",
+        request_type: "PACKAGE",
+        price_hint: "Tailored after dates and group size",
+        tailored_client_id: null,
+        active: true,
+        package_items: ["Beach club day", "Dinner reservation", "Nightclub table or guestlist", "Transfer plan"],
+        created_by: demoProfile.id,
+        created_at: new Date().toISOString(),
+        clients: null
+      }
     ];
   }
 }
@@ -1248,6 +1314,14 @@ function normalizeCommissionRules(data: unknown): CommissionRule[] {
     flat_fee_cents: Number(rule.flat_fee_cents),
     profiles: Array.isArray(rule.profiles) ? rule.profiles[0] ?? null : rule.profiles ?? null,
     clubs: Array.isArray(rule.clubs) ? rule.clubs[0] ?? null : rule.clubs ?? null
+  }));
+}
+
+function normalizeConciergePackages(data: unknown): ConciergePackage[] {
+  return ((data as Array<Omit<ConciergePackage, "clients" | "package_items"> & { package_items?: unknown; clients?: ConciergePackage["clients"] | ConciergePackage["clients"][] | null }> | null) ?? []).map((item) => ({
+    ...item,
+    package_items: Array.isArray(item.package_items) ? item.package_items.map(String) : [],
+    clients: Array.isArray(item.clients) ? item.clients[0] ?? null : item.clients ?? null
   }));
 }
 

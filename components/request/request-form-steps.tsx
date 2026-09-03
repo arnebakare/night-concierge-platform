@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, Check, ChevronLeft, Clock, Minus, MapPin, Plus, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, Clock, ConciergeBell, Minus, MapPin, Plus, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +43,7 @@ export function RequestFormSteps({
   }, [clubs]);
   const visibleClubs = showAllVenues ? orderedClubs : orderedClubs.slice(0, 3);
   const hasMoreVenues = orderedClubs.length > visibleClubs.length;
+  const conciergeClub = useMemo(() => orderedClubs.find((club) => club.slug === "marbella-concierge"), [orderedClubs]);
   const initialClub = orderedClubs[0];
   const initialService = initialClub ? getClubVenueExperience(initialClub).services[0] : undefined;
   const form = useForm<PublicRequestInput>({
@@ -207,6 +208,25 @@ export function RequestFormSteps({
               );
             })}
           </div>
+          {!showAllVenues && conciergeClub && !visibleClubs.some((club) => club.id === conciergeClub.id) && (
+            <button
+              type="button"
+              onClick={() => {
+                selectClub(conciergeClub);
+                setStep(2);
+              }}
+              className="group flex min-h-[4.9rem] w-full items-center gap-3 rounded-2xl border border-champagne-700/30 bg-white/[0.055] p-3 text-left transition hover:border-champagne-300/55 active:scale-[0.99]"
+            >
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-champagne-300 text-ink-950 shadow-glow">
+                <ConciergeBell className="size-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-semibold text-champagne-50">Plan the full stay</span>
+                <span className="mt-1 block text-[13px] leading-snug text-champagne-100/74">Yachts, golf, villas, chauffeurs, packages, and full schedules.</span>
+              </span>
+              <span className="ml-auto text-xs font-semibold text-champagne-300">Open</span>
+            </button>
+          )}
           {hasMoreVenues && (
             <Button type="button" variant="secondary" className="w-full rounded-xl" onClick={() => setShowAllVenues(true)}>
               Show more venues

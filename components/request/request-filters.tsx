@@ -6,7 +6,7 @@ import { formatEnum } from "@/lib/utils";
 import type { Club, Profile, RequestStatus, RequestType } from "@/lib/types";
 
 const statuses: RequestStatus[] = ["NEW", "CONTACTED", "PENDING", "CONFIRMED", "ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"];
-const types: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"];
+const types: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE", "GENERAL"];
 
 export function RequestFilters({
   action,

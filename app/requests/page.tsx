@@ -61,7 +61,7 @@ function parseStatus(value?: string): RequestStatus | undefined {
 }
 
 function parseType(value?: string): RequestType | undefined {
-  const allowed: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"];
+  const allowed: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE", "GENERAL"];
   return allowed.includes(value as RequestType) ? value as RequestType : undefined;
 }
 

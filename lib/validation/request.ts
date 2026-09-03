@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const requestTypeSchema = z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"]);
+export const requestTypeSchema = z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE"]);
 
 export const publicRequestSchema = z.object({
   clubId: z.string().uuid("Choose a club."),

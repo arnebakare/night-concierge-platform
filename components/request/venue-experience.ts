@@ -1,4 +1,4 @@
-import { Calendar, Crown, GlassWater, Music2, Sparkles, Sun, Utensils, Users, Waves } from "lucide-react";
+import { Calendar, CalendarRange, Car, Crown, Flag, GlassWater, Hotel, Music2, Package, ShipWheel, Sparkles, Sun, Utensils, Users, Waves } from "lucide-react";
 import type { Club, RequestType } from "@/lib/types";
 
 export type VenueService = {
@@ -23,7 +23,8 @@ export type VenueExperience = {
 const defaultServices: VenueService[] = [
   { id: "guestlist", label: "Guestlist", description: "Names on the list with quick confirmation.", priceHint: "Host confirms entry details", requestType: "GUESTLIST", icon: Users },
   { id: "vip-table", label: "VIP table", description: "Table request with spend and group details.", priceHint: "Minimum spend confirmed by host", requestType: "TABLE", icon: Crown },
-  { id: "concierge", label: "Concierge request", description: "Ask for help planning the night.", priceHint: "Personal reply on WhatsApp", requestType: "GENERAL", icon: Sparkles }
+  { id: "concierge", label: "Concierge request", description: "Ask for help planning the night.", priceHint: "Personal reply on WhatsApp", requestType: "GENERAL", icon: Sparkles },
+  { id: "full-stay", label: "Full stay planning", description: "Boats, restaurants, clubs, transfers, and tailored days.", priceHint: "Host builds the plan", requestType: "SCHEDULE", icon: CalendarRange }
 ];
 
 export const venueExperiences: Record<string, VenueExperience> = {
@@ -91,6 +92,22 @@ export const venueExperiences: Record<string, VenueExperience> = {
       { id: "dj-night", label: "DJ night", description: "Request for a specific event or DJ.", priceHint: "Artist programming checked", requestType: "VIP_SERVICE", icon: Music2 }
     ]
   }
+  ,
+  "marbella-concierge": {
+    slug: "marbella-concierge",
+    wordmark: "Marbella Concierge",
+    monogram: "MC",
+    tagline: "Boats, villas, transfers, golf, and tailored stays",
+    mood: "Full-stay concierge",
+    services: [
+      { id: "yacht-day", label: "Boat or yacht day", description: "Private boat, yacht, skipper, route, and onboard requests.", priceHint: "Options checked by size and date", requestType: "BOAT", icon: ShipWheel },
+      { id: "golf-day", label: "Golf booking", description: "Tee times, clubs, buggies, transfers, and lunch after.", priceHint: "Course and tee time confirmed first", requestType: "GOLF", icon: Flag },
+      { id: "villa-hotel", label: "Hotel or private villa", description: "Hotel suites, villas, private chef, security, or hosted stay needs.", priceHint: "Tell us dates and group size", requestType: "VILLA", icon: Hotel },
+      { id: "chauffeur", label: "Transfers and chauffeur", description: "Airport pickup, driver by the hour, and late-night movement.", priceHint: "Route and vehicle confirmed on WhatsApp", requestType: "TRANSFER", icon: Car },
+      { id: "full-schedule", label: "Full schedule planning", description: "Beach clubs, restaurants, nightlife, DJs, and movement across days.", priceHint: "Personal plan sent back", requestType: "SCHEDULE", icon: CalendarRange },
+      { id: "tailored-package", label: "Tailored package", description: "A ready-made or custom plan for the whole stay.", priceHint: "Built around your group", requestType: "PACKAGE", icon: Package }
+    ]
+  }
 };
 
 export function getVenueExperience(slug?: string | null, fallbackName = "Venue"): VenueExperience {
@@ -105,8 +122,8 @@ export function getVenueExperience(slug?: string | null, fallbackName = "Venue")
   };
 }
 
-const iconByName = { Calendar, Crown, GlassWater, Music2, Sparkles, Sun, Utensils, Users, Waves };
-const requestTypes: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"];
+const iconByName = { Calendar, CalendarRange, Car, Crown, Flag, GlassWater, Hotel, Music2, Package, ShipWheel, Sparkles, Sun, Utensils, Users, Waves };
+const requestTypes: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE"];
 
 export function getClubVenueExperience(club?: Club | null): VenueExperience {
   const fallback = getVenueExperience(club?.slug, club?.name);

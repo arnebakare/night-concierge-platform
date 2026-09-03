@@ -19,8 +19,8 @@ type EditableService = {
   active: boolean;
 };
 
-const requestTypes: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL"];
-const icons = ["Calendar", "Crown", "GlassWater", "Music2", "Sparkles", "Sun", "Utensils", "Users", "Waves"];
+const requestTypes: RequestType[] = ["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE"];
+const icons = ["Calendar", "CalendarRange", "Car", "Crown", "Flag", "GlassWater", "Hotel", "Music2", "Package", "ShipWheel", "Sparkles", "Sun", "Utensils", "Users", "Waves"];
 
 export function ClubExperienceForm({
   clubId,
