@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergePackage, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergePackage, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, PromoterServiceEligibility, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
 const requestSelect =
-  "id, client_id, club_id, promoter_id, assigned_manager_id, source, request_type, status, requested_date, arrival_time, guest_count, budget, message, internal_summary, created_at, clients(name, phone, client_code, country, preferred_language, vip_level, status), clubs(name, city, slug), promoter:profiles!requests_promoter_id_fkey(name, email)";
+  "id, client_id, club_id, promoter_id, assigned_manager_id, source, request_type, status, requested_date, requested_date_end, arrival_time, guest_count, budget, message, internal_summary, created_at, clients(name, phone, client_code, country, preferred_language, vip_level, status), clubs(name, city, slug), promoter:profiles!requests_promoter_id_fkey(name, email)";
 
 export type RequestFilters = {
   status?: RequestStatus;
@@ -563,6 +563,29 @@ export async function getTeamPromoters(managerId: string, filters?: PromoterFilt
       { ...demoProfile, request_count: 18 },
       { ...demoProfile, id: "demo-promoter-2", name: "Daniel", email: "daniel@casanis.es", request_count: 25 }
     ], filters);
+  }
+}
+
+export async function getPromoterServiceEligibilityForProfile(profile: Profile): Promise<PromoterServiceEligibility[]> {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("promoter_service_eligibility")
+      .select("id, promoter_id, request_type, eligible, notes, created_by, created_at, updated_at, profiles(name, email)")
+      .order("request_type");
+    if (profile.role === "PROMOTER") query = query.eq("promoter_id", profile.id);
+    if (profile.role === "PROMOTER_MANAGER") {
+      const teamIds = await teamIdsCsv(profile.id);
+      if (!teamIds) return [];
+      query = query.in("promoter_id", teamIds.split(","));
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    return normalizePromoterEligibility(data);
+  } catch (error) {
+    if (error instanceof Error && /promoter_service_eligibility/i.test(error.message)) return [];
+    if (!isDemoAuthEnabled()) throw error;
+    return [];
   }
 }
 
@@ -1245,6 +1268,13 @@ function applyPromoterFilters<T extends Profile>(promoters: T[], filters?: Promo
   const query = filters?.q?.trim().toLowerCase();
   if (!query) return promoters;
   return promoters.filter((promoter) => `${promoter.name ?? ""} ${promoter.email ?? ""} ${promoter.phone ?? ""}`.toLowerCase().includes(query));
+}
+
+function normalizePromoterEligibility(data: unknown): PromoterServiceEligibility[] {
+  return ((data as Array<Omit<PromoterServiceEligibility, "profiles"> & { profiles?: PromoterServiceEligibility["profiles"] | PromoterServiceEligibility["profiles"][] | null }> | null) ?? []).map((item) => ({
+    ...item,
+    profiles: Array.isArray(item.profiles) ? item.profiles[0] ?? null : item.profiles ?? null
+  }));
 }
 
 function applyClientFilters(clients: Client[], filters?: ClientFilters) {

@@ -82,6 +82,7 @@ export function RequestFormSteps({
       email: defaults?.email ?? "",
       instagram: defaults?.instagram ?? "",
       requestedDate: defaults?.requestedDate ?? new Date().toISOString().slice(0, 10),
+      requestedDateEnd: defaults?.requestedDateEnd ?? "",
       arrivalTime: defaults?.arrivalTime ?? "",
       guestCount: defaults?.guestCount ?? 2,
       budget: defaults?.budget ?? "",
@@ -105,6 +106,7 @@ export function RequestFormSteps({
     () => selectedClubEvents.find((event) => event.id === values.occasionId),
     [selectedClubEvents, values.occasionId]
   );
+  const isMultiDayRequest = ["VILLA", "SCHEDULE", "PACKAGE"].includes(values.requestType);
   const stepTitles = ["Request", "Venue", "Experience", "Guest", "Details", "Review"];
   const nextLabel = step === 1 ? "Choose place" : step === 2 ? "Choose experience" : step === 3 ? "Add contact" : step === 4 ? "Add details" : "Review request";
 
@@ -145,7 +147,7 @@ export function RequestFormSteps({
       selectClub(nextClub);
       if (option?.requestType) selectServiceByType(nextClub, option.requestType);
     }
-    setStep(2);
+    setStep(option?.requestType ? 3 : 2);
   }
 
   function selectServiceByType(club: Club, requestType: typeof conciergeRequestTypes[number]) {
@@ -168,7 +170,7 @@ export function RequestFormSteps({
 
   async function next() {
     const fieldsByStep: Record<number, (keyof PublicRequestInput)[]> = {
-      2: ["clubId"], 3: ["requestType"], 4: ["name", "phone", "email", "instagram"], 5: ["requestedDate", "guestCount", "arrivalTime", "budget", "message"]
+      2: ["clubId"], 3: ["requestType"], 4: ["name", "phone", "email", "instagram"], 5: ["requestedDate", "requestedDateEnd", "guestCount", "arrivalTime", "budget", "message"]
     };
     if (step === 1 && !category) {
       setError("Choose what you need first.");
@@ -253,7 +255,7 @@ export function RequestFormSteps({
 
       {step === 2 && (
         <div className="space-y-3">
-          <StepIntro title="Where are you going?" description="Start with the place. Services adapt to each venue." />
+          <StepIntro title="Where are you going?" description={category === "nightlife" ? "Choose the venue. Services adapt to each place." : "This service is handled through Marbella Concierge."} />
           <div className="grid gap-3">
             {visibleClubs.map((club) => {
               const experience = getClubVenueExperience(club);
@@ -411,11 +413,16 @@ export function RequestFormSteps({
 
       {step === 5 && (
         <div className="space-y-4">
-          <StepIntro title="When are you going?" description="Approximate times are fine. Add anything we should know." />
+          <StepIntro title={isMultiDayRequest ? "Which dates?" : "When are you going?"} description={isMultiDayRequest ? "Choose the start and end dates. Add any extra timing notes below." : "Approximate times are fine. Add anything we should know."} />
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Date" error={form.formState.errors.requestedDate?.message}>
+            <Field label={isMultiDayRequest ? "Start date" : "Date"} error={form.formState.errors.requestedDate?.message}>
               <Input {...form.register("requestedDate")} type="date" min={new Date().toISOString().slice(0, 10)} />
             </Field>
+            {isMultiDayRequest ? (
+              <Field label="End date" error={form.formState.errors.requestedDateEnd?.message}>
+                <Input {...form.register("requestedDateEnd")} type="date" min={values.requestedDate || new Date().toISOString().slice(0, 10)} />
+              </Field>
+            ) : (
             <Field label="Guests" error={form.formState.errors.guestCount?.message}>
               <div className="grid grid-cols-[2.75rem_1fr_2.75rem] overflow-hidden rounded-md border border-champagne-700/35 bg-input">
                 <button type="button" aria-label="Remove guest" className="flex min-h-12 items-center justify-center border-r border-champagne-700/35 text-champagne-300" onClick={() => setGuestCount(Number(values.guestCount || 1) - 1)}>
@@ -427,7 +434,21 @@ export function RequestFormSteps({
                 </button>
               </div>
             </Field>
+            )}
           </div>
+          {isMultiDayRequest && (
+            <Field label="Guests" error={form.formState.errors.guestCount?.message}>
+              <div className="grid grid-cols-[2.75rem_1fr_2.75rem] overflow-hidden rounded-md border border-champagne-700/35 bg-input">
+                <button type="button" aria-label="Remove guest" className="flex min-h-12 items-center justify-center border-r border-champagne-700/35 text-champagne-300" onClick={() => setGuestCount(Number(values.guestCount || 1) - 1)}>
+                  <Minus className="size-4" />
+                </button>
+                <Input {...form.register("guestCount")} type="number" min={1} inputMode="numeric" className="border-0 bg-transparent text-center shadow-none focus:ring-0" />
+                <button type="button" aria-label="Add guest" className="flex min-h-12 items-center justify-center border-l border-champagne-700/35 text-champagne-300" onClick={() => setGuestCount(Number(values.guestCount || 1) + 1)}>
+                  <Plus className="size-4" />
+                </button>
+              </div>
+            </Field>
+          )}
           <div className="grid grid-cols-3 gap-2">
             <QuickPick label="Tonight" onClick={() => form.setValue("requestedDate", dateString(0), { shouldValidate: true })} />
             <QuickPick label="Tomorrow" onClick={() => form.setValue("requestedDate", dateString(1), { shouldValidate: true })} />
@@ -484,7 +505,7 @@ export function RequestFormSteps({
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <ReviewFact icon={CalendarDays} label="Date" value={values.requestedDate} />
+              <ReviewFact icon={CalendarDays} label={isMultiDayRequest ? "Dates" : "Date"} value={isMultiDayRequest && values.requestedDateEnd ? `${values.requestedDate} to ${values.requestedDateEnd}` : values.requestedDate} />
               <ReviewFact icon={Users} label="Guests" value={String(values.guestCount)} />
               <ReviewFact icon={Clock} label="Arrival" value={values.arrivalTime || "TBC"} />
             </div>

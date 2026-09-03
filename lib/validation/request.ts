@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const requestTypeSchema = z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE"]);
 
-export const publicRequestSchema = z.object({
+const publicRequestBaseSchema = z.object({
   clubId: z.string().uuid("Choose a club."),
   requestType: requestTypeSchema,
   name: z.string().trim().min(2, "Enter the guest name.").max(100),
@@ -10,6 +10,7 @@ export const publicRequestSchema = z.object({
   email: z.string().email("Enter a valid email.").optional().or(z.literal("")),
   instagram: z.string().trim().max(80).optional().or(z.literal("")),
   requestedDate: z.string().min(1, "Choose a date.").refine((value) => value >= new Date().toISOString().slice(0, 10), "Choose today or a future date."),
+  requestedDateEnd: z.string().trim().max(20).optional().or(z.literal("")),
   arrivalTime: z.string().max(40).optional().or(z.literal("")),
   guestCount: z.coerce.number().int().min(1).max(200),
   budget: z.string().max(100).optional().or(z.literal("")),
@@ -22,10 +23,22 @@ export const publicRequestSchema = z.object({
   magicToken: z.string().optional()
 });
 
-export const manualRequestSchema = publicRequestSchema.extend({
+function validateDateRange(value: z.infer<typeof publicRequestBaseSchema>, ctx: z.RefinementCtx) {
+  const needsEndDate = ["VILLA", "SCHEDULE", "PACKAGE"].includes(value.requestType);
+  if (needsEndDate && !value.requestedDateEnd) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["requestedDateEnd"], message: "Choose an end date." });
+  }
+  if (value.requestedDateEnd && value.requestedDateEnd < value.requestedDate) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["requestedDateEnd"], message: "End date must be after the start date." });
+  }
+}
+
+export const publicRequestSchema = publicRequestBaseSchema.superRefine(validateDateRange);
+
+export const manualRequestSchema = publicRequestBaseSchema.extend({
   clientId: z.string().uuid().optional().or(z.literal("")),
   internalNote: z.string().max(1200).optional().or(z.literal(""))
-});
+}).superRefine(validateDateRange);
 
 export type PublicRequestInput = z.infer<typeof publicRequestSchema>;
 export type ManualRequestInput = z.infer<typeof manualRequestSchema>;

@@ -13,6 +13,7 @@ import type { ConciergeRequest, MessageTemplate, RequestStatus } from "@/lib/typ
 import { isTemporaryPhone, whatsAppHref } from "@/lib/sales/funnel";
 import { formatCustomerCode } from "@/lib/concierge/phone";
 import { formatEnum } from "@/lib/utils";
+import { requestDateRangeLabel } from "@/lib/concierge/requests";
 
 export function RequestDetail({
   request,
@@ -40,7 +41,7 @@ export function RequestDetail({
         </div>
 
         <div className="grid grid-cols-2 divide-x divide-y divide-border overflow-hidden rounded-md border border-border md:grid-cols-4 md:divide-y-0">
-          <Fact icon={CalendarDays} label="Date" value={request.requested_date} />
+          <Fact icon={CalendarDays} label="Date" value={requestDateRangeLabel(request)} />
           <Fact icon={Clock} label="Arrival" value={request.arrival_time ?? "TBC"} />
           <Fact icon={Users} label="Guests" value={String(request.guest_count)} />
           <Fact icon={MessageCircle} label="Budget" value={request.budget ?? "Not set"} />

@@ -1736,11 +1736,21 @@ export async function assignRequestPromoter(formData: FormData) {
 
   const supabase = await createClient();
   const promoterId = parsed.data.promoterId || null;
+  const { data: request } = await supabase.from("requests").select("request_type").eq("id", parsed.data.requestId).maybeSingle();
   if (promoterId) {
     let targetQuery = supabase.from("profiles").select("id").eq("id", promoterId).eq("role", "PROMOTER").eq("active", true);
     if (profile.role === "PROMOTER_MANAGER") targetQuery = targetQuery.eq("manager_id", profile.id);
     const { data: target } = await targetQuery.maybeSingle();
     if (!target) throw new Error("Promoter is not active or outside your team.");
+    if (request?.request_type) {
+      const { data: eligibility } = await supabase
+        .from("promoter_service_eligibility")
+        .select("eligible")
+        .eq("promoter_id", promoterId)
+        .eq("request_type", request.request_type)
+        .maybeSingle();
+      if (eligibility?.eligible === false) throw new Error("This promoter is not eligible for this service type.");
+    }
   }
   const { error } = await supabase
     .from("requests")
@@ -1883,6 +1893,47 @@ const entityStatusSchema = z.object({
   entityId: z.string().min(1),
   active: z.enum(["true", "false"]).transform((value) => value === "true")
 });
+
+const promoterServiceEligibilitySchema = z.object({
+  promoterId: z.string().uuid(),
+  requestType: z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE"]),
+  eligible: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
+export async function setPromoterServiceEligibility(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = promoterServiceEligibilitySchema.safeParse({
+    promoterId: formData.get("promoterId"),
+    requestType: formData.get("requestType"),
+    eligible: formData.get("eligible")
+  });
+  if (!parsed.success) return;
+  if (isDemoAuthEnabled()) { revalidatePath("/manager/promoters"); return; }
+
+  const supabase = await createClient();
+  await assertPromoterOwnership(supabase, profile, parsed.data.promoterId);
+  const { data, error } = await supabase
+    .from("promoter_service_eligibility")
+    .upsert({
+      promoter_id: parsed.data.promoterId,
+      request_type: parsed.data.requestType,
+      eligible: parsed.data.eligible,
+      created_by: profile.id
+    }, { onConflict: "promoter_id,request_type" })
+    .select("id")
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "Could not update promoter service eligibility.");
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: parsed.data.eligible ? "PROMOTER_SERVICE_ENABLED" : "PROMOTER_SERVICE_DISABLED",
+    entityType: "promoter_service_eligibility",
+    entityId: data.id,
+    metadata: { promoterId: parsed.data.promoterId, requestType: parsed.data.requestType, eligible: parsed.data.eligible }
+  });
+  revalidatePath("/manager/promoters");
+  revalidatePath("/links");
+}
 
 export async function setTeamPromoterActive(formData: FormData) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);

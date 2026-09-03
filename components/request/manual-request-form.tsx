@@ -24,6 +24,7 @@ export function ManualRequestForm({ clubs, clients }: Readonly<{ clubs: Club[]; 
       clubId: clubs[0]?.id ?? "",
       requestType: "GUESTLIST",
       requestedDate: new Date().toISOString().slice(0, 10),
+      requestedDateEnd: "",
       guestCount: 2,
       name: "",
       phone: "",
@@ -37,6 +38,7 @@ export function ManualRequestForm({ clubs, clients }: Readonly<{ clubs: Club[]; 
   });
   const matchingClients = useMemo(() => clients.filter((client) => `${client.name} ${client.phone} ${client.client_code ?? ""} ${client.instagram ?? ""}`.toLowerCase().includes(clientQuery.toLowerCase())).slice(0, 8), [clients, clientQuery]);
   const values = form.watch();
+  const isMultiDayRequest = ["VILLA", "SCHEDULE", "PACKAGE"].includes(values.requestType);
 
   function chooseClient(clientId: string) {
     const client = clients.find((item) => item.id === clientId);
@@ -85,9 +87,14 @@ export function ManualRequestForm({ clubs, clients }: Readonly<{ clubs: Club[]; 
               {requestTypes.map((type) => <option key={type} value={type}>{formatEnum(type)}</option>)}
             </select>
           </Field>
-          <Field label="Date">
+          <Field label={isMultiDayRequest ? "Start date" : "Date"} error={form.formState.errors.requestedDate?.message}>
             <Input {...form.register("requestedDate")} type="date" min={new Date().toISOString().slice(0, 10)} />
           </Field>
+          {isMultiDayRequest && (
+            <Field label="End date" error={form.formState.errors.requestedDateEnd?.message}>
+              <Input {...form.register("requestedDateEnd")} type="date" min={values.requestedDate || new Date().toISOString().slice(0, 10)} />
+            </Field>
+          )}
           <Field label="Guests">
             <Input {...form.register("guestCount")} type="number" min={1} />
           </Field>

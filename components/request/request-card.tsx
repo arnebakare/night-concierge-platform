@@ -2,7 +2,7 @@ import { CalendarDays, Clock, MessageCircle, Users, UserRoundPlus } from "lucide
 import Link from "next/link";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
-import { fullDateLabel, isMissingRequestContact, requestDateLabel, requestPriority, requestServiceLabel, requestValueSignal } from "@/lib/concierge/requests";
+import { isMissingRequestContact, requestDateLabel, requestDateRangeLabel, requestPriority, requestServiceLabel, requestValueSignal } from "@/lib/concierge/requests";
 import type { ConciergeRequest } from "@/lib/types";
 import { nextSalesAction } from "@/lib/sales/funnel";
 import { formatEnum } from "@/lib/utils";
@@ -25,7 +25,7 @@ export function RequestCard({ request, href, audience = "staff" }: Readonly<{ re
         <RequestStatusBadge status={request.status} />
       </div>
       <div className="grid grid-cols-3 gap-1.5 text-sm">
-        <Fact icon={CalendarDays} label={requestDateLabel(request.requested_date)} value={fullDateLabel(request.requested_date)} />
+        <Fact icon={CalendarDays} label={requestDateLabel(request.requested_date)} value={requestDateRangeLabel(request)} />
         <Fact icon={Users} label="Guests" value={String(request.guest_count)} />
         <Fact icon={Clock} label="Arrival" value={request.arrival_time ?? "TBC"} />
       </div>

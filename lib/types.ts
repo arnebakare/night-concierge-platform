@@ -153,6 +153,7 @@ export type ConciergeRequest = {
   request_type: RequestType;
   status: RequestStatus;
   requested_date: string;
+  requested_date_end?: string | null;
   arrival_time: string | null;
   guest_count: number;
   budget: string | null;
@@ -162,6 +163,18 @@ export type ConciergeRequest = {
   clients?: Pick<Client, "name" | "phone" | "client_code" | "country" | "preferred_language" | "vip_level" | "status"> | null;
   clubs?: Pick<Club, "name" | "city" | "slug"> | null;
   promoter?: Pick<Profile, "name" | "email"> | null;
+};
+
+export type PromoterServiceEligibility = {
+  id: string;
+  promoter_id: string;
+  request_type: RequestType;
+  eligible: boolean;
+  notes: string | null;
+  created_by: string | null;
+  created_at?: string;
+  updated_at?: string;
+  profiles?: Pick<Profile, "name" | "email"> | null;
 };
 
 export type SchedulePlan = {

@@ -6,7 +6,7 @@ import { RequestActivityTimeline } from "@/components/request/request-activity-t
 import { RequestAssignmentControl } from "@/components/request/request-assignment-control";
 import { RequestDetail } from "@/components/request/request-detail";
 import { requireProfile } from "@/lib/auth";
-import { getMessageTemplates, getRequestActivity, getRequestCommerce, getRequestDetail, getTeamPromoters, getUsersForAdmin } from "@/lib/data/app";
+import { getMessageTemplates, getPromoterServiceEligibilityForProfile, getRequestActivity, getRequestCommerce, getRequestDetail, getTeamPromoters, getUsersForAdmin } from "@/lib/data/app";
 import type { RequestStatus } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
@@ -15,15 +15,18 @@ export default async function ManagerRequestDetailPage({
   searchParams
 }: Readonly<{ params: Promise<{ id: string }>; searchParams: Promise<{ updated?: string }> }>) {
   const [profile, { id }, query] = await Promise.all([requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]), params, searchParams]);
-  const [request, promoters, templates] = await Promise.all([
+  const [request, promoters, templates, eligibility] = await Promise.all([
     getRequestDetail(id),
     profile.role === "SUPER_ADMIN" ? getUsersForAdmin({ role: "PROMOTER", active: "active" }) : getTeamPromoters(profile.id),
-    getMessageTemplates()
+    getMessageTemplates(),
+    getPromoterServiceEligibilityForProfile(profile)
   ]);
 
   if (!request) notFound();
   const [commerce, activity] = await Promise.all([getRequestCommerce(request), getRequestActivity(request.id)]);
   const updated = parseStatus(query.updated);
+  const excludedPromoters = new Set(eligibility.filter((item) => item.request_type === request.request_type && !item.eligible).map((item) => item.promoter_id));
+  const eligiblePromoters = promoters.filter((promoter) => promoter.id === request.promoter_id || !excludedPromoters.has(promoter.id));
 
   return (
     <AppShell profile={profile} title="Request detail" eyebrow="Manager inbox">
@@ -33,7 +36,7 @@ export default async function ManagerRequestDetailPage({
         <AvailabilityOfferPanel request={request} slots={commerce.slots} offers={commerce.offers} canManageAvailability templates={templates} />
         <DepositPanel request={request} payments={commerce.payments} returnTo={`/manager/requests/${request.id}`} />
         <RequestActivityTimeline activity={activity} />
-        <RequestAssignmentControl requestId={request.id} currentPromoterId={request.promoter_id} promoters={promoters} />
+        <RequestAssignmentControl requestId={request.id} currentPromoterId={request.promoter_id} promoters={eligiblePromoters} />
       </div>
     </AppShell>
   );

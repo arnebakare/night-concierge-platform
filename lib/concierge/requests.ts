@@ -31,6 +31,11 @@ export function fullDateLabel(value: string) {
   return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" }).format(new Date(`${value}T12:00:00`));
 }
 
+export function requestDateRangeLabel(request: Pick<ConciergeRequest, "requested_date" | "requested_date_end">) {
+  if (!request.requested_date_end || request.requested_date_end === request.requested_date) return fullDateLabel(request.requested_date);
+  return `${fullDateLabel(request.requested_date)} to ${fullDateLabel(request.requested_date_end)}`;
+}
+
 export function requestFreshnessLabel(createdAt: string) {
   const diffMs = Date.now() - new Date(createdAt).getTime();
   const minutes = Math.max(0, Math.round(diffMs / 60000));

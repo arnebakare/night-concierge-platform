@@ -3,7 +3,7 @@ import Link from "next/link";
 import { RequestStatusBadge } from "@/components/request/request-status-badge";
 import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { updateRequestStatus } from "@/lib/actions/management-actions";
-import { compactDate, fullDateLabel, isMissingRequestContact, requestFreshnessLabel, requestPriority, requestServiceLabel, requestValueSignal, whatsappContactHref } from "@/lib/concierge/requests";
+import { compactDate, isMissingRequestContact, requestDateRangeLabel, requestFreshnessLabel, requestPriority, requestServiceLabel, requestValueSignal, whatsappContactHref } from "@/lib/concierge/requests";
 import type { ConciergeRequest, RequestStatus } from "@/lib/types";
 
 const easyActions: Partial<Record<RequestStatus, { status: RequestStatus; label: string; variant?: "default" | "secondary" }[]>> = {
@@ -57,7 +57,7 @@ export function RequestLeadRow({
         </Link>
 
         <Link href={href} className="hidden grid-cols-3 gap-1 text-xs text-slate-500 md:grid">
-          <Fact icon={CalendarDays} label="Date" value={fullDateLabel(request.requested_date)} />
+          <Fact icon={CalendarDays} label="Date" value={requestDateRangeLabel(request)} />
           <Fact icon={Users} label="Guests" value={String(request.guest_count)} />
           <Fact icon={Clock} label="Arrival" value={request.arrival_time ?? "TBC"} />
         </Link>
@@ -124,6 +124,6 @@ function priorityPillClass(tone: ReturnType<typeof requestPriority>["tone"]) {
 function buildQuickReply(request: ConciergeRequest) {
   const firstName = request.clients?.name?.split(" ").filter(Boolean)[0] ?? "";
   const clubName = request.clubs?.name ?? "the venue";
-  const date = fullDateLabel(request.requested_date);
+  const date = requestDateRangeLabel(request);
   return `Hi ${firstName || "there"}, I am checking ${clubName} for ${date} for ${request.guest_count} guests and will come back shortly.`;
 }

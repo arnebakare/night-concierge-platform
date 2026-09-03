@@ -3,13 +3,22 @@ import { ClipboardList, UserRound } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { ClientSearchForm } from "@/components/client/client-search-form";
+import { setPromoterServiceEligibility } from "@/lib/actions/management-actions";
 import { requireProfile } from "@/lib/auth";
-import { getTeamPromoters } from "@/lib/data/app";
+import { getPromoterServiceEligibilityForProfile, getTeamPromoters } from "@/lib/data/app";
+import type { RequestType } from "@/lib/types";
+import { formatEnum } from "@/lib/utils";
+
+const serviceTypes: RequestType[] = ["TABLE", "GUESTLIST", "VIP_SERVICE", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE", "GENERAL"];
 
 export default async function ManagerPromotersPage({ searchParams }: Readonly<{ searchParams: Promise<{ q?: string }> }>) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const filters = await searchParams;
-  const promoters = await getTeamPromoters(profile.id, { q: filters.q });
+  const [promoters, eligibility] = await Promise.all([
+    getTeamPromoters(profile.id, { q: filters.q }),
+    getPromoterServiceEligibilityForProfile(profile)
+  ]);
+  const eligibilityByPromoter = new Map(eligibility.map((item) => [`${item.promoter_id}:${item.request_type}`, item.eligible]));
 
   return (
     <AppShell profile={profile} title="Promoters" eyebrow="Team">
@@ -21,7 +30,8 @@ export default async function ManagerPromotersPage({ searchParams }: Readonly<{ 
       </div>
       <div className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
         {promoters.map((promoter) => (
-          <Link key={promoter.id} href={`/manager/promoters/${promoter.id}`} className="block px-3 py-2.5 text-slate-950 transition hover:bg-slate-50">
+          <div key={promoter.id} className="px-3 py-2.5 text-slate-950 transition hover:bg-slate-50">
+            <Link href={`/manager/promoters/${promoter.id}`} className="block">
               <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-500">
@@ -41,7 +51,32 @@ export default async function ManagerPromotersPage({ searchParams }: Readonly<{ 
                   </span>
                 </div>
               </div>
-          </Link>
+            </Link>
+            <details className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+              <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Service eligibility
+              </summary>
+              <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-5">
+                {serviceTypes.map((type) => {
+                  const eligible = eligibilityByPromoter.get(`${promoter.id}:${type}`) ?? true;
+                  return (
+                    <form key={type} action={setPromoterServiceEligibility}>
+                      <input type="hidden" name="promoterId" value={promoter.id} />
+                      <input type="hidden" name="requestType" value={type} />
+                      <input type="hidden" name="eligible" value={String(!eligible)} />
+                      <button
+                        type="submit"
+                        className={eligible ? "min-h-9 w-full rounded-md border border-emerald-200 bg-emerald-50 px-2 text-xs font-semibold text-emerald-700" : "min-h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-400 line-through"}
+                      >
+                        {formatEnum(type)}
+                      </button>
+                    </form>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-slate-500">Green means eligible. Tap a service to opt this promoter out or back in.</p>
+            </details>
+          </div>
         ))}
         {!promoters.length && <LuxuryCard className="text-center text-sm text-muted-foreground">No promoters match this search.</LuxuryCard>}
       </div>
