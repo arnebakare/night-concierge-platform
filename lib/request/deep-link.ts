@@ -1,6 +1,6 @@
 import type { RequestCategory } from "@/components/request/request-form-steps";
 import type { PublicRequestInput } from "@/lib/validation/request";
-import type { Club, RequestType } from "@/lib/types";
+import type { Club, ConciergePackage, RequestType } from "@/lib/types";
 
 type DeepLinkParams = Record<string, string | string[] | undefined>;
 
@@ -50,6 +50,27 @@ export function resolveRequestDeepLink(clubs: Club[], params?: DeepLinkParams) {
     defaults,
     initialCategory: optionConfig?.category ?? (matchedClub ? "nightlife" as const : undefined),
     startAtStep: optionConfig?.category && optionConfig.category !== "nightlife" ? 3 : matchedClub ? 3 : optionConfig ? 2 : undefined
+  };
+}
+
+export function withPackageDeepLink<T extends ReturnType<typeof resolveRequestDeepLink>>(linkDefaults: T, packages: ConciergePackage[], params?: DeepLinkParams): T {
+  const packageSlug = firstParam(params?.package ?? params?.packageSlug)?.toLowerCase().trim();
+  if (!packageSlug) return linkDefaults;
+  const selectedPackage = packages.find((item) => item.slug === packageSlug || item.id === packageSlug);
+  if (!selectedPackage) return linkDefaults;
+  return {
+    ...linkDefaults,
+    defaults: {
+      ...linkDefaults.defaults,
+      requestType: selectedPackage.request_type,
+      serviceLabel: "Tailored package",
+      packageId: selectedPackage.id,
+      packageTitle: selectedPackage.title,
+      packageStyle: selectedPackage.title,
+      budget: selectedPackage.price_hint ?? linkDefaults.defaults.budget ?? ""
+    },
+    initialCategory: "package" as const,
+    startAtStep: 3
   };
 }
 

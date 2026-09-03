@@ -615,6 +615,38 @@ export async function getServiceRoutingRulesForProfile(profile: Profile): Promis
   }
 }
 
+export async function getServiceRoutingStatsForProfile(profile: Profile): Promise<Partial<Record<RequestType, { open: number; recent: number }>>> {
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("requests")
+      .select("request_type, status, created_at")
+      .gte("created_at", new Date(Date.now() - 60 * 86400000).toISOString())
+      .limit(1000);
+    if (profile.role === "PROMOTER_MANAGER") {
+      const teamIds = await teamIdsCsv(profile.id);
+      const clubIds = await managerClubIdsCsv(profile.id);
+      const scopedRules = [`assigned_manager_id.eq.${profile.id}`];
+      if (teamIds) scopedRules.push(`promoter_id.in.(${teamIds})`);
+      if (clubIds) scopedRules.push(`club_id.in.(${clubIds})`);
+      query = query.or(scopedRules.join(","));
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    const stats: Partial<Record<RequestType, { open: number; recent: number }>> = {};
+    for (const request of (data ?? []) as { request_type: RequestType; status: RequestStatus }[]) {
+      const current = stats[request.request_type] ?? { open: 0, recent: 0 };
+      current.recent += 1;
+      if (!["ARRIVED", "NO_SHOW", "DECLINED", "CANCELLED"].includes(request.status)) current.open += 1;
+      stats[request.request_type] = current;
+    }
+    return stats;
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return { TABLE: { open: 6, recent: 14 }, GOLF: { open: 1, recent: 2 }, PACKAGE: { open: 2, recent: 3 } };
+  }
+}
+
 export async function getPromoterPerformance(promoterId: string) {
   try {
     const supabase = await createClient();

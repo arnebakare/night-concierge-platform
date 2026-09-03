@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import { RequestFormSteps } from "@/components/request/request-form-steps";
 import { PublicRequestShell } from "@/components/request/public-request-shell";
-import { getActiveClubs, getMagicLink, getPublicUpcomingEvents } from "@/lib/data/public";
+import { getActiveClubs, getMagicLink, getPublicConciergePackages, getPublicUpcomingEvents } from "@/lib/data/public";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Button } from "@/components/ui/button";
-import { resolveRequestDeepLink } from "@/lib/request/deep-link";
+import { resolveRequestDeepLink, withPackageDeepLink } from "@/lib/request/deep-link";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,7 @@ export default async function MagicLinkPage({
   searchParams
 }: Readonly<{ params: Promise<{ token: string }>; searchParams?: Promise<Record<string, string | string[] | undefined>> }>) {
   const { token } = await params;
-  const [clubs, link, events] = await Promise.all([getActiveClubs(), getMagicLink(token), getPublicUpcomingEvents()]);
+  const [clubs, link, events, packages] = await Promise.all([getActiveClubs(), getMagicLink(token), getPublicUpcomingEvents(), getPublicConciergePackages()]);
 
   if (!link?.active) notFound();
   if (link.expires_at && new Date(link.expires_at) < new Date()) notFound();
@@ -25,7 +25,8 @@ export default async function MagicLinkPage({
   const hostName = promoter?.name ?? "your concierge host";
   const promoterWhatsAppHref = whatsAppHref(promoter?.phone, `Hi ${hostName}, I opened my private VIP link and have a special request.`);
   const availableClubs = link.club_id ? clubs.filter((club) => club.id === link.club_id) : clubs;
-  const linkDefaults = resolveRequestDeepLink(availableClubs, await searchParams);
+  const paramsValue = await searchParams;
+  const linkDefaults = withPackageDeepLink(resolveRequestDeepLink(availableClubs, paramsValue), packages, paramsValue);
   const startAtStep = linkDefaults.startAtStep ?? (link.club_id ? 3 : undefined);
 
   return (
@@ -61,6 +62,7 @@ export default async function MagicLinkPage({
       <RequestFormSteps
         clubs={availableClubs}
         events={events}
+        packages={packages}
         magicToken={token}
         initialCategory={linkDefaults.initialCategory}
         startAtStep={startAtStep}

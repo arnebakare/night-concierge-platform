@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Club, ConciergeEvent } from "@/lib/types";
+import type { Club, ConciergeEvent, ConciergePackage } from "@/lib/types";
 import { isDemoAuthEnabled } from "@/lib/env";
 
 export async function getActiveClubs(): Promise<Club[]> {
@@ -53,6 +53,43 @@ export async function getPublicUpcomingEvents(): Promise<ConciergeEvent[]> {
       { id: "public-event-1", club_id: "00000000-0000-0000-0000-000000000001", name: "La Plage Sunset Session", slug: "la-plage-sunset-session", event_date: today, description: "Beach-club lunch, sunset tables, and hosted groups.", active: true, clubs: { name: "La Plage Casanis", city: "Marbella", slug: "la-plage-casanis" } },
       { id: "public-event-2", club_id: "00000000-0000-0000-0000-000000000002", name: "Le Jade After Party", slug: "le-jade-after-party", event_date: today, description: "Late after-party tables and guestlist.", active: true, clubs: { name: "Le Jade", city: "Marbella", slug: "le-jade" } },
       { id: "public-event-3", club_id: "00000000-0000-0000-0000-000000000005", name: "Momento DJ Night", slug: "momento-dj-night", event_date: tomorrow, description: "Club-night option for table or guestlist clients.", active: true, clubs: { name: "Momento", city: "Marbella", slug: "momento" } }
+    ];
+  }
+}
+
+export async function getPublicConciergePackages(): Promise<ConciergePackage[]> {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("concierge_packages")
+      .select("id, title, slug, description, request_type, price_hint, tailored_client_id, active, package_items, created_by, created_at, updated_at")
+      .eq("active", true)
+      .is("tailored_client_id", null)
+      .order("created_at", { ascending: false })
+      .limit(12);
+    if (error) throw error;
+    return ((data ?? []) as Array<Omit<ConciergePackage, "clients" | "package_items"> & { package_items?: unknown }>).map((item) => ({
+      ...item,
+      package_items: Array.isArray(item.package_items) ? item.package_items.map(String) : [],
+      clients: null
+    }));
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return [
+      {
+        id: "public-package-1",
+        title: "Marbella Weekend Starter",
+        slug: "marbella-weekend-starter",
+        description: "Beach club, dinner, nightlife, and transfers shaped around your group.",
+        request_type: "PACKAGE",
+        price_hint: "Tailored after dates",
+        tailored_client_id: null,
+        active: true,
+        package_items: ["Beach club day", "Dinner reservation", "Nightclub table", "Transfers"],
+        created_by: null,
+        created_at: new Date().toISOString(),
+        clients: null
+      }
     ];
   }
 }

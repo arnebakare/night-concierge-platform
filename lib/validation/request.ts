@@ -23,6 +23,8 @@ const publicRequestBaseSchema = z.object({
   pickupLocation: z.string().trim().max(160).optional().or(z.literal("")),
   dropoffLocation: z.string().trim().max(160).optional().or(z.literal("")),
   packageStyle: z.string().trim().max(160).optional().or(z.literal("")),
+  packageId: z.string().trim().max(120).optional().or(z.literal("")),
+  packageTitle: z.string().trim().max(160).optional().or(z.literal("")),
   serviceLabel: z.string().trim().max(120).optional().or(z.literal("")),
   occasionId: z.string().trim().max(120).optional().or(z.literal("")),
   occasionName: z.string().trim().max(160).optional().or(z.literal("")),

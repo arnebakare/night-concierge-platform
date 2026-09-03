@@ -1,6 +1,8 @@
 import { PackagePlus } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/layout/app-shell";
+import { ClientSearchForm } from "@/components/client/client-search-form";
 import { StatusSubmitButton } from "@/components/request/status-submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,12 +16,20 @@ import { formatEnum } from "@/lib/utils";
 
 const packageTypes: RequestType[] = ["PACKAGE", "SCHEDULE", "BOAT", "GOLF", "VILLA", "TRANSFER", "VIP_SERVICE", "GENERAL"];
 
-export default async function AdminPackagesPage() {
+export default async function AdminPackagesPage({ searchParams }: Readonly<{ searchParams?: Promise<{ q?: string; type?: string; active?: string }> }>) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const filters = await searchParams;
   const [packages, clients] = await Promise.all([
     getConciergePackagesForProfile(profile),
     getClientsForProfile(profile)
   ]);
+  const visiblePackages = packages.filter((item) => {
+    const query = filters?.q?.trim().toLowerCase();
+    const matchesQuery = !query || `${item.title} ${item.slug} ${item.description ?? ""} ${item.price_hint ?? ""} ${item.package_items.join(" ")}`.toLowerCase().includes(query);
+    const matchesType = !filters?.type || item.request_type === filters.type;
+    const matchesActive = !filters?.active || String(item.active) === filters.active;
+    return matchesQuery && matchesType && matchesActive;
+  });
 
   return (
     <AppShell profile={profile} title="Packages" eyebrow="Concierge CMS">
@@ -41,9 +51,18 @@ export default async function AdminPackagesPage() {
         </details>
       </LuxuryCard>
 
+      <div className="mb-3 grid gap-2 md:grid-cols-[1fr_auto_auto] md:items-center">
+        <ClientSearchForm action="/admin/packages" value={filters?.q} placeholder="Search packages, services, inclusions" />
+        <FilterLink label="All" href="/admin/packages" active={!filters?.active && !filters?.type} />
+        <FilterLink label="Active" href="/admin/packages?active=true" active={filters?.active === "true"} />
+      </div>
+      <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+        {packageTypes.map((type) => <FilterLink key={type} label={formatEnum(type)} href={`/admin/packages?type=${type}`} active={filters?.type === type} />)}
+      </div>
+
       <div className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
-        {packages.map((item) => <PackageRow key={item.id} item={item} clients={clients} />)}
-        {!packages.length && <div className="p-6 text-center text-sm text-slate-500">No packages yet.</div>}
+        {visiblePackages.map((item) => <PackageRow key={item.id} item={item} clients={clients} />)}
+        {!visiblePackages.length && <div className="p-6 text-center text-sm text-slate-500">No packages match this view.</div>}
       </div>
     </AppShell>
   );
@@ -52,13 +71,16 @@ export default async function AdminPackagesPage() {
 function PackageRow({ item, clients }: Readonly<{ item: ConciergePackage; clients: Awaited<ReturnType<typeof getClientsForProfile>> }>) {
   return (
     <div className={`px-3 py-2.5 text-slate-950 ${!item.active ? "opacity-65" : ""}`}>
-      <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
+      <div className="grid gap-2 md:grid-cols-[1fr_auto_auto] md:items-center">
         <div className="min-w-0">
           <p className="truncate font-semibold">{item.title}</p>
           <p className="mt-0.5 truncate text-xs text-slate-500">
             {formatEnum(item.request_type)} · /{item.slug}{item.clients ? ` · for ${item.clients.name}` : " · available to all clients"}
           </p>
         </div>
+        <Link href={`/request?option=package&package=${item.slug}`} className="w-fit rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
+          Test form
+        </Link>
         <span className={item.active ? "w-fit rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700" : "w-fit rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500"}>
           {item.active ? "Active" : "Archived"}
         </span>
@@ -126,5 +148,13 @@ function Metric({ label, value }: Readonly<{ label: string; value: number }>) {
       <p className="text-[11px] text-slate-500">{label}</p>
       <p className="mt-0.5 text-lg font-semibold leading-none">{value}</p>
     </div>
+  );
+}
+
+function FilterLink({ label, href, active }: Readonly<{ label: string; href: string; active?: boolean }>) {
+  return (
+    <Link href={href} className={active ? "inline-flex h-10 shrink-0 items-center justify-center rounded-md bg-slate-950 px-3 text-sm font-semibold text-white" : "inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600"}>
+      {label}
+    </Link>
   );
 }

@@ -46,7 +46,8 @@ export async function submitPublicRequest(input: PublicRequestInput): Promise<Re
     bedrooms: data.bedrooms,
     pickupLocation: data.pickupLocation,
     dropoffLocation: data.dropoffLocation,
-    packageStyle: data.packageStyle
+    packageStyle: data.packageStyle,
+    packageTitle: data.packageTitle
   });
   const fingerprint = createHash("sha256").update(normalizedPhone).digest("hex");
   const { data: allowed, error: rateError } = await supabase.rpc("consume_public_request_slot", { p_fingerprint: fingerprint, p_limit: 5, p_window_minutes: 10 });
@@ -152,7 +153,8 @@ export async function createManualRequest(input: unknown): Promise<RequestAction
     bedrooms: data.bedrooms,
     pickupLocation: data.pickupLocation,
     dropoffLocation: data.dropoffLocation,
-    packageStyle: data.packageStyle
+    packageStyle: data.packageStyle,
+    packageTitle: data.packageTitle
   });
   const { clientId, status: clientStatus } = await upsertClient(supabase, {
     name: data.name,
@@ -275,6 +277,7 @@ function withRequestContext(
     pickupLocation?: string;
     dropoffLocation?: string;
     packageStyle?: string;
+    packageTitle?: string;
   }
 ) {
   const contextLines = [
@@ -288,7 +291,8 @@ function withRequestContext(
     context.bedrooms?.trim() ? `Bedrooms: ${context.bedrooms.trim()}` : null,
     context.pickupLocation?.trim() ? `Pickup: ${context.pickupLocation.trim()}` : null,
     context.dropoffLocation?.trim() ? `Drop-off: ${context.dropoffLocation.trim()}` : null,
-    context.packageStyle?.trim() ? `Package style: ${context.packageStyle.trim()}` : null
+    context.packageStyle?.trim() ? `Package style: ${context.packageStyle.trim()}` : null,
+    context.packageTitle?.trim() ? `Selected package: ${context.packageTitle.trim()}` : null
   ].filter(Boolean);
   const cleanMessage = message.trim();
   if (!contextLines.length) return cleanMessage;

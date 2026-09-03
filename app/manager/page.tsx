@@ -3,7 +3,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { RequestLeadRow } from "@/components/request/request-lead-row";
 import { ActionTile } from "@/components/ui/action-tile";
-import { CalendarDays, CheckCircle2, HeartHandshake, Inbox, ListPlus, MessageCircle, UserRoundSearch, Users } from "lucide-react";
+import { CalendarDays, CheckCircle2, HeartHandshake, Inbox, ListPlus, MessageCircle, Route, UserRoundSearch, Users } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
 import { getOpenFollowUpTasksForProfile, getRequestsForProfile } from "@/lib/data/app";
 import { fullDateLabel, isMissingRequestContact, requestPriority, requestServiceLabel } from "@/lib/concierge/requests";
@@ -43,6 +43,7 @@ export default async function ManagerPage() {
             <ActionTile href="/requests/new" label="New request" icon={ListPlus} />
             <ActionTile href="/schedule" label="Suggest schedule" icon={CalendarDays} />
             <ActionTile href="/manager/retention" label="Client care" icon={HeartHandshake} />
+            <ActionTile href="/manager/routing" label="Service routing" icon={Route} />
           </div>
         </section>
         <TodayCare tasks={followUps.slice(0, 4)} />
@@ -57,6 +58,7 @@ export default async function ManagerPage() {
         <Button asChild><Link href="/manager/requests">Open inbox</Link></Button>
         <Button asChild variant="secondary"><Link href="/requests/lead">Paste lead</Link></Button>
         <Button asChild variant="secondary"><Link href="/manager/promoters">Manage team</Link></Button>
+        <Button asChild variant="secondary"><Link href="/manager/routing">Routing</Link></Button>
         <Button asChild variant="secondary"><Link href="/schedule">Suggest schedule</Link></Button>
         <Button asChild variant="secondary"><Link href="/manager/retention">Retention</Link></Button>
         <Button asChild variant="secondary"><Link href="/manager/events">Events</Link></Button>

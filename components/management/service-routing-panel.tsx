@@ -8,11 +8,13 @@ const serviceTypes: RequestType[] = ["TABLE", "GUESTLIST", "VIP_SERVICE", "BOAT"
 export function ServiceRoutingPanel({
   rules,
   promoters,
-  managers
+  managers,
+  stats = {}
 }: Readonly<{
   rules: ServiceRoutingRule[];
   promoters: Profile[];
   managers: Profile[];
+  stats?: Partial<Record<RequestType, { open: number; recent: number }>>;
 }>) {
   const rulesByType = new Map(rules.map((rule) => [rule.request_type, rule]));
 
@@ -25,12 +27,16 @@ export function ServiceRoutingPanel({
       <div className="divide-y divide-slate-200">
         {serviceTypes.map((type) => {
           const rule = rulesByType.get(type);
+          const typeStats = stats[type];
           return (
             <form key={type} action={saveServiceRoutingRule} className="grid gap-3 px-4 py-3 md:grid-cols-[11rem_1fr_1fr_1fr_5.5rem] md:items-end">
               <input type="hidden" name="requestType" value={type} />
               <div>
                 <p className="text-sm font-semibold">{formatEnum(type)}</p>
-                <p className="mt-0.5 text-[11px] text-slate-500">{rule?.active === false ? "Paused" : "Active routing"}</p>
+                <p className="mt-0.5 text-[11px] text-slate-500">
+                  {rule?.active === false ? "Paused" : "Active routing"}
+                  {typeStats ? ` · ${typeStats.open} open · ${typeStats.recent} recent` : ""}
+                </p>
               </div>
               <SelectField name="defaultPromoterId" label="Default promoter" value={rule?.default_promoter_id ?? ""} options={promoters} emptyLabel="No default" />
               <SelectField name="fallbackPromoterId" label="Fallback" value={rule?.fallback_promoter_id ?? ""} options={promoters} emptyLabel="No fallback" />

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createPublicRequest } from "@/lib/actions/request-actions";
 import { publicRequestSchema, type PublicRequestInput } from "@/lib/validation/request";
-import type { Club, ConciergeEvent } from "@/lib/types";
+import type { Club, ConciergeEvent, ConciergePackage } from "@/lib/types";
 import { cn, formatEnum } from "@/lib/utils";
 import { getClubVenueExperience } from "@/components/request/venue-experience";
 
@@ -31,6 +31,7 @@ const categoryCards: { id: RequestCategory; title: string; description: string; 
 export function RequestFormSteps({
   clubs,
   events = [],
+  packages = [],
   promoterSlug,
   magicToken,
   initialCategory,
@@ -39,6 +40,7 @@ export function RequestFormSteps({
 }: Readonly<{
   clubs: Club[];
   events?: ConciergeEvent[];
+  packages?: ConciergePackage[];
   promoterSlug?: string;
   magicToken?: string;
   initialCategory?: RequestCategory;
@@ -95,6 +97,8 @@ export function RequestFormSteps({
       pickupLocation: defaults?.pickupLocation ?? "",
       dropoffLocation: defaults?.dropoffLocation ?? "",
       packageStyle: defaults?.packageStyle ?? "",
+      packageId: defaults?.packageId ?? "",
+      packageTitle: defaults?.packageTitle ?? "",
       occasionId: defaults?.occasionId ?? "",
       occasionName: defaults?.occasionName ?? "",
       occasionDate: defaults?.occasionDate ?? "",
@@ -178,7 +182,7 @@ export function RequestFormSteps({
 
   async function next() {
     const fieldsByStep: Record<number, (keyof PublicRequestInput)[]> = {
-      2: ["clubId"], 3: ["requestType"], 4: ["name", "phone", "email", "instagram"], 5: ["requestedDate", "requestedDateEnd", "guestCount", "arrivalTime", "budget", "message", "preferredArea", "occasion", "boatStyle", "teeTimePreference", "bedrooms", "pickupLocation", "dropoffLocation", "packageStyle"]
+      2: ["clubId"], 3: ["requestType"], 4: ["name", "phone", "email", "instagram"], 5: ["requestedDate", "requestedDateEnd", "guestCount", "arrivalTime", "budget", "message", "preferredArea", "occasion", "boatStyle", "teeTimePreference", "bedrooms", "pickupLocation", "dropoffLocation", "packageStyle", "packageId", "packageTitle"]
     };
     if (step === 1 && !category) {
       setError("Choose what you need first.");
@@ -354,6 +358,47 @@ export function RequestFormSteps({
               );
             })}
           </div>
+          {values.requestType === "PACKAGE" && packages.length > 0 && (
+            <div className="rounded-2xl border border-champagne-700/28 bg-white/[0.045] p-3">
+              <div className="mb-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Packages</p>
+                <p className="mt-1 text-sm text-muted-foreground">Optional. Choose a starting point and your host can tailor it.</p>
+              </div>
+              <div className="grid gap-2">
+                {packages.slice(0, 5).map((item) => {
+                  const active = values.packageId === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        form.setValue("packageId", active ? "" : item.id, { shouldValidate: true });
+                        form.setValue("packageTitle", active ? "" : item.title, { shouldValidate: true });
+                        form.setValue("packageStyle", active ? "" : item.title, { shouldValidate: true });
+                        if (!active && item.price_hint) form.setValue("budget", item.price_hint, { shouldValidate: true });
+                      }}
+                      className={cn(
+                        "rounded-xl border p-3 text-left transition active:scale-[0.99]",
+                        active ? "border-champagne-300 bg-champagne-300/12" : "border-champagne-700/24 bg-ink-950/40 hover:border-champagne-300/50"
+                      )}
+                    >
+                      <span className="flex items-start justify-between gap-3">
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold text-champagne-50">{item.title}</span>
+                          {item.description && <span className="mt-1 block text-xs leading-5 text-champagne-100/72">{item.description}</span>}
+                        </span>
+                        {active && <Check className="size-4 shrink-0 text-champagne-300" />}
+                      </span>
+                      <span className="mt-2 flex flex-wrap gap-1.5">
+                        {item.price_hint && <span className="rounded-full border border-champagne-700/25 px-2 py-0.5 text-[10px] text-champagne-200">{item.price_hint}</span>}
+                        {item.package_items.slice(0, 3).map((detail) => <span key={detail} className="rounded-full bg-white/[0.055] px-2 py-0.5 text-[10px] text-muted-foreground">{detail}</span>)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {selectedClubEvents.length > 0 && (
             <div className="rounded-2xl border border-champagne-700/28 bg-white/[0.045] p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
@@ -511,6 +556,7 @@ export function RequestFormSteps({
                   <p className="text-champagne-300">{selectedServiceHint(selectedExperience.services, values.serviceLabel)}</p>
                 )}
                 {selectedOccasion && <p className="text-champagne-300">{selectedOccasion.name} · {formatEventDate(selectedOccasion.event_date)}</p>}
+                {values.packageTitle && <p className="text-champagne-300">{values.packageTitle}</p>}
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
