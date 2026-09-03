@@ -4,7 +4,7 @@ import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
 const requestSelect =
-  "id, client_id, club_id, promoter_id, assigned_manager_id, source, request_type, status, requested_date, requested_date_end, arrival_time, guest_count, budget, message, internal_summary, created_at, clients(name, phone, client_code, country, preferred_language, vip_level, status), clubs(name, city, slug), promoter:profiles!requests_promoter_id_fkey(name, email)";
+  "id, client_id, club_id, promoter_id, assigned_manager_id, source, request_type, status, requested_date, requested_date_end, arrival_time, guest_count, budget, message, internal_summary, created_at, removed_at, removed_by, removal_reason, clients(name, phone, client_code, country, preferred_language, vip_level, status), clubs(name, city, slug), promoter:profiles!requests_promoter_id_fkey(name, email)";
 
 export type RequestFilters = {
   status?: RequestStatus;
@@ -49,6 +49,7 @@ export async function getRequestsForProfile(profile: Profile, options?: RequestF
     let query = supabase
       .from("requests")
       .select(requestSelect)
+      .is("removed_at", null)
       .order("requested_date", { ascending: true })
       .order("created_at", { ascending: false });
 
@@ -72,7 +73,7 @@ export async function getRequestsForProfile(profile: Profile, options?: RequestF
       query = query.or(scopedRules.join(","));
     }
     if (profile.role === "CLIENT" || options?.clientOnly) {
-      const { data: ownedClients } = await supabase.from("clients").select("id").eq("profile_id", profile.id);
+      const { data: ownedClients } = await supabase.from("clients").select("id").is("removed_at", null).eq("profile_id", profile.id);
       const ownedIds = (ownedClients ?? []).map((client) => client.id);
       if (!ownedIds.length) return [];
       query = query.in("client_id", ownedIds);
@@ -212,7 +213,8 @@ export async function getClientsForProfile(profile: Profile, filters?: ClientFil
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("clients")
-      .select("id, name, phone, client_code, email, instagram, country, preferred_language, vip_level, status")
+      .select("id, name, phone, client_code, email, instagram, country, preferred_language, vip_level, status, removed_at, removed_by, removal_reason")
+      .is("removed_at", null)
       .order("updated_at", { ascending: false })
       .limit(80);
     if (error) throw error;
@@ -230,6 +232,7 @@ export async function getRetentionClientsForProfile(profile: Profile, days = 45)
     const { data, error } = await supabase
       .from("clients")
       .select("id, name, phone, email, instagram, country, preferred_language, vip_level, status, requests(requested_date, created_at), retention_outreach(created_at)")
+      .is("removed_at", null)
       .neq("status", "BLOCKED")
       .limit(120);
     if (error) throw error;
@@ -335,7 +338,7 @@ export async function getClientProfile(clientId: string, filters?: NoteFilters) 
     const [{ data: client, error: clientError }, { data: notes, error: notesError }, { data: aliases, error: aliasError }, { data: history, error: historyError }, { data: outreach, error: outreachError }, tasksResult] = await Promise.all([
       supabase
         .from("clients")
-        .select("id, name, phone, client_code, email, instagram, country, preferred_language, vip_level, status")
+        .select("id, name, phone, client_code, email, instagram, country, preferred_language, vip_level, status, removed_at, removed_by, removal_reason")
         .eq("id", clientId)
         .single(),
       supabase
@@ -356,6 +359,7 @@ export async function getClientProfile(clientId: string, filters?: NoteFilters) 
         .from("requests")
         .select("id, requested_date, arrival_time, guest_count, request_type, status, budget, created_at, clubs(name, city, slug), promoter:profiles!requests_promoter_id_fkey(name, email)")
         .eq("client_id", clientId)
+        .is("removed_at", null)
         .order("requested_date", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(20)

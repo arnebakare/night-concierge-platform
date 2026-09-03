@@ -1696,6 +1696,92 @@ export async function updateClientRecord(formData: FormData) {
   revalidatePath("/manager/clients");
 }
 
+const removeRequestSchema = z.object({
+  requestId: z.string().uuid(),
+  reason: z.string().trim().max(400).optional().or(z.literal(""))
+});
+
+export async function removeRequestFromCrm(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = removeRequestSchema.safeParse({
+    requestId: formData.get("requestId"),
+    reason: formData.get("reason") || ""
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/manager/requests");
+    redirect("/manager/requests?removed=request");
+  }
+
+  const supabase = createAdminClient();
+  await assertRequestRemovalAccess(supabase, profile, parsed.data.requestId);
+  const { error } = await supabase
+    .from("requests")
+    .update({
+      removed_at: new Date().toISOString(),
+      removed_by: profile.id,
+      removal_reason: parsed.data.reason || null
+    })
+    .eq("id", parsed.data.requestId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "REQUEST_REMOVED_FROM_CRM",
+    entityType: "requests",
+    entityId: parsed.data.requestId,
+    metadata: { reason: parsed.data.reason || null }
+  });
+
+  revalidatePath("/manager/requests");
+  revalidatePath(`/manager/requests/${parsed.data.requestId}`);
+  redirect("/manager/requests?removed=request");
+}
+
+const removeClientSchema = z.object({
+  clientId: z.string().uuid(),
+  reason: z.string().trim().max(400).optional().or(z.literal(""))
+});
+
+export async function removeClientFromCrm(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = removeClientSchema.safeParse({
+    clientId: formData.get("clientId"),
+    reason: formData.get("reason") || ""
+  });
+  if (!parsed.success) return;
+
+  if (isDemoAuthEnabled()) {
+    revalidatePath("/manager/clients");
+    redirect("/manager/clients?removed=client");
+  }
+
+  const supabase = createAdminClient();
+  await assertClientRemovalAccess(supabase, profile, parsed.data.clientId);
+  const { error } = await supabase
+    .from("clients")
+    .update({
+      removed_at: new Date().toISOString(),
+      removed_by: profile.id,
+      removal_reason: parsed.data.reason || null
+    })
+    .eq("id", parsed.data.clientId);
+  if (error) throw new Error(error.message);
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "CLIENT_REMOVED_FROM_CRM",
+    entityType: "clients",
+    entityId: parsed.data.clientId,
+    metadata: { reason: parsed.data.reason || null }
+  });
+
+  revalidatePath("/manager/clients");
+  revalidatePath(`/manager/clients/${parsed.data.clientId}`);
+  redirect("/manager/clients?removed=client");
+}
+
 async function rememberClientAlias(supabase: ReturnType<typeof createAdminClient>, clientId: string, name: string, source: string) {
   const cleanName = name.trim();
   if (!cleanName || /^unknown guest$/i.test(cleanName)) return;
@@ -1713,6 +1799,54 @@ async function mergeClientPortfolio(supabase: ReturnType<typeof createAdminClien
     supabase.from("retention_outreach").update({ client_id: toClientId }).eq("client_id", fromClientId),
     supabase.from("schedule_plans").update({ client_id: toClientId }).eq("client_id", fromClientId)
   ]);
+}
+
+async function assertRequestRemovalAccess(supabase: ReturnType<typeof createAdminClient>, profile: Awaited<ReturnType<typeof requireProfile>>, requestId: string) {
+  if (profile.role === "SUPER_ADMIN") return;
+  const { data: request } = await supabase
+    .from("requests")
+    .select("id, promoter_id, assigned_manager_id, club_id")
+    .eq("id", requestId)
+    .maybeSingle();
+  if (!request) throw new Error("Request not found.");
+  if (request.assigned_manager_id === profile.id) return;
+
+  const [{ data: teamPromoter }, { data: clubAssignment }] = await Promise.all([
+    request.promoter_id
+      ? supabase.from("profiles").select("id").eq("id", request.promoter_id).eq("manager_id", profile.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from("club_users").select("id").eq("club_id", request.club_id).eq("user_id", profile.id).maybeSingle()
+  ]);
+  if (teamPromoter || clubAssignment) return;
+  throw new Error("You can only remove requests connected to your team or assigned clubs.");
+}
+
+async function assertClientRemovalAccess(supabase: ReturnType<typeof createAdminClient>, profile: Awaited<ReturnType<typeof requireProfile>>, clientId: string) {
+  if (profile.role === "SUPER_ADMIN") return;
+  const [{ data: ownRequest }, { data: createdClient }] = await Promise.all([
+    supabase
+      .from("requests")
+      .select("id")
+      .eq("client_id", clientId)
+      .or(`assigned_manager_id.eq.${profile.id},promoter_id.in.(${await teamIdsForManager(supabase, profile.id)}),club_id.in.(${await clubIdsForManager(supabase, profile.id)})`)
+      .limit(1)
+      .maybeSingle(),
+    supabase.from("clients").select("id").eq("id", clientId).eq("created_by_user_id", profile.id).maybeSingle()
+  ]);
+  if (ownRequest || createdClient) return;
+  throw new Error("You can only remove clients connected to your team or assigned clubs.");
+}
+
+async function teamIdsForManager(supabase: ReturnType<typeof createAdminClient>, managerId: string) {
+  const { data } = await supabase.from("profiles").select("id").eq("manager_id", managerId).eq("role", "PROMOTER");
+  const ids = (data ?? []).map((item) => item.id);
+  return ids.length ? ids.join(",") : "00000000-0000-0000-0000-000000000000";
+}
+
+async function clubIdsForManager(supabase: ReturnType<typeof createAdminClient>, managerId: string) {
+  const { data } = await supabase.from("club_users").select("club_id").eq("user_id", managerId);
+  const ids = (data ?? []).map((item) => item.club_id);
+  return ids.length ? ids.join(",") : "00000000-0000-0000-0000-000000000000";
 }
 
 const assignmentSchema = z.object({

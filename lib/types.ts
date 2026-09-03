@@ -75,6 +75,9 @@ export type Client = {
   preferred_language?: "en" | "es" | "sv" | null;
   vip_level: "STANDARD" | "SILVER" | "GOLD" | "PLATINUM";
   status: "NORMAL" | "WATCHLIST" | "MANAGER_APPROVAL_REQUIRED" | "BLOCKED";
+  removed_at?: string | null;
+  removed_by?: string | null;
+  removal_reason?: string | null;
 };
 
 export type ClientAlias = {
@@ -160,6 +163,9 @@ export type ConciergeRequest = {
   message: string | null;
   internal_summary: string | null;
   created_at: string;
+  removed_at?: string | null;
+  removed_by?: string | null;
+  removal_reason?: string | null;
   clients?: Pick<Client, "name" | "phone" | "client_code" | "country" | "preferred_language" | "vip_level" | "status"> | null;
   clubs?: Pick<Club, "name" | "city" | "slug"> | null;
   promoter?: Pick<Profile, "name" | "email"> | null;

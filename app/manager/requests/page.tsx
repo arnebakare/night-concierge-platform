@@ -12,7 +12,7 @@ import type { RequestStatus, RequestType } from "@/lib/types";
 
 export default async function ManagerRequestsPage({
   searchParams
-}: Readonly<{ searchParams: Promise<{ status?: string; type?: string; date?: string; q?: string; club?: string; promoter?: string; archived?: string; updated?: string }> }>) {
+}: Readonly<{ searchParams: Promise<{ status?: string; type?: string; date?: string; q?: string; club?: string; promoter?: string; archived?: string; updated?: string; removed?: string }> }>) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const filters = await searchParams;
   const archiveMode = filters.archived === "1";
@@ -32,6 +32,11 @@ export default async function ManagerRequestsPage({
       {parseStatus(filters.updated) && (
         <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">
           Booking status updated to {statusLabel(filters.updated as RequestStatus)}.
+        </div>
+      )}
+      {filters.removed === "request" && (
+        <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">
+          Request removed from the CRM list.
         </div>
       )}
       {archiveMode && (

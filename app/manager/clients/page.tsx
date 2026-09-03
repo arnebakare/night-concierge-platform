@@ -7,7 +7,7 @@ import { getClientCareSignalsForProfile, getClientsForProfile } from "@/lib/data
 
 export default async function ManagerClientsPage({
   searchParams
-}: Readonly<{ searchParams: Promise<{ q?: string }> }>) {
+}: Readonly<{ searchParams: Promise<{ q?: string; removed?: string }> }>) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const filters = await searchParams;
   const [clients, careSignals] = await Promise.all([
@@ -18,6 +18,11 @@ export default async function ManagerClientsPage({
   return (
     <AppShell profile={profile} title="Client CRM" eyebrow="Manager">
       <div className="space-y-4">
+        {filters.removed === "client" && (
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">
+            Customer removed from the CRM list.
+          </div>
+        )}
         <ClientSearchForm action="/manager/clients" value={filters.q} placeholder="Search by SKU, phone, name, Instagram, VIP level" />
         <ClientCreateForm role={profile.role} />
         <div className="compact-list grid gap-2">

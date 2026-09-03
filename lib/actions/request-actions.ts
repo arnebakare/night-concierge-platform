@@ -222,7 +222,7 @@ async function upsertClient(
     profileId = matchingProfile?.id ?? null;
   }
   const clientCode = customerCodeFromPhone(input.phone);
-  const { data: existing } = await supabase.from("clients").select("id, status, name").eq("client_code", clientCode).maybeSingle();
+  const { data: existing } = await supabase.from("clients").select("id, status, name, removed_at").eq("client_code", clientCode).maybeSingle();
   if (existing?.id) {
     if (existing.status !== "BLOCKED") {
       const updates: Record<string, string | null> = {};
@@ -230,6 +230,11 @@ async function upsertClient(
       if (input.instagram) updates.instagram = input.instagram;
       if (profileId) updates.profile_id = profileId;
       if (!existing.name || /^unknown guest$/i.test(existing.name)) updates.name = input.name;
+      if (existing.removed_at) {
+        updates.removed_at = null;
+        updates.removed_by = null;
+        updates.removal_reason = null;
+      }
       if (Object.keys(updates).length) await supabase.from("clients").update(updates).eq("id", existing.id);
       await rememberClientAlias(supabase, existing.id, input.name, "PUBLIC_REQUEST");
     }

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
+import { RemoveRecordPanel } from "@/components/management/remove-record-panel";
 import { DepositPanel } from "@/components/payments/deposit-panel";
 import { AvailabilityOfferPanel } from "@/components/request/availability-offer-panel";
 import { RequestActivityTimeline } from "@/components/request/request-activity-timeline";
@@ -32,11 +33,17 @@ export default async function ManagerRequestDetailPage({
     <AppShell profile={profile} title="Request detail" eyebrow="Manager inbox">
       <div className="space-y-4">
         {updated && <StatusNotice status={updated} />}
+        {request.removed_at && (
+          <div className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-800">
+            This request has been removed from normal CRM views.
+          </div>
+        )}
         <RequestDetail request={request} backHref="/manager/requests" clientHref={`/manager/clients/${request.client_id}`} statusReturnTo={`/manager/requests/${request.id}`} templates={templates} />
         <AvailabilityOfferPanel request={request} slots={commerce.slots} offers={commerce.offers} canManageAvailability templates={templates} />
         <DepositPanel request={request} payments={commerce.payments} returnTo={`/manager/requests/${request.id}`} />
         <RequestActivityTimeline activity={activity} />
         <RequestAssignmentControl requestId={request.id} currentPromoterId={request.promoter_id} promoters={eligiblePromoters} />
+        {!request.removed_at && <RemoveRecordPanel recordType="request" recordId={request.id} label="request" />}
       </div>
     </AppShell>
   );

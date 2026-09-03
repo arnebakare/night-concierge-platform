@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { RemoveRecordPanel } from "@/components/management/remove-record-panel";
 import { Button } from "@/components/ui/button";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { ClientNoteCard } from "@/components/client/client-note-card";
@@ -30,6 +31,11 @@ export default async function ManagerClientDetailPage({
 
   return (
     <AppShell profile={profile} title={client.name} eyebrow="Full profile">
+      {client.removed_at && (
+        <div className="mb-4 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-800">
+          This customer has been removed from normal CRM views.
+        </div>
+      )}
       <LuxuryCard className="client-row bg-white text-ink-950">
         <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-start">
           <div className="min-w-0">
@@ -62,6 +68,11 @@ export default async function ManagerClientDetailPage({
         <ClientEditForm client={client} role={profile.role} />
         </div>
       </details>
+      {!client.removed_at && (
+        <div className="mt-4">
+          <RemoveRecordPanel recordType="client" recordId={client.id} label="customer" />
+        </div>
+      )}
       <div className="mt-4">
         <ClientRelationshipSummary history={history} tasks={tasks} outreach={outreach} />
       </div>
