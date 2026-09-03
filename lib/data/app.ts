@@ -106,9 +106,7 @@ export async function getRequestDetail(requestId: string) {
 export async function getRequestDetailForStaff(requestId: string, profile: Profile) {
   try {
     const supabase = createAdminClient();
-    const { data, error } = await supabase.from("requests").select(requestSelect).eq("id", requestId).maybeSingle();
-    if (error) throw error;
-    const [request] = normalizeRequests(data ? [data] : []);
+    const request = await fetchRequestDetailWithFallback(supabase, requestId);
     if (!request) return null;
     if (profile.role === "SUPER_ADMIN") return request;
     if (profile.role === "PROMOTER" && request.promoter_id === profile.id) return request;
@@ -123,6 +121,35 @@ export async function getRequestDetailForStaff(requestId: string, profile: Profi
     if (!isDemoAuthEnabled()) throw error;
     return demoRequests.find((request) => request.id === requestId) ?? demoRequests[0] ?? null;
   }
+}
+
+async function fetchRequestDetailWithFallback(supabase: ReturnType<typeof createAdminClient>, requestId: string) {
+  const { data, error } = await supabase.from("requests").select(requestSelect).eq("id", requestId).maybeSingle();
+  if (!error) {
+    const [request] = normalizeRequests(data ? [data] : []);
+    return request ?? null;
+  }
+
+  const { data: request, error: baseError } = await supabase
+    .from("requests")
+    .select("id, client_id, club_id, promoter_id, assigned_manager_id, source, request_type, status, requested_date, requested_date_end, arrival_time, guest_count, budget, message, internal_summary, created_at, removed_at, removed_by, removal_reason")
+    .eq("id", requestId)
+    .maybeSingle();
+  if (baseError) throw baseError;
+  if (!request) return null;
+
+  const [{ data: client }, { data: club }, { data: promoter }] = await Promise.all([
+    supabase.from("clients").select("name, phone, client_code, country, preferred_language, vip_level, status").eq("id", request.client_id).maybeSingle(),
+    supabase.from("clubs").select("name, city, slug").eq("id", request.club_id).maybeSingle(),
+    request.promoter_id ? supabase.from("profiles").select("name, email").eq("id", request.promoter_id).maybeSingle() : Promise.resolve({ data: null })
+  ]);
+
+  return {
+    ...request,
+    clients: client ?? { name: "Removed customer", phone: "", client_code: null, country: null, preferred_language: "en", vip_level: "STANDARD", status: "NORMAL" },
+    clubs: club ?? { name: "Removed venue", city: "", slug: "" },
+    promoter: promoter ?? null
+  } as ConciergeRequest;
 }
 
 export async function getRequestCommerce(request: ConciergeRequest) {

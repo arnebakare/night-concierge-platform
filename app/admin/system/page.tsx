@@ -2,11 +2,13 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { requireProfile } from "@/lib/auth";
+import { getBuildInfo } from "@/lib/services/build-info";
 import { getSystemReadiness } from "@/lib/services/readiness";
 
 export default async function AdminSystemPage() {
   const profile = await requireProfile(["SUPER_ADMIN"]);
   const checks = await getSystemReadiness();
+  const build = getBuildInfo();
   const readyCount = checks.filter((check) => check.ok).length;
   const ready = readyCount === checks.length;
 
@@ -18,6 +20,17 @@ export default async function AdminSystemPage() {
           <Metric label="Status" value={ready ? "Live ready" : "Needs setup"} />
         </div>
       </div>
+
+      <LuxuryCard className="mb-4 bg-white text-slate-950">
+        <p className="text-xs uppercase tracking-[0.18em] text-champagne-700">Live build</p>
+        <div className="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-2">
+          <BuildLine label="Commit" value={build.shortSha} />
+          <BuildLine label="Branch" value={build.branch} />
+          <BuildLine label="Environment" value={build.environment} />
+          <BuildLine label="Message" value={build.commitMessage} />
+        </div>
+        <p className="mt-3 text-xs text-slate-500">You can also open `/api/build` to compare the live commit with the latest commit I give you here.</p>
+      </LuxuryCard>
 
       <div className="compact-list grid gap-2">
         {checks.map((check) => (
@@ -46,6 +59,15 @@ export default async function AdminSystemPage() {
         </div>
       </LuxuryCard>
     </AppShell>
+  );
+}
+
+function BuildLine({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-slate-50 p-2.5">
+      <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">{label}</p>
+      <p className="mt-1 break-words font-semibold text-slate-950">{value || "Not available"}</p>
+    </div>
   );
 }
 
