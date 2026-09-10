@@ -10,6 +10,7 @@ export type RequestStatus =
   | "CANCELLED";
 export type RequestType = "GUESTLIST" | "TABLE" | "VIP_SERVICE" | "GENERAL" | "BOAT" | "GOLF" | "VILLA" | "TRANSFER" | "SCHEDULE" | "PACKAGE";
 export type RequestSource = "PUBLIC_FORM" | "PROMOTER_LINK" | "MAGIC_LINK" | "MANUAL_ENTRY" | "ADMIN_CREATED";
+export type VipLevel = "STANDARD" | "SILVER" | "GOLD" | "PLATINUM" | "INVITATION";
 
 export type Profile = {
   id: string;
@@ -73,7 +74,7 @@ export type Client = {
   instagram: string | null;
   country?: string | null;
   preferred_language?: "en" | "es" | "sv" | null;
-  vip_level: "STANDARD" | "SILVER" | "GOLD" | "PLATINUM" | "INVITATION";
+  vip_level: VipLevel;
   status: "NORMAL" | "WATCHLIST" | "MANAGER_APPROVAL_REQUIRED" | "BLOCKED";
   removed_at?: string | null;
   removed_by?: string | null;

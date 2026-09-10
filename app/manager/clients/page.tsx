@@ -3,17 +3,19 @@ import { ClientCard } from "@/components/client/client-card";
 import { ClientCreateForm } from "@/components/client/client-create-form";
 import { ClientSearchForm } from "@/components/client/client-search-form";
 import { requireProfile } from "@/lib/auth";
-import { getClientCareSignalsForProfile, getClientCountForProfile, getClientsForProfile } from "@/lib/data/app";
+import { getClientCareSignalsForProfile, getClientCountForProfile, getClientLevelCountsForProfile, getClientsForProfile } from "@/lib/data/app";
+import { formatEnum } from "@/lib/utils";
 
 export default async function ManagerClientsPage({
   searchParams
 }: Readonly<{ searchParams: Promise<{ q?: string; removed?: string }> }>) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const filters = await searchParams;
-  const [clients, careSignals, clientCount] = await Promise.all([
+  const [clients, careSignals, clientCount, levelCounts] = await Promise.all([
     getClientsForProfile(profile, { q: filters.q }),
     getClientCareSignalsForProfile(profile),
-    getClientCountForProfile(profile)
+    getClientCountForProfile(profile),
+    getClientLevelCountsForProfile(profile)
   ]);
 
   return (
@@ -28,6 +30,13 @@ export default async function ManagerClientsPage({
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">CRM total</p>
             <p className="mt-1 text-2xl font-semibold">{clientCount} customers</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {Object.entries(levelCounts).map(([level, count]) => (
+                <span key={level} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                  {formatEnum(level)} {count}
+                </span>
+              ))}
+            </div>
           </div>
           <p className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
             Showing {clients.length}{filters.q ? " matching" : ""}

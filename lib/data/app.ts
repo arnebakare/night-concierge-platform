@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergePackage, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, PromoterServiceEligibility, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule, ServiceRoutingRule } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergePackage, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, PromoterServiceEligibility, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule, ServiceRoutingRule, VipLevel } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -288,6 +288,30 @@ export async function getClientCountForProfile(profile: Profile) {
     if (!isDemoAuthEnabled()) throw error;
     if (profile.role === "CLIENT") return 1;
     return demoClients.length;
+  }
+}
+
+export async function getClientLevelCountsForProfile(profile: Profile): Promise<Record<VipLevel, number>> {
+  const empty = emptyClientLevelCounts();
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("clients")
+      .select("vip_level")
+      .is("removed_at", null)
+      .limit(5000);
+    if (error) throw error;
+    return (data ?? []).reduce((counts, client) => {
+      const level = client.vip_level as VipLevel;
+      if (level in counts) counts[level] += 1;
+      return counts;
+    }, empty);
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return demoClients.reduce((counts, client) => {
+      counts[client.vip_level] += 1;
+      return counts;
+    }, empty);
   }
 }
 
@@ -1691,4 +1715,14 @@ function errorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
   if (typeof error === "object" && error && "message" in error) return String((error as { message?: unknown }).message ?? "");
   return String(error ?? "");
+}
+
+function emptyClientLevelCounts(): Record<VipLevel, number> {
+  return {
+    STANDARD: 0,
+    INVITATION: 0,
+    SILVER: 0,
+    GOLD: 0,
+    PLATINUM: 0
+  };
 }
