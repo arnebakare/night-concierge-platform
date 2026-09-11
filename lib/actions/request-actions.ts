@@ -47,7 +47,8 @@ export async function submitPublicRequest(input: PublicRequestInput): Promise<Re
     pickupLocation: data.pickupLocation,
     dropoffLocation: data.dropoffLocation,
     packageStyle: data.packageStyle,
-    packageTitle: data.packageTitle
+    packageTitle: data.packageTitle,
+    addons: buildAddonSummary(data)
   });
   const fingerprint = createHash("sha256").update(normalizedPhone).digest("hex");
   const { data: allowed, error: rateError } = await supabase.rpc("consume_public_request_slot", { p_fingerprint: fingerprint, p_limit: 5, p_window_minutes: 10 });
@@ -154,7 +155,8 @@ export async function createManualRequest(input: unknown): Promise<RequestAction
     pickupLocation: data.pickupLocation,
     dropoffLocation: data.dropoffLocation,
     packageStyle: data.packageStyle,
-    packageTitle: data.packageTitle
+    packageTitle: data.packageTitle,
+    addons: buildAddonSummary(data)
   });
   const { clientId, status: clientStatus } = await upsertClient(supabase, {
     name: data.name,
@@ -283,6 +285,7 @@ function withRequestContext(
     dropoffLocation?: string;
     packageStyle?: string;
     packageTitle?: string;
+    addons?: string;
   }
 ) {
   const contextLines = [
@@ -297,11 +300,28 @@ function withRequestContext(
     context.pickupLocation?.trim() ? `Pickup: ${context.pickupLocation.trim()}` : null,
     context.dropoffLocation?.trim() ? `Drop-off: ${context.dropoffLocation.trim()}` : null,
     context.packageStyle?.trim() ? `Package style: ${context.packageStyle.trim()}` : null,
-    context.packageTitle?.trim() ? `Selected package: ${context.packageTitle.trim()}` : null
+    context.packageTitle?.trim() ? `Selected package: ${context.packageTitle.trim()}` : null,
+    context.addons?.trim() ? `Requested add-ons: ${context.addons.trim()}` : null
   ].filter(Boolean);
   const cleanMessage = message.trim();
   if (!contextLines.length) return cleanMessage;
   return cleanMessage ? `${contextLines.join("\n")}\n\n${cleanMessage}` : contextLines.join("\n");
+}
+
+function buildAddonSummary(data: PublicRequestInput) {
+  return [
+    addonLine("Beach club", data.addonBeachClub),
+    addonLine("Dinner", data.addonDinner),
+    addonLine("Nightclub", data.addonNightclub),
+    addonLine("Golf", data.addonGolf),
+    addonLine("Yacht / boat", data.addonYacht),
+    addonLine("Transfers / chauffeur", data.addonTransfer),
+    addonLine("Hotel / villa", data.addonVilla)
+  ].filter(Boolean).join(", ");
+}
+
+function addonLine(label: string, count?: number) {
+  return count && count > 0 ? `${label} x${count}` : null;
 }
 
 async function resolveAttribution(

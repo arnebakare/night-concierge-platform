@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, CalendarRange, Car, Check, ChevronLeft, Clock, Flag, Hotel, MapPin, Minus, Moon, Package, Plus, ShieldCheck, ShipWheel, Sparkles, Users } from "lucide-react";
+import { CalendarDays, CalendarRange, Car, Check, ChevronLeft, Clock, Flag, Hotel, MapPin, Minus, Moon, Package, Plus, ShieldCheck, ShipWheel, Sparkles, Users, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,6 +99,13 @@ export function RequestFormSteps({
       packageStyle: defaults?.packageStyle ?? "",
       packageId: defaults?.packageId ?? "",
       packageTitle: defaults?.packageTitle ?? "",
+      addonBeachClub: defaults?.addonBeachClub ?? 0,
+      addonDinner: defaults?.addonDinner ?? 0,
+      addonNightclub: defaults?.addonNightclub ?? 0,
+      addonGolf: defaults?.addonGolf ?? 0,
+      addonYacht: defaults?.addonYacht ?? 0,
+      addonTransfer: defaults?.addonTransfer ?? 0,
+      addonVilla: defaults?.addonVilla ?? 0,
       occasionId: defaults?.occasionId ?? "",
       occasionName: defaults?.occasionName ?? "",
       occasionDate: defaults?.occasionDate ?? "",
@@ -119,6 +126,7 @@ export function RequestFormSteps({
     [selectedClubEvents, values.occasionId]
   );
   const isMultiDayRequest = ["VILLA", "SCHEDULE", "PACKAGE"].includes(values.requestType);
+  const canBuildStayPlan = ["SCHEDULE", "PACKAGE"].includes(values.requestType);
   const stepTitles = ["Request", "Venue", "Experience", "Guest", "Details", "Review"];
   const nextLabel = step === 1 ? "Choose place" : step === 2 ? "Choose experience" : step === 3 ? "Add contact" : step === 4 ? "Add details" : "Review request";
 
@@ -182,7 +190,7 @@ export function RequestFormSteps({
 
   async function next() {
     const fieldsByStep: Record<number, (keyof PublicRequestInput)[]> = {
-      2: ["clubId"], 3: ["requestType"], 4: ["name", "phone", "email", "instagram"], 5: ["requestedDate", "requestedDateEnd", "guestCount", "arrivalTime", "budget", "message", "preferredArea", "occasion", "boatStyle", "teeTimePreference", "bedrooms", "pickupLocation", "dropoffLocation", "packageStyle", "packageId", "packageTitle"]
+      2: ["clubId"], 3: ["requestType"], 4: ["name", "phone", "email", "instagram"], 5: ["requestedDate", "requestedDateEnd", "guestCount", "arrivalTime", "budget", "message", "preferredArea", "occasion", "boatStyle", "teeTimePreference", "bedrooms", "pickupLocation", "dropoffLocation", "packageStyle", "packageId", "packageTitle", "addonBeachClub", "addonDinner", "addonNightclub", "addonGolf", "addonYacht", "addonTransfer", "addonVilla"]
     };
     if (step === 1 && !category) {
       setError("Choose what you need first.");
@@ -527,6 +535,7 @@ export function RequestFormSteps({
             <Textarea {...form.register("message")} placeholder="Occasion, preferred area, special requests..." />
           </Field>
           <ServiceDetailsFields requestType={values.requestType} form={form} />
+          {canBuildStayPlan && <AddOnBuilder form={form} values={values} />}
           <div className="grid grid-cols-2 gap-2">
             {["Birthday", "Best table possible", "Flexible timing", "Need fast reply"].map((note) => (
               <QuickPick
@@ -557,6 +566,7 @@ export function RequestFormSteps({
                 )}
                 {selectedOccasion && <p className="text-champagne-300">{selectedOccasion.name} · {formatEventDate(selectedOccasion.event_date)}</p>}
                 {values.packageTitle && <p className="text-champagne-300">{values.packageTitle}</p>}
+                {addonSummary(values) && <p className="text-champagne-300">{addonSummary(values)}</p>}
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -694,6 +704,81 @@ function ServiceDetailsFields({
   );
 }
 
+const addOns = [
+  { key: "addonBeachClub", label: "Beach club", hint: "Day beds, table, lunch, or sunset", icon: Waves },
+  { key: "addonDinner", label: "Dinner", hint: "Restaurants across the stay", icon: Sparkles },
+  { key: "addonNightclub", label: "Nightclub", hint: "Guestlist or table nights", icon: Moon },
+  { key: "addonGolf", label: "Golf", hint: "Tee times and course requests", icon: Flag },
+  { key: "addonYacht", label: "Yacht / boat", hint: "Boat day or private yacht", icon: ShipWheel },
+  { key: "addonTransfer", label: "Transfers", hint: "Airport, chauffeur, venue movement", icon: Car },
+  { key: "addonVilla", label: "Hotel / villa", hint: "Stay, villa, rooms, private extras", icon: Hotel }
+] satisfies Array<{ key: keyof PublicRequestInput; label: string; hint: string; icon: typeof Moon }>;
+
+const addOnPresets = [
+  { label: "Party weekend", values: { addonBeachClub: 2, addonDinner: 2, addonNightclub: 2, addonTransfer: 2 } },
+  { label: "Golf trip", values: { addonGolf: 2, addonDinner: 3, addonTransfer: 2, addonNightclub: 1 } },
+  { label: "Full stay", values: { addonBeachClub: 2, addonDinner: 3, addonNightclub: 2, addonYacht: 1, addonTransfer: 3 } }
+] satisfies Array<{ label: string; values: Partial<Record<keyof PublicRequestInput, number>> }>;
+
+function AddOnBuilder({
+  form,
+  values
+}: Readonly<{ form: ReturnType<typeof useForm<PublicRequestInput>>; values: PublicRequestInput }>) {
+  function setAddon(key: keyof PublicRequestInput, nextValue: number) {
+    form.setValue(key, Math.max(0, Math.min(14, nextValue)) as never, { shouldValidate: true });
+  }
+
+  function applyPreset(preset: (typeof addOnPresets)[number]) {
+    addOns.forEach((item) => form.setValue(item.key, 0 as never, { shouldValidate: true }));
+    Object.entries(preset.values).forEach(([key, value]) => {
+      form.setValue(key as keyof PublicRequestInput, value as never, { shouldValidate: true });
+    });
+  }
+
+  return (
+    <div className="rounded-2xl border border-champagne-700/24 bg-white/[0.04] p-3">
+      <div className="mb-3">
+        <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Build your stay</p>
+        <p className="mt-1 text-sm text-muted-foreground">Add what you want across the dates. Your host will turn this into a clean schedule.</p>
+      </div>
+      <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+        {addOnPresets.map((preset) => (
+          <button key={preset.label} type="button" onClick={() => applyPreset(preset)} className="min-h-10 shrink-0 rounded-xl border border-champagne-700/30 bg-ink-950/40 px-3 text-sm font-semibold text-champagne-100">
+            {preset.label}
+          </button>
+        ))}
+      </div>
+      <div className="grid gap-2">
+        {addOns.map((item) => {
+          const Icon = item.icon;
+          const count = Number(values[item.key] ?? 0);
+          return (
+            <div key={item.key} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl border border-champagne-700/24 bg-ink-950/42 p-2.5">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-white/[0.06] text-champagne-300">
+                <Icon className="size-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-semibold text-champagne-50">{item.label}</span>
+                <span className="mt-0.5 block truncate text-xs text-muted-foreground">{item.hint}</span>
+              </span>
+              <span className="grid grid-cols-[2.4rem_2.2rem_2.4rem] overflow-hidden rounded-xl border border-champagne-700/30 bg-ink-950/70">
+                <button type="button" aria-label={`Remove ${item.label}`} className="flex min-h-10 items-center justify-center text-champagne-300" onClick={() => setAddon(item.key, count - 1)}>
+                  <Minus className="size-4" />
+                </button>
+                <span className="flex min-h-10 items-center justify-center border-x border-champagne-700/30 text-sm font-semibold text-champagne-50">{count}</span>
+                <button type="button" aria-label={`Add ${item.label}`} className="flex min-h-10 items-center justify-center text-champagne-300" onClick={() => setAddon(item.key, count + 1)}>
+                  <Plus className="size-4" />
+                </button>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {addonSummary(values) && <p className="mt-3 rounded-xl bg-ink-950/58 p-3 text-sm text-champagne-100">{addonSummary(values)}</p>}
+    </div>
+  );
+}
+
 function VenueLogo({ club, monogram, size = "md" }: Readonly<{ club?: Club | null; monogram: string; size?: "md" | "lg" | "xl" }>) {
   const sizeClass = size === "xl" ? "size-16" : size === "lg" ? "size-14" : "size-12";
 
@@ -755,6 +840,23 @@ function QuickPick({ label, active, onClick }: Readonly<{ label: string; active?
       {label}
     </button>
   );
+}
+
+function addonSummary(values: PublicRequestInput) {
+  const parts = [
+    addonSummaryPart("Beach club", values.addonBeachClub),
+    addonSummaryPart("Dinner", values.addonDinner),
+    addonSummaryPart("Nightclub", values.addonNightclub),
+    addonSummaryPart("Golf", values.addonGolf),
+    addonSummaryPart("Yacht / boat", values.addonYacht),
+    addonSummaryPart("Transfers", values.addonTransfer),
+    addonSummaryPart("Hotel / villa", values.addonVilla)
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "";
+}
+
+function addonSummaryPart(label: string, count?: number) {
+  return count && count > 0 ? `${label} x${count}` : null;
 }
 
 function dateString(offset: number) {
