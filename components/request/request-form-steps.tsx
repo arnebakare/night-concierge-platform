@@ -19,13 +19,13 @@ const conciergeRequestTypes = ["BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", 
 export type RequestCategory = "nightlife" | "boat" | "golf" | "villa" | "transfer" | "schedule" | "package";
 
 const categoryCards: { id: RequestCategory; title: string; description: string; requestType?: typeof conciergeRequestTypes[number]; icon: typeof Moon }[] = [
-  { id: "nightlife", title: "Nightlife", description: "Beach clubs, restaurants, guestlists, VIP tables, and DJs.", icon: Moon },
+  { id: "schedule", title: "Full stay", description: "Let us shape the whole trip: beach, dinner, clubs, drivers, and timing.", requestType: "SCHEDULE", icon: CalendarRange },
+  { id: "nightlife", title: "Nightlife", description: "Tables, guestlists, beach parties, restaurants, and DJ-led nights.", icon: Moon },
+  { id: "package", title: "Curated packages", description: "Choose a ready-made starting point and tailor it with your host.", requestType: "PACKAGE", icon: Package },
   { id: "boat", title: "Boats & yachts", description: "Private boats, yachts, routes, skipper, and onboard requests.", requestType: "BOAT", icon: ShipWheel },
-  { id: "golf", title: "Golf", description: "Tee times, courses, buggies, club rental, and lunch after.", requestType: "GOLF", icon: Flag },
+  { id: "golf", title: "Golf", description: "Tee times, course ideas, buggies, club rental, and lunch after.", requestType: "GOLF", icon: Flag },
   { id: "villa", title: "Hotels & villas", description: "Suites, private villas, hosted stays, chefs, and special needs.", requestType: "VILLA", icon: Hotel },
-  { id: "transfer", title: "Transfers", description: "Airport pickup, chauffeurs, drivers by the hour, and night movement.", requestType: "TRANSFER", icon: Car },
-  { id: "schedule", title: "Full schedule", description: "A complete Marbella trail across days, venues, DJs, and movement.", requestType: "SCHEDULE", icon: CalendarRange },
-  { id: "package", title: "Packages", description: "Ready-made or tailored stay packages for your group.", requestType: "PACKAGE", icon: Package }
+  { id: "transfer", title: "Transfers", description: "Airport pickup, chauffeurs, drivers by the hour, and night movement.", requestType: "TRANSFER", icon: Car }
 ];
 
 export function RequestFormSteps({
@@ -47,8 +47,9 @@ export function RequestFormSteps({
   startAtStep?: number;
   defaults?: Partial<PublicRequestInput>;
 }>) {
-  const [step, setStep] = useState(Math.min(6, Math.max(1, startAtStep ?? (initialCategory ? 2 : 1))));
-  const [category, setCategory] = useState<RequestCategory | null>(initialCategory ?? inferInitialCategory(defaults?.requestType));
+  const derivedInitialCategory = initialCategory ?? inferInitialCategory(defaults?.requestType);
+  const [step, setStep] = useState(Math.min(6, Math.max(1, startAtStep ?? (derivedInitialCategory ? (derivedInitialCategory === "nightlife" ? 2 : 3) : 1))));
+  const [category, setCategory] = useState<RequestCategory | null>(derivedInitialCategory);
   const flowRef = useRef<HTMLElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAllVenues, setShowAllVenues] = useState(false);
@@ -127,8 +128,11 @@ export function RequestFormSteps({
   );
   const isMultiDayRequest = ["VILLA", "SCHEDULE", "PACKAGE"].includes(values.requestType);
   const canBuildStayPlan = ["SCHEDULE", "PACKAGE"].includes(values.requestType);
-  const stepTitles = ["Request", "Venue", "Experience", "Guest", "Details", "Review"];
-  const nextLabel = step === 1 ? "Choose place" : step === 2 ? "Choose experience" : step === 3 ? "Add contact" : step === 4 ? "Add details" : "Review request";
+  const selectedCategoryCard = categoryCards.find((item) => item.id === category);
+  const SelectedCategoryIcon = selectedCategoryCard?.icon ?? Sparkles;
+  const isNightlife = category === "nightlife";
+  const stepTitles = ["Service", "Venue", "Plan", "Contact", "Dates", "Review"];
+  const nextLabel = step === 1 ? "Continue" : step === 2 ? "Choose experience" : step === 3 ? "Add contact" : step === 4 ? "Add dates" : "Review";
 
   useEffect(() => {
     const serviceExists = selectedExperience.services.some((service) => service.label === values.serviceLabel && service.requestType === values.requestType);
@@ -227,15 +231,28 @@ export function RequestFormSteps({
             <span key={item} className={cn("h-1.5 rounded-full bg-secondary transition", item <= step && "bg-champagne-300 shadow-glow")} />
           ))}
         </div>
-        {selectedClub && step > 2 && (
-          <button type="button" onClick={() => setStep(2)} className="flex w-full items-center gap-3 rounded-xl border border-champagne-700/28 bg-white/[0.045] p-2.5 text-left transition hover:border-champagne-300/55">
-            <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="md" />
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold text-champagne-50">{selectedExperience.wordmark}</span>
-              <span className="block truncate text-xs text-muted-foreground">{values.serviceLabel || "Choose service"}</span>
-            </span>
-            <span className="ml-auto text-xs font-semibold text-champagne-300">Change</span>
-          </button>
+        {selectedCategoryCard && step > 2 && (
+          isNightlife && selectedClub ? (
+            <button type="button" onClick={() => setStep(2)} className="flex w-full items-center gap-3 rounded-xl border border-champagne-700/28 bg-white/[0.045] p-2.5 text-left transition hover:border-champagne-300/55">
+              <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="md" />
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-champagne-50">{selectedExperience.wordmark}</span>
+                <span className="block truncate text-xs text-muted-foreground">{values.serviceLabel || "Choose service"}</span>
+              </span>
+              <span className="ml-auto text-xs font-semibold text-champagne-300">Change</span>
+            </button>
+          ) : (
+            <button type="button" onClick={() => setStep(1)} className="flex w-full items-center gap-3 rounded-xl border border-champagne-700/28 bg-white/[0.045] p-2.5 text-left transition hover:border-champagne-300/55">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-champagne-500/35 bg-champagne-300/12 text-champagne-200">
+                <SelectedCategoryIcon className="size-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-champagne-50">{selectedCategoryCard.title}</span>
+                <span className="block truncate text-xs text-muted-foreground">Handled by your Marbella concierge team</span>
+              </span>
+              <span className="ml-auto text-xs font-semibold text-champagne-300">Change</span>
+            </button>
+          )
         )}
       </div>
 
@@ -243,7 +260,7 @@ export function RequestFormSteps({
 
       {step === 1 && (
         <div className="space-y-3">
-          <StepIntro title="What do you need?" description="Start with the service. We will only show the choices that fit." />
+          <StepIntro title="What should we arrange?" description="Choose the kind of help you want. Your host will shape the details with you." />
           <div className="grid gap-2">
             {categoryCards.map((item) => {
               const Icon = item.icon;
@@ -275,7 +292,7 @@ export function RequestFormSteps({
 
       {step === 2 && (
         <div className="space-y-3">
-          <StepIntro title="Where are you going?" description={category === "nightlife" ? "Choose the venue. Services adapt to each place." : "This service is handled through Marbella Concierge."} />
+          <StepIntro title="Choose nightlife venue" description="Pick a place to start. We can adjust after checking availability." />
           <div className="grid gap-3">
             {visibleClubs.map((club) => {
               const experience = getClubVenueExperience(club);
@@ -325,55 +342,76 @@ export function RequestFormSteps({
 
       {step === 3 && (
         <div className="space-y-3">
-          <div className="rounded-2xl border border-champagne-700/28 bg-[radial-gradient(circle_at_top_right,rgba(216,183,100,0.14),transparent_36%),rgba(255,255,255,0.045)] p-3.5">
-            <div className="flex items-center gap-3">
-              <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="xl" />
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">{selectedExperience.mood}</p>
-                <h2 className="font-serif text-2xl">{selectedExperience.wordmark}</h2>
-                <p className="text-sm text-muted-foreground">{selectedExperience.tagline}</p>
+          {isNightlife ? (
+            <>
+              <div className="rounded-2xl border border-champagne-700/28 bg-[radial-gradient(circle_at_top_right,rgba(216,183,100,0.14),transparent_36%),rgba(255,255,255,0.045)] p-3.5">
+                <div className="flex items-center gap-3">
+                  <VenueLogo club={selectedClub} monogram={selectedExperience.monogram} size="xl" />
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">{selectedExperience.mood}</p>
+                    <h2 className="font-serif text-2xl">{selectedExperience.wordmark}</h2>
+                    <p className="text-sm text-muted-foreground">{selectedExperience.tagline}</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <StepIntro title="What should we arrange?" description="Pick the closest option. Your host can fine-tune it after." />
-          <div className="grid grid-cols-2 gap-3">
-            {selectedExperience.services.map((service) => {
-              const Icon = service.icon;
-              const active = values.serviceLabel === service.label && values.requestType === service.requestType;
-              return (
-              <button
-                key={service.id}
-                type="button"
-                onClick={() => {
-                  form.setValue("requestType", service.requestType, { shouldValidate: true });
-                  form.setValue("serviceLabel", service.label, { shouldValidate: true });
-                }}
-                className={cn(
-                  "group relative flex min-h-[7.1rem] flex-col justify-between rounded-2xl border p-3 text-left transition active:scale-[0.99]",
-                  active ? "border-champagne-300 bg-champagne-300/14 shadow-glow" : "border-champagne-700/28 bg-ink-950/48 hover:border-champagne-300/55"
-                )}
-              >
-                <span className="flex size-9 items-center justify-center rounded-xl bg-ink-950/60 text-champagne-300">
-                  <Icon className="size-5" />
-                </span>
-                <span>
-                  <span className="block font-semibold text-champagne-50">{service.label}</span>
-                  <span className="mt-1 block line-clamp-2 text-xs leading-snug text-champagne-100/74">{service.description}</span>
-                  {service.priceHint && <span className="mt-2 inline-flex rounded-full border border-champagne-700/30 px-2 py-0.5 text-[10px] text-champagne-200">{service.priceHint}</span>}
-                </span>
-                {active && <Check className="absolute right-3 top-3 size-4 text-champagne-300" />}
-              </button>
-              );
-            })}
-          </div>
+              <StepIntro title="What do you want there?" description="Pick the closest option. Your host can fine-tune it after." />
+              <div className="grid grid-cols-2 gap-3">
+                {selectedExperience.services.map((service) => {
+                  const Icon = service.icon;
+                  const active = values.serviceLabel === service.label && values.requestType === service.requestType;
+                  return (
+                  <button
+                    key={service.id}
+                    type="button"
+                    onClick={() => {
+                      form.setValue("requestType", service.requestType, { shouldValidate: true });
+                      form.setValue("serviceLabel", service.label, { shouldValidate: true });
+                    }}
+                    className={cn(
+                      "group relative flex min-h-[7.1rem] flex-col justify-between rounded-2xl border p-3 text-left transition active:scale-[0.99]",
+                      active ? "border-champagne-300 bg-champagne-300/14 shadow-glow" : "border-champagne-700/28 bg-ink-950/48 hover:border-champagne-300/55"
+                    )}
+                  >
+                    <span className="flex size-9 items-center justify-center rounded-xl bg-ink-950/60 text-champagne-300">
+                      <Icon className="size-5" />
+                    </span>
+                    <span>
+                      <span className="block font-semibold text-champagne-50">{service.label}</span>
+                      <span className="mt-1 block line-clamp-2 text-xs leading-snug text-champagne-100/74">{service.description}</span>
+                      {service.priceHint && <span className="mt-2 inline-flex rounded-full border border-champagne-700/30 px-2 py-0.5 text-[10px] text-champagne-200">{service.priceHint}</span>}
+                    </span>
+                    {active && <Check className="absolute right-3 top-3 size-4 text-champagne-300" />}
+                  </button>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="rounded-2xl border border-champagne-700/28 bg-[radial-gradient(circle_at_top_right,rgba(216,183,100,0.14),transparent_36%),rgba(255,255,255,0.045)] p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-champagne-300 text-ink-950 shadow-glow">
+                    <SelectedCategoryIcon className="size-6" />
+                  </span>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Personal concierge</p>
+                    <h2 className="font-serif text-2xl">{selectedCategoryCard?.title ?? "Concierge request"}</h2>
+                    <p className="text-sm text-muted-foreground">Tell us what you need. A host will reply personally and shape the best option.</p>
+                  </div>
+                </div>
+              </div>
+              <StepIntro title={canBuildStayPlan ? "Build your stay" : "Add the key details"} description={canBuildStayPlan ? "Choose a package or add the pieces you want across your dates." : "Keep it simple. Approximate details are enough to start."} />
+              <ConciergeServiceSummary title={selectedCategoryCard?.title ?? "Concierge request"} serviceLabel={values.serviceLabel || formatEnum(values.requestType)} icon={SelectedCategoryIcon} />
+            </>
+          )}
           {values.requestType === "PACKAGE" && packages.length > 0 && (
-            <div className="rounded-2xl border border-champagne-700/28 bg-white/[0.045] p-3">
+            <div className="rounded-2xl border border-champagne-700/28 bg-white/[0.045] p-3.5">
               <div className="mb-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Packages</p>
-                <p className="mt-1 text-sm text-muted-foreground">Optional. Choose a starting point and your host can tailor it.</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Curated packages</p>
+                <p className="mt-1 text-sm text-muted-foreground">Choose one starting point, then adjust it with your host.</p>
               </div>
               <div className="grid gap-2">
-                {packages.slice(0, 5).map((item) => {
+                {packages.slice(0, 6).map((item) => {
                   const active = values.packageId === item.id;
                   return (
                     <button
@@ -386,19 +424,22 @@ export function RequestFormSteps({
                         if (!active && item.price_hint) form.setValue("budget", item.price_hint, { shouldValidate: true });
                       }}
                       className={cn(
-                        "rounded-xl border p-3 text-left transition active:scale-[0.99]",
-                        active ? "border-champagne-300 bg-champagne-300/12" : "border-champagne-700/24 bg-ink-950/40 hover:border-champagne-300/50"
+                        "rounded-2xl border p-3 text-left transition active:scale-[0.99]",
+                        active ? "border-champagne-300 bg-champagne-300/14 shadow-glow" : "border-champagne-700/24 bg-ink-950/40 hover:border-champagne-300/50"
                       )}
                     >
                       <span className="flex items-start justify-between gap-3">
                         <span className="min-w-0">
-                          <span className="block text-sm font-semibold text-champagne-50">{item.title}</span>
+                          <span className="block text-base font-semibold text-champagne-50">{item.title}</span>
                           {item.description && <span className="mt-1 block text-xs leading-5 text-champagne-100/72">{item.description}</span>}
                         </span>
-                        {active && <Check className="size-4 shrink-0 text-champagne-300" />}
+                        <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]", active ? "border-champagne-300 bg-champagne-300 text-ink-950" : "border-champagne-700/28 text-champagne-200")}>
+                          {active ? "Selected" : "Choose"}
+                        </span>
                       </span>
                       <span className="mt-2 flex flex-wrap gap-1.5">
                         {item.price_hint && <span className="rounded-full border border-champagne-700/25 px-2 py-0.5 text-[10px] text-champagne-200">{item.price_hint}</span>}
+                        <span className="rounded-full bg-white/[0.055] px-2 py-0.5 text-[10px] text-muted-foreground">{item.package_items.length} inclusions</span>
                         {item.package_items.slice(0, 3).map((detail) => <span key={detail} className="rounded-full bg-white/[0.055] px-2 py-0.5 text-[10px] text-muted-foreground">{detail}</span>)}
                       </span>
                     </button>
@@ -407,7 +448,8 @@ export function RequestFormSteps({
               </div>
             </div>
           )}
-          {selectedClubEvents.length > 0 && (
+          {canBuildStayPlan && <AddOnBuilder form={form} values={values} />}
+          {isNightlife && selectedClubEvents.length > 0 && (
             <div className="rounded-2xl border border-champagne-700/28 bg-white/[0.045] p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
@@ -474,7 +516,7 @@ export function RequestFormSteps({
 
       {step === 5 && (
         <div className="space-y-4">
-          <StepIntro title={isMultiDayRequest ? "Which dates?" : "When are you going?"} description={isMultiDayRequest ? "Choose the start and end dates. Add any extra timing notes below." : "Approximate times are fine. Add anything we should know."} />
+          <StepIntro title={isMultiDayRequest ? "Dates and preferences" : "Date and preferences"} description={isMultiDayRequest ? "Choose the start and end dates. Add timing notes if you have them." : "Approximate times are fine. Add anything we should know."} />
           <div className="grid grid-cols-2 gap-3">
             <Field label={isMultiDayRequest ? "Start date" : "Date"} error={form.formState.errors.requestedDate?.message}>
               <Input {...form.register("requestedDate")} type="date" min={new Date().toISOString().slice(0, 10)} />
@@ -523,7 +565,7 @@ export function RequestFormSteps({
               <QuickPick key={time} label={time} active={values.arrivalTime === time} onClick={() => form.setValue("arrivalTime", time, { shouldValidate: true })} />
             ))}
           </div>
-          <Field label="Budget optional">
+          <Field label="Preferred spend optional">
             <Input {...form.register("budget")} placeholder="Bottle service, 1k, flexible..." />
           </Field>
           <div className="grid grid-cols-3 gap-2">
@@ -531,11 +573,10 @@ export function RequestFormSteps({
               <QuickPick key={budget} label={budget} active={values.budget === budget} onClick={() => form.setValue("budget", budget, { shouldValidate: true })} />
             ))}
           </div>
-          <Field label="Message optional">
+          <Field label="Anything important? optional">
             <Textarea {...form.register("message")} placeholder="Occasion, preferred area, special requests..." />
           </Field>
           <ServiceDetailsFields requestType={values.requestType} form={form} />
-          {canBuildStayPlan && <AddOnBuilder form={form} values={values} />}
           <div className="grid grid-cols-2 gap-2">
             {["Birthday", "Best table possible", "Flexible timing", "Need fast reply"].map((note) => (
               <QuickPick
@@ -621,6 +662,26 @@ function StepIntro({ title, description }: Readonly<{ title: string; description
 
 function selectedServiceHint(services: ReturnType<typeof getClubVenueExperience>["services"], serviceLabel?: string) {
   return services.find((service) => service.label === serviceLabel)?.priceHint ?? "";
+}
+
+function ConciergeServiceSummary({
+  title,
+  serviceLabel,
+  icon: Icon
+}: Readonly<{ title: string; serviceLabel: string; icon: typeof Moon }>) {
+  return (
+    <div className="grid grid-cols-[auto_1fr] gap-3 rounded-2xl border border-champagne-700/24 bg-ink-950/44 p-3.5">
+      <span className="flex size-11 items-center justify-center rounded-2xl bg-white/[0.055] text-champagne-300">
+        <Icon className="size-5" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold text-champagne-50">{serviceLabel || title}</span>
+        <span className="mt-1 block text-xs leading-5 text-champagne-100/72">
+          We will check the best options, availability, and any details that matter before confirming anything.
+        </span>
+      </span>
+    </div>
+  );
 }
 
 function ServiceDetailsFields({
