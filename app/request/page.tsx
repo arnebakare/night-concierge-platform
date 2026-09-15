@@ -1,12 +1,12 @@
 import { RequestFormSteps } from "@/components/request/request-form-steps";
 import { PublicRequestShell } from "@/components/request/public-request-shell";
-import { getActiveClubs, getPublicConciergePackages, getPublicUpcomingEvents } from "@/lib/data/public";
+import { getActiveClubs, getPublicConciergePackages, getPublicServicePathDefaults, getPublicUpcomingEvents } from "@/lib/data/public";
 import { resolveRequestDeepLink, withPackageDeepLink } from "@/lib/request/deep-link";
 
 export const dynamic = "force-dynamic";
 
 export default async function PublicRequestPage({ searchParams }: Readonly<{ searchParams?: Promise<Record<string, string | string[] | undefined>> }>) {
-  const [clubs, events, packages] = await Promise.all([getActiveClubs(), getPublicUpcomingEvents(), getPublicConciergePackages()]);
+  const [clubs, events, packages, serviceDefaults] = await Promise.all([getActiveClubs(), getPublicUpcomingEvents(), getPublicConciergePackages(), getPublicServicePathDefaults()]);
   const params = await searchParams;
   const linkDefaults = withPackageDeepLink(resolveRequestDeepLink(clubs, params), packages, params);
 
@@ -17,7 +17,7 @@ export default async function PublicRequestPage({ searchParams }: Readonly<{ sea
       description="Choose nightlife, boats, golf, villas, transfers, full planning, or a tailored package."
       hostLine="Fast request. Real person follow-up. No account needed."
     >
-      <RequestFormSteps clubs={clubs} events={events} packages={packages} {...linkDefaults} />
+      <RequestFormSteps clubs={clubs} events={events} packages={packages} serviceDefaults={serviceDefaults} {...linkDefaults} />
     </PublicRequestShell>
   );
 }

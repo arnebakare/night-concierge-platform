@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergePackage, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, PromoterServiceEligibility, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule, ServiceRoutingRule, VipLevel } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergePackage, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, PromoterServiceEligibility, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule, ServicePathDefault, ServiceRoutingRule, VipLevel } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -738,6 +738,22 @@ export async function getServiceRoutingStatsForProfile(profile: Profile): Promis
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
     return { TABLE: { open: 6, recent: 14 }, GOLF: { open: 1, recent: 2 }, PACKAGE: { open: 2, recent: 3 } };
+  }
+}
+
+export async function getServicePathDefaultsForProfile(): Promise<ServicePathDefault[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("service_path_defaults")
+      .select("id, request_type, customer_title, customer_intro, detail_prompt, question_prompts, default_addons, active, created_by, created_at, updated_at")
+      .order("request_type");
+    if (error) throw error;
+    return normalizeServicePathDefaults(data);
+  } catch (error) {
+    if (error instanceof Error && /service_path_defaults/i.test(error.message)) return demoServicePathDefaults();
+    if (!isDemoAuthEnabled()) throw error;
+    return demoServicePathDefaults();
   }
 }
 
@@ -1497,6 +1513,54 @@ function demoServiceRoutingRules(): ServiceRoutingRule[] {
     fallback_promoter: null,
     manager: { name: "Julia Casanis", email: "julia@casanis.es" }
   }));
+}
+
+function normalizeServicePathDefaults(data: unknown): ServicePathDefault[] {
+  return ((data as Array<Omit<ServicePathDefault, "question_prompts" | "default_addons"> & { question_prompts?: unknown; default_addons?: unknown }> | null) ?? []).map((item) => ({
+    ...item,
+    question_prompts: Array.isArray(item.question_prompts) ? item.question_prompts.map(String) : [],
+    default_addons: normalizeDefaultAddons(item.default_addons)
+  }));
+}
+
+function normalizeDefaultAddons(value: unknown): ServicePathDefault["default_addons"] {
+  const allowed = new Set(["addonBeachClub", "addonDinner", "addonNightclub", "addonGolf", "addonYacht", "addonTransfer", "addonVilla"]);
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const entries: Array<[string, number]> = [];
+  Object.entries(value as Record<string, unknown>).forEach(([key, count]) => {
+    const numericCount = Number(count);
+    if (allowed.has(key) && Number.isFinite(numericCount) && numericCount > 0) entries.push([key, numericCount]);
+  });
+  return Object.fromEntries(entries) as ServicePathDefault["default_addons"];
+}
+
+function demoServicePathDefaults(): ServicePathDefault[] {
+  return [
+    {
+      id: "demo-service-default-schedule",
+      request_type: "SCHEDULE",
+      customer_title: "Full stay planning",
+      customer_intro: "Build the whole Marbella plan across beach clubs, dinner, nightlife, drivers, and special requests.",
+      detail_prompt: "Add dates, group style, spend level, and must-have experiences.",
+      question_prompts: ["Party focused or balanced?", "High spend or normal?", "Any must-go venues or DJs?"],
+      default_addons: { addonBeachClub: 2, addonDinner: 2, addonNightclub: 2, addonTransfer: 2 },
+      active: true,
+      created_by: demoProfile.id,
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "demo-service-default-golf",
+      request_type: "GOLF",
+      customer_title: "Golf booking",
+      customer_intro: "Tell us dates and group size. Your host will check tee times and course options.",
+      detail_prompt: "Add preferred tee time, course, handicap level, and transport needs.",
+      question_prompts: ["Morning or afternoon tee time?", "Need clubs or buggies?", "Dinner after golf?"],
+      default_addons: { addonGolf: 1, addonDinner: 1, addonTransfer: 1 },
+      active: true,
+      created_by: demoProfile.id,
+      created_at: new Date().toISOString()
+    }
+  ];
 }
 
 function applyClientFilters(clients: Client[], filters?: ClientFilters) {

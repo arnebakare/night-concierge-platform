@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { RequestFormSteps } from "@/components/request/request-form-steps";
 import { PublicRequestShell } from "@/components/request/public-request-shell";
-import { getActiveClubs, getMagicLink, getPublicConciergePackages, getPublicUpcomingEvents } from "@/lib/data/public";
+import { getActiveClubs, getMagicLink, getPublicConciergePackages, getPublicServicePathDefaults, getPublicUpcomingEvents } from "@/lib/data/public";
 import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Button } from "@/components/ui/button";
 import { resolveRequestDeepLink, withPackageDeepLink } from "@/lib/request/deep-link";
@@ -13,7 +13,7 @@ export default async function MagicLinkPage({
   searchParams
 }: Readonly<{ params: Promise<{ token: string }>; searchParams?: Promise<Record<string, string | string[] | undefined>> }>) {
   const { token } = await params;
-  const [clubs, link, events, packages] = await Promise.all([getActiveClubs(), getMagicLink(token), getPublicUpcomingEvents(), getPublicConciergePackages()]);
+  const [clubs, link, events, packages, serviceDefaults] = await Promise.all([getActiveClubs(), getMagicLink(token), getPublicUpcomingEvents(), getPublicConciergePackages(), getPublicServicePathDefaults()]);
 
   if (!link?.active) notFound();
   if (link.expires_at && new Date(link.expires_at) < new Date()) notFound();
@@ -28,6 +28,7 @@ export default async function MagicLinkPage({
   const paramsValue = await searchParams;
   const linkDefaults = withPackageDeepLink(resolveRequestDeepLink(availableClubs, paramsValue), packages, paramsValue);
   const startAtStep = linkDefaults.startAtStep ?? (link.club_id ? 3 : undefined);
+  const initialCategory = linkDefaults.initialCategory ?? (link.club_id ? "nightlife" : undefined);
 
   return (
     <PublicRequestShell
@@ -63,8 +64,9 @@ export default async function MagicLinkPage({
         clubs={availableClubs}
         events={events}
         packages={packages}
+        serviceDefaults={serviceDefaults}
         magicToken={token}
-        initialCategory={linkDefaults.initialCategory}
+        initialCategory={initialCategory}
         startAtStep={startAtStep}
         defaults={{
           ...linkDefaults.defaults,

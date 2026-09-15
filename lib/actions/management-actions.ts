@@ -2103,6 +2103,22 @@ const serviceRoutingRuleSchema = z.object({
   notes: z.string().trim().max(400).optional().or(z.literal(""))
 });
 
+const servicePathDefaultSchema = z.object({
+  requestType: z.enum(["GUESTLIST", "TABLE", "VIP_SERVICE", "GENERAL", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE"]),
+  customerTitle: z.string().trim().min(2).max(120),
+  customerIntro: z.string().trim().max(500).optional().or(z.literal("")),
+  detailPrompt: z.string().trim().max(500).optional().or(z.literal("")),
+  questionPrompts: z.string().trim().max(800).optional().or(z.literal("")),
+  addonBeachClub: z.coerce.number().int().min(0).max(14),
+  addonDinner: z.coerce.number().int().min(0).max(14),
+  addonNightclub: z.coerce.number().int().min(0).max(14),
+  addonGolf: z.coerce.number().int().min(0).max(14),
+  addonYacht: z.coerce.number().int().min(0).max(14),
+  addonTransfer: z.coerce.number().int().min(0).max(14),
+  addonVilla: z.coerce.number().int().min(0).max(14),
+  active: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
 export async function saveServiceRoutingRule(formData: FormData) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const parsed = serviceRoutingRuleSchema.safeParse({
@@ -2157,6 +2173,74 @@ export async function saveServiceRoutingRule(formData: FormData) {
   });
   revalidatePath("/admin/routing");
   revalidatePath("/manager/routing");
+}
+
+export async function saveServicePathDefault(formData: FormData) {
+  const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
+  const parsed = servicePathDefaultSchema.safeParse({
+    requestType: formData.get("requestType"),
+    customerTitle: formData.get("customerTitle"),
+    customerIntro: formData.get("customerIntro") || "",
+    detailPrompt: formData.get("detailPrompt") || "",
+    questionPrompts: formData.get("questionPrompts") || "",
+    addonBeachClub: formData.get("addonBeachClub") || "0",
+    addonDinner: formData.get("addonDinner") || "0",
+    addonNightclub: formData.get("addonNightclub") || "0",
+    addonGolf: formData.get("addonGolf") || "0",
+    addonYacht: formData.get("addonYacht") || "0",
+    addonTransfer: formData.get("addonTransfer") || "0",
+    addonVilla: formData.get("addonVilla") || "0",
+    active: formData.get("active") || "false"
+  });
+  if (!parsed.success) return;
+  if (isDemoAuthEnabled()) { revalidatePath("/admin/routing"); revalidatePath("/manager/routing"); revalidatePath("/request"); return; }
+
+  const supabase = await createClient();
+  const defaultAddons = Object.fromEntries(
+    [
+      ["addonBeachClub", parsed.data.addonBeachClub],
+      ["addonDinner", parsed.data.addonDinner],
+      ["addonNightclub", parsed.data.addonNightclub],
+      ["addonGolf", parsed.data.addonGolf],
+      ["addonYacht", parsed.data.addonYacht],
+      ["addonTransfer", parsed.data.addonTransfer],
+      ["addonVilla", parsed.data.addonVilla]
+    ].filter(([, value]) => Number(value) > 0)
+  );
+  const questionPrompts = (parsed.data.questionPrompts ?? "")
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 6);
+
+  const { data, error } = await supabase
+    .from("service_path_defaults")
+    .upsert({
+      request_type: parsed.data.requestType,
+      customer_title: parsed.data.customerTitle,
+      customer_intro: parsed.data.customerIntro || null,
+      detail_prompt: parsed.data.detailPrompt || null,
+      question_prompts: questionPrompts,
+      default_addons: defaultAddons,
+      active: parsed.data.active,
+      created_by: profile.id
+    }, { onConflict: "request_type" })
+    .select("id")
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "Could not save service defaults.");
+
+  await writeAuditLog(supabase, {
+    userId: profile.id,
+    action: "SERVICE_PATH_DEFAULT_SAVED",
+    entityType: "service_path_defaults",
+    entityId: data.id,
+    metadata: { requestType: parsed.data.requestType, active: parsed.data.active }
+  });
+  revalidatePath("/admin/routing");
+  revalidatePath("/manager/routing");
+  revalidatePath("/request");
+  revalidatePath("/p/[promoterSlug]", "page");
+  revalidatePath("/m/[token]", "page");
 }
 
 export async function setPromoterServiceEligibility(formData: FormData) {

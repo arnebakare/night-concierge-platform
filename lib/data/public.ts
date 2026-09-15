@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Club, ConciergeEvent, ConciergePackage } from "@/lib/types";
+import type { Club, ConciergeEvent, ConciergePackage, ServicePathDefault } from "@/lib/types";
 import { isDemoAuthEnabled } from "@/lib/env";
 
 export async function getActiveClubs(): Promise<Club[]> {
@@ -99,6 +99,58 @@ export async function getPublicConciergePackages(): Promise<ConciergePackage[]> 
       }
     ];
   }
+}
+
+export async function getPublicServicePathDefaults(): Promise<ServicePathDefault[]> {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("service_path_defaults")
+      .select("id, request_type, customer_title, customer_intro, detail_prompt, question_prompts, default_addons, active, created_by, created_at, updated_at")
+      .eq("active", true)
+      .order("request_type");
+    if (error) throw error;
+    return normalizeServicePathDefaults(data);
+  } catch (error) {
+    if (!isDemoAuthEnabled()) throw error;
+    return demoServicePathDefaults();
+  }
+}
+
+function normalizeServicePathDefaults(data: unknown): ServicePathDefault[] {
+  return ((data as Array<Omit<ServicePathDefault, "question_prompts" | "default_addons"> & { question_prompts?: unknown; default_addons?: unknown }> | null) ?? []).map((item) => ({
+    ...item,
+    question_prompts: Array.isArray(item.question_prompts) ? item.question_prompts.map(String) : [],
+    default_addons: normalizeDefaultAddons(item.default_addons)
+  }));
+}
+
+function normalizeDefaultAddons(value: unknown): ServicePathDefault["default_addons"] {
+  const allowed = new Set(["addonBeachClub", "addonDinner", "addonNightclub", "addonGolf", "addonYacht", "addonTransfer", "addonVilla"]);
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const entries: Array<[string, number]> = [];
+  Object.entries(value as Record<string, unknown>).forEach(([key, count]) => {
+    const numericCount = Number(count);
+    if (allowed.has(key) && Number.isFinite(numericCount) && numericCount > 0) entries.push([key, numericCount]);
+  });
+  return Object.fromEntries(entries) as ServicePathDefault["default_addons"];
+}
+
+function demoServicePathDefaults(): ServicePathDefault[] {
+  return [
+    {
+      id: "demo-service-default-schedule",
+      request_type: "SCHEDULE",
+      customer_title: "Full stay planning",
+      customer_intro: "Build the whole Marbella plan across beach clubs, dinner, nightlife, drivers, and special requests.",
+      detail_prompt: "Add dates, group style, spend level, and must-have experiences.",
+      question_prompts: ["Party focused or balanced?", "High spend or normal?", "Any must-go venues or DJs?"],
+      default_addons: { addonBeachClub: 2, addonDinner: 2, addonNightclub: 2, addonTransfer: 2 },
+      active: true,
+      created_by: null,
+      created_at: new Date().toISOString()
+    }
+  ];
 }
 
 export async function getPromoterLink(slug: string) {

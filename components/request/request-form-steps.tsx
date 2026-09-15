@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createPublicRequest } from "@/lib/actions/request-actions";
 import { publicRequestSchema, type PublicRequestInput } from "@/lib/validation/request";
-import type { Club, ConciergeEvent, ConciergePackage } from "@/lib/types";
+import type { Club, ConciergeEvent, ConciergePackage, ServicePathDefault } from "@/lib/types";
 import { cn, formatEnum } from "@/lib/utils";
 import { getClubVenueExperience } from "@/components/request/venue-experience";
 
@@ -32,6 +32,7 @@ export function RequestFormSteps({
   clubs,
   events = [],
   packages = [],
+  serviceDefaults = [],
   promoterSlug,
   magicToken,
   initialCategory,
@@ -41,6 +42,7 @@ export function RequestFormSteps({
   clubs: Club[];
   events?: ConciergeEvent[];
   packages?: ConciergePackage[];
+  serviceDefaults?: ServicePathDefault[];
   promoterSlug?: string;
   magicToken?: string;
   initialCategory?: RequestCategory;
@@ -51,6 +53,7 @@ export function RequestFormSteps({
   const [step, setStep] = useState(Math.min(6, Math.max(1, startAtStep ?? (derivedInitialCategory ? (derivedInitialCategory === "nightlife" ? 2 : 3) : 1))));
   const [category, setCategory] = useState<RequestCategory | null>(derivedInitialCategory);
   const flowRef = useRef<HTMLElement | null>(null);
+  const defaultAppliedRef = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAllVenues, setShowAllVenues] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -137,6 +140,13 @@ export function RequestFormSteps({
     () => rankPackages(packages, values.requestType, values.guestCount, values.requestedDate, values.requestedDateEnd, values.budget),
     [packages, values.budget, values.guestCount, values.requestType, values.requestedDate, values.requestedDateEnd]
   );
+  const serviceDefaultsByType = useMemo(() => new Map(serviceDefaults.map((item) => [item.request_type, item])), [serviceDefaults]);
+  const currentServiceDefault = serviceDefaultsByType.get(values.requestType);
+  const serviceTitle = currentServiceDefault?.customer_title || selectedCategoryCard?.title || "Concierge request";
+  const serviceIntro = currentServiceDefault?.customer_intro || "Tell us what you need. A host will reply personally and shape the best option.";
+  const detailPrompt = currentServiceDefault?.detail_prompt || "Approximate details are enough to start.";
+  const questionPrompts = currentServiceDefault?.question_prompts ?? [];
+  const recommendationContext = recommendationContextText(values.requestedDate, values.requestedDateEnd, values.guestCount, values.budget);
 
   useEffect(() => {
     const serviceExists = selectedExperience.services.some((service) => service.label === values.serviceLabel && service.requestType === values.requestType);
@@ -155,6 +165,13 @@ export function RequestFormSteps({
   useEffect(() => {
     flowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [step]);
+
+  useEffect(() => {
+    if (!currentServiceDefault?.active || defaultAppliedRef.current === values.requestType || hasAnyAddons(values)) return;
+    applyDefaultAddons(currentServiceDefault);
+    defaultAppliedRef.current = values.requestType;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentServiceDefault, values.requestType]);
 
   function selectClub(club: Club) {
     const experience = getClubVenueExperience(club);
@@ -183,6 +200,14 @@ export function RequestFormSteps({
     if (!service) return;
     form.setValue("requestType", service.requestType, { shouldValidate: true });
     form.setValue("serviceLabel", service.label, { shouldValidate: true });
+    const serviceDefault = serviceDefaultsByType.get(service.requestType);
+    if (serviceDefault && !hasAnyAddons(form.getValues())) applyDefaultAddons(serviceDefault);
+  }
+
+  function applyDefaultAddons(serviceDefault: ServicePathDefault) {
+    Object.entries(serviceDefault.default_addons).forEach(([key, value]) => {
+      form.setValue(key as keyof PublicRequestInput, Number(value) as never, { shouldValidate: true });
+    });
   }
 
   function selectOccasion(event: ConciergeEvent | null) {
@@ -402,13 +427,13 @@ export function RequestFormSteps({
                   </span>
                   <div>
                     <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Personal concierge</p>
-                    <h2 className="font-serif text-2xl">{selectedCategoryCard?.title ?? "Concierge request"}</h2>
-                    <p className="text-sm text-muted-foreground">Tell us what you need. A host will reply personally and shape the best option.</p>
+                    <h2 className="font-serif text-2xl">{serviceTitle}</h2>
+                    <p className="text-sm text-muted-foreground">{serviceIntro}</p>
                   </div>
                 </div>
               </div>
-              <StepIntro title={canBuildStayPlan ? "Build your stay" : "Add the key details"} description={canBuildStayPlan ? "Choose a package or add the pieces you want across your dates." : "Keep it simple. Approximate details are enough to start."} />
-              <ConciergeServiceSummary title={selectedCategoryCard?.title ?? "Concierge request"} serviceLabel={values.serviceLabel || formatEnum(values.requestType)} icon={SelectedCategoryIcon} />
+              <StepIntro title={canBuildStayPlan ? "Build your stay" : "Add the key details"} description={canBuildStayPlan ? "Choose a package or add the pieces you want across your dates." : detailPrompt} />
+              <ConciergeServiceSummary title={serviceTitle} serviceLabel={values.serviceLabel || formatEnum(values.requestType)} detail={detailPrompt} icon={SelectedCategoryIcon} />
             </>
           )}
           {values.requestType === "PACKAGE" && recommendedPackages.length > 0 && (
@@ -586,7 +611,22 @@ export function RequestFormSteps({
           <Field label="Anything important? optional">
             <Textarea {...form.register("message")} placeholder="Occasion, preferred area, special requests..." />
           </Field>
+          {questionPrompts.length > 0 && <QuestionPromptList prompts={questionPrompts} form={form} currentMessage={values.message} />}
           <ServiceDetailsFields requestType={values.requestType} form={form} />
+          {canBuildStayPlan && recommendedPackages.length > 0 && (
+            <LiveRecommendationPanel
+              recommendations={recommendedPackages.slice(0, 3)}
+              context={recommendationContext}
+              selectedPackageId={values.packageId}
+              onSelect={(item) => {
+                const active = values.packageId === item.id;
+                form.setValue("packageId", active ? "" : item.id, { shouldValidate: true });
+                form.setValue("packageTitle", active ? "" : item.title, { shouldValidate: true });
+                form.setValue("packageStyle", active ? "" : item.title, { shouldValidate: true });
+                if (!active && item.price_hint) form.setValue("budget", item.price_hint, { shouldValidate: true });
+              }}
+            />
+          )}
           <div className="grid grid-cols-2 gap-2">
             {["Birthday", "Best table possible", "Flexible timing", "Need fast reply"].map((note) => (
               <QuickPick
@@ -677,8 +717,9 @@ function selectedServiceHint(services: ReturnType<typeof getClubVenueExperience>
 function ConciergeServiceSummary({
   title,
   serviceLabel,
+  detail,
   icon: Icon
-}: Readonly<{ title: string; serviceLabel: string; icon: typeof Moon }>) {
+}: Readonly<{ title: string; serviceLabel: string; detail: string; icon: typeof Moon }>) {
   return (
     <div className="grid grid-cols-[auto_1fr] gap-3 rounded-2xl border border-champagne-700/24 bg-ink-950/44 p-3.5">
       <span className="flex size-11 items-center justify-center rounded-2xl bg-white/[0.055] text-champagne-300">
@@ -687,9 +728,87 @@ function ConciergeServiceSummary({
       <span className="min-w-0">
         <span className="block text-sm font-semibold text-champagne-50">{serviceLabel || title}</span>
         <span className="mt-1 block text-xs leading-5 text-champagne-100/72">
-          We will check the best options, availability, and any details that matter before confirming anything.
+          {detail}
         </span>
       </span>
+    </div>
+  );
+}
+
+function QuestionPromptList({
+  prompts,
+  form,
+  currentMessage
+}: Readonly<{ prompts: string[]; form: ReturnType<typeof useForm<PublicRequestInput>>; currentMessage?: string }>) {
+  return (
+    <div className="rounded-2xl border border-champagne-700/24 bg-white/[0.04] p-3">
+      <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Helpful to mention</p>
+      <div className="mt-2 grid gap-2">
+        {prompts.slice(0, 4).map((prompt) => (
+          <button
+            key={prompt}
+            type="button"
+            className="rounded-xl border border-champagne-700/24 bg-ink-950/42 px-3 py-2 text-left text-xs leading-5 text-champagne-100/80 transition hover:border-champagne-300/45"
+            onClick={() => {
+              const current = currentMessage?.trim();
+              if (current?.includes(prompt)) return;
+              form.setValue("message", current ? `${current}\n${prompt} ` : `${prompt} `, { shouldValidate: true });
+            }}
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LiveRecommendationPanel({
+  recommendations,
+  context,
+  selectedPackageId,
+  onSelect
+}: Readonly<{
+  recommendations: Array<{ item: ConciergePackage; score: number }>;
+  context: string;
+  selectedPackageId?: string;
+  onSelect: (item: ConciergePackage) => void;
+}>) {
+  return (
+    <div className="rounded-2xl border border-champagne-400/30 bg-[linear-gradient(135deg,rgba(216,183,100,0.13),rgba(255,255,255,0.035))] p-3.5">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Recommendations updated</p>
+          <p className="mt-1 text-sm leading-5 text-champagne-100/78">{context}</p>
+        </div>
+        <Sparkles className="size-5 shrink-0 text-champagne-300" />
+      </div>
+      <div className="grid gap-2">
+        {recommendations.map(({ item }, index) => {
+          const active = selectedPackageId === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onSelect(item)}
+              className={cn(
+                "rounded-xl border p-3 text-left transition active:scale-[0.99]",
+                active ? "border-champagne-300 bg-champagne-300/14" : "border-champagne-700/24 bg-ink-950/42 hover:border-champagne-300/50"
+              )}
+            >
+              <span className="flex items-center justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-champagne-50">{item.title}</span>
+                  <span className="mt-1 block truncate text-xs text-muted-foreground">{item.price_hint || customerPackageFit(item)}</span>
+                </span>
+                <span className={cn("rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]", index === 0 ? "bg-champagne-300 text-ink-950" : "border border-champagne-700/28 text-champagne-200")}>
+                  {active ? "Selected" : index === 0 ? "Best" : "Option"}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -926,8 +1045,22 @@ function addonSummary(values: PublicRequestInput) {
   return parts.length ? parts.join(" · ") : "";
 }
 
+function hasAnyAddons(values: PublicRequestInput) {
+  return addOns.some((item) => Number(values[item.key] ?? 0) > 0);
+}
+
 function addonSummaryPart(label: string, count?: number) {
   return count && count > 0 ? `${label} x${count}` : null;
+}
+
+function recommendationContextText(startDate?: string, endDate?: string, guestCount?: number, budget?: string) {
+  const days = tripLength(startDate, endDate);
+  const parts = [
+    days > 1 ? `${days} days` : "1 day",
+    guestCount ? `${guestCount} guests` : null,
+    budget?.trim() ? budget.trim() : "flexible spend"
+  ].filter(Boolean);
+  return `Adjusted for ${parts.join(" · ")}.`;
 }
 
 function rankPackages(

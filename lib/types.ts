@@ -207,6 +207,23 @@ export type ServiceRoutingRule = {
   manager?: Pick<Profile, "name" | "email"> | null;
 };
 
+export type ServicePathDefault = {
+  id: string;
+  request_type: RequestType;
+  customer_title: string;
+  customer_intro: string | null;
+  detail_prompt: string | null;
+  question_prompts: string[];
+  default_addons: Partial<Record<
+    "addonBeachClub" | "addonDinner" | "addonNightclub" | "addonGolf" | "addonYacht" | "addonTransfer" | "addonVilla",
+    number
+  >>;
+  active: boolean;
+  created_by: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type SchedulePlan = {
   id: string;
   user_id: string | null;
