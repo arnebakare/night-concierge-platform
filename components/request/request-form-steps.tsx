@@ -142,8 +142,22 @@ export function RequestFormSteps({
   const stepTitles = ["Service", "Venue", "Plan", "Contact", "Dates", "Review"];
   const nextLabel = step === 1 ? "Continue" : step === 2 ? "Choose experience" : step === 3 ? "Add contact" : step === 4 ? "Add dates" : "Review";
   const recommendedPackages = useMemo(
-    () => rankPackages(packages, values.requestType, values.guestCount, values.requestedDate, values.requestedDateEnd, values.budget),
-    [packages, values.budget, values.guestCount, values.requestType, values.requestedDate, values.requestedDateEnd]
+    () => rankPackages(packages, values),
+    [
+      packages,
+      values.addonBeachClub,
+      values.addonDinner,
+      values.addonGolf,
+      values.addonNightclub,
+      values.addonTransfer,
+      values.addonVilla,
+      values.addonYacht,
+      values.budget,
+      values.guestCount,
+      values.requestType,
+      values.requestedDate,
+      values.requestedDateEnd
+    ]
   );
   const serviceDefaultsByType = useMemo(() => new Map(serviceDefaults.map((item) => [item.request_type, item])), [serviceDefaults]);
   const currentServiceDefault = serviceDefaultsByType.get(values.requestType);
@@ -448,7 +462,7 @@ export function RequestFormSteps({
                 <p className="mt-1 text-sm text-muted-foreground">Ranked by your group, dates, and spend notes. Choose one starting point, then adjust it with your host.</p>
               </div>
               <div className="grid gap-2">
-                {recommendedPackages.slice(0, 6).map(({ item, score }, index) => {
+                {recommendedPackages.slice(0, 6).map(({ item, score, reasons }, index) => {
                   const active = values.packageId === item.id;
                   return (
                     <button
@@ -480,6 +494,7 @@ export function RequestFormSteps({
                         {item.price_hint && <span className="rounded-full border border-champagne-700/25 px-2 py-0.5 text-[10px] text-champagne-200">{item.price_hint}</span>}
                         <span className="rounded-full bg-white/[0.055] px-2 py-0.5 text-[10px] text-muted-foreground">{item.package_items.length} inclusions</span>
                         <span className="rounded-full bg-white/[0.055] px-2 py-0.5 text-[10px] text-muted-foreground">{customerPackageFit(item)}</span>
+                        {reasons.slice(0, 2).map((reason) => <span key={reason} className="rounded-full bg-white/[0.055] px-2 py-0.5 text-[10px] text-champagne-200">{reason}</span>)}
                         {item.package_items.slice(0, 3).map((detail) => <span key={detail} className="rounded-full bg-white/[0.055] px-2 py-0.5 text-[10px] text-muted-foreground">{detail}</span>)}
                       </span>
                     </button>
@@ -774,7 +789,7 @@ function LiveRecommendationPanel({
   selectedPackageId,
   onSelect
 }: Readonly<{
-  recommendations: Array<{ item: ConciergePackage; score: number }>;
+  recommendations: Array<{ item: ConciergePackage; score: number; reasons: string[] }>;
   context: string;
   selectedPackageId?: string;
   onSelect: (item: ConciergePackage) => void;
@@ -789,7 +804,7 @@ function LiveRecommendationPanel({
         <Sparkles className="size-5 shrink-0 text-champagne-300" />
       </div>
       <div className="grid gap-2">
-        {recommendations.map(({ item }, index) => {
+        {recommendations.map(({ item, reasons }, index) => {
           const active = selectedPackageId === item.id;
           return (
             <button
@@ -805,6 +820,7 @@ function LiveRecommendationPanel({
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-champagne-50">{item.title}</span>
                   <span className="mt-1 block truncate text-xs text-muted-foreground">{item.price_hint || customerPackageFit(item)}</span>
+                  {reasons.length > 0 && <span className="mt-1 block text-xs text-champagne-200/86">{reasons.slice(0, 2).join(" · ")}</span>}
                 </span>
                 <span className={cn("rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]", index === 0 ? "bg-champagne-300 text-ink-950" : "border border-champagne-700/28 text-champagne-200")}>
                   {active ? "Selected" : index === 0 ? "Best" : "Option"}
@@ -1083,40 +1099,49 @@ function recommendationContextText(startDate?: string, endDate?: string, guestCo
   return `Adjusted for ${parts.join(" · ")}.`;
 }
 
-function rankPackages(
-  packages: ConciergePackage[],
-  requestType: PublicRequestInput["requestType"],
-  guestCount?: number,
-  startDate?: string,
-  endDate?: string,
-  budget?: string
-) {
+function rankPackages(packages: ConciergePackage[], values: PublicRequestInput) {
   return packages
-    .map((item) => ({ item, score: packageScore(item, requestType, guestCount, startDate, endDate, budget) }))
+    .map((item) => packageScore(item, values))
     .sort((a, b) => b.score - a.score || (b.item.recommendation_weight ?? 1) - (a.item.recommendation_weight ?? 1) || a.item.title.localeCompare(b.item.title));
 }
 
-function packageScore(
-  item: ConciergePackage,
-  requestType: PublicRequestInput["requestType"],
-  guestCount?: number,
-  startDate?: string,
-  endDate?: string,
-  budget?: string
-) {
+function packageScore(item: ConciergePackage, values: PublicRequestInput) {
   let score = item.recommendation_weight ?? 1;
-  if (item.request_type === requestType) score += 6;
+  const reasons: string[] = [];
+  if (item.request_type === values.requestType) {
+    score += 6;
+    reasons.push("Matches this path");
+  }
   if (item.request_type === "PACKAGE") score += 2;
-  const spend = spendLevelFromBudget(budget);
-  if (item.spend_level === spend) score += 4;
+  const spend = spendLevelFromBudget(values.budget);
+  if (item.spend_level === spend) {
+    score += 4;
+    reasons.push(spend === "HIGH" ? "Fits high spend" : "Fits normal spend");
+  }
   if (item.spend_level === "ANY" || !item.spend_level) score += 1;
-  if (guestCount && item.ideal_group_min && guestCount >= item.ideal_group_min) score += 2;
-  if (guestCount && item.ideal_group_max && guestCount <= item.ideal_group_max) score += 2;
-  const days = tripLength(startDate, endDate);
+  if (values.guestCount && item.ideal_group_min && values.guestCount >= item.ideal_group_min) score += 2;
+  if (values.guestCount && item.ideal_group_max && values.guestCount <= item.ideal_group_max) {
+    score += 2;
+    reasons.push("Good group size");
+  }
+  const days = tripLength(values.requestedDate, values.requestedDateEnd);
   if (days && item.ideal_days_min && days >= item.ideal_days_min) score += 2;
-  if (days && item.ideal_days_max && days <= item.ideal_days_max) score += 2;
+  if (days && item.ideal_days_max && days <= item.ideal_days_max) {
+    score += 2;
+    reasons.push("Good date length");
+  }
   if (days && item.ideal_days_max && days > item.ideal_days_max) score -= 3;
-  return score;
+
+  const addonMatches = packageAddonMatches(item, values);
+  if (addonMatches.length) {
+    score += Math.min(8, addonMatches.length * 2);
+    reasons.push(...addonMatches.slice(0, 3));
+  }
+  if (values.occasion && textMatches(item, values.occasion)) {
+    score += 2;
+    reasons.push("Fits the occasion");
+  }
+  return { item, score, reasons: reasons.length ? reasons : ["Flexible fit"] };
 }
 
 function spendLevelFromBudget(budget?: string) {
@@ -1139,6 +1164,27 @@ function customerPackageFit(item: ConciergePackage) {
   const days = item.ideal_days_min || item.ideal_days_max ? `${item.ideal_days_min ?? 1}-${item.ideal_days_max ?? "any"} days` : "any length";
   const group = item.ideal_group_min || item.ideal_group_max ? `${item.ideal_group_min ?? 1}-${item.ideal_group_max ?? "any"} guests` : "any group";
   return `${spend} · ${group} · ${days}`;
+}
+
+function packageAddonMatches(item: ConciergePackage, values: PublicRequestInput) {
+  const text = `${item.title} ${item.description ?? ""} ${item.package_items.join(" ")} ${item.recommendation_note ?? ""}`.toLowerCase();
+  const checks: Array<[keyof PublicRequestInput, RegExp, string]> = [
+    ["addonBeachClub", /beach|pool|sunbed|day club|la plage|cabane/i, "Beach included"],
+    ["addonDinner", /dinner|restaurant|supper|gaia|coya|mamzel|cipriani/i, "Dinner included"],
+    ["addonNightclub", /night|club|table|guestlist|jade|bonbonniere|pangea|momento/i, "Nightlife included"],
+    ["addonGolf", /golf|tee|course|buggy|handicap/i, "Golf included"],
+    ["addonYacht", /yacht|boat|skipper|marina|sail/i, "Yacht included"],
+    ["addonTransfer", /transfer|driver|chauffeur|airport|pickup|car/i, "Driver included"],
+    ["addonVilla", /villa|hotel|suite|bedroom|stay/i, "Stay included"]
+  ];
+  return checks.filter(([key, pattern]) => Number(values[key] ?? 0) > 0 && pattern.test(text)).map(([, , label]) => label);
+}
+
+function textMatches(item: ConciergePackage, value: string) {
+  const needle = value.toLowerCase().split(/[\s,]+/).filter((word) => word.length > 3);
+  if (!needle.length) return false;
+  const text = `${item.title} ${item.description ?? ""} ${item.package_items.join(" ")} ${item.recommendation_note ?? ""}`.toLowerCase();
+  return needle.some((word) => text.includes(word));
 }
 
 function dateString(offset: number) {

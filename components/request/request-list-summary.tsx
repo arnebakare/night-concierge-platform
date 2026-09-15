@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { AlertCircle, CalendarDays, CheckCircle2, MessageCircle, Sparkles, UserRoundPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LuxuryCard } from "@/components/ui/luxury-card";
 import type { ConciergeRequest } from "@/lib/types";
 import { isMissingRequestContact, requestValueSignal } from "@/lib/concierge/requests";
 
@@ -23,11 +22,11 @@ export function RequestListSummary({
   const nextAction = missingContact ? "Fix missing contact details first" : needsReply ? "Reply to new leads first" : confirmed ? "Confirmed bookings are ready" : "Inbox is calm";
 
   return (
-    <LuxuryCard className="ops-summary mb-4 overflow-hidden bg-white text-ink-950">
-      <div className="flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="ops-summary mb-4 overflow-hidden rounded-xl border border-slate-200 bg-white text-ink-950 shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.18em] text-champagne-700">Live inbox</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-normal">What needs attention</h2>
+          <h2 className="mt-1 text-lg font-semibold tracking-normal">What needs attention</h2>
           <p className="mt-1 text-sm text-slate-500">{nextAction}</p>
         </div>
         {showLeadAction && (
@@ -48,7 +47,7 @@ export function RequestListSummary({
         )}
       </div>
 
-      <div className="ops-metrics grid grid-cols-2 divide-x divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200 md:grid-cols-5 md:divide-y-0">
+      <div className="ops-metrics grid grid-cols-2 divide-x divide-y divide-slate-200 md:grid-cols-5 md:divide-y-0">
         <Metric icon={AlertCircle} label="Need reply" value={String(needsReply)} hot={needsReply > 0} />
         <Metric icon={CheckCircle2} label="Confirmed" value={String(confirmed)} />
         <Metric icon={CalendarDays} label="Tonight" value={`${tonightGuests} guests`} />
@@ -56,7 +55,7 @@ export function RequestListSummary({
         <Metric icon={UserRoundPlus} label="Missing contact" value={String(missingContact)} muted={missingContact === 0} />
       </div>
 
-      <div className="ops-tabs flex gap-2 overflow-x-auto pb-1 text-sm">
+      <div className="ops-tabs flex gap-2 overflow-x-auto border-t border-slate-200 px-3 py-2 text-sm">
         <QuickLink href={baseHref} label="Active" />
         <QuickLink href={`${baseHref}?date=${today}`} label="Today" />
         <QuickLink href={`${baseHref}?date=${tomorrow}`} label="Tomorrow" />
@@ -64,7 +63,7 @@ export function RequestListSummary({
         <QuickLink href={`${baseHref}?status=CONFIRMED`} label="Confirmed" />
         <QuickLink href={`${baseHref}?archived=1`} label="Completed" />
       </div>
-    </LuxuryCard>
+    </div>
   );
 }
 
@@ -76,12 +75,12 @@ function Metric({
   hot
 }: Readonly<{ icon: typeof Sparkles; label: string; value: string; muted?: boolean; hot?: boolean }>) {
   return (
-    <div className="metric-cell bg-slate-50 px-3 py-2.5">
+    <div className="metric-cell bg-white px-3 py-2.5">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-slate-500">{label}</span>
         <Icon className={muted ? "size-4 text-slate-400" : hot ? "size-4 text-rose-500" : "size-4 text-champagne-700"} />
       </div>
-      <p className={hot ? "mt-1.5 text-xl font-semibold leading-none tracking-tight text-rose-700" : "mt-1.5 text-xl font-semibold leading-none tracking-tight"}>{value}</p>
+      <p className={hot ? "mt-1 text-lg font-semibold leading-none tracking-tight text-rose-700" : "mt-1 text-lg font-semibold leading-none tracking-tight"}>{value}</p>
     </div>
   );
 }
@@ -90,7 +89,7 @@ function QuickLink({ href, label }: Readonly<{ href: string; label: string }>) {
   return (
     <Link
       href={href}
-      className="whitespace-nowrap rounded-md border border-slate-200 bg-white px-3 py-1.5 text-slate-600 transition hover:border-champagne-600 hover:text-ink-950"
+      className="whitespace-nowrap rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-600 transition hover:border-champagne-600 hover:bg-white hover:text-ink-950"
     >
       {label}
     </Link>
