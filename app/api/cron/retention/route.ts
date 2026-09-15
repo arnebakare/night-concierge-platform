@@ -52,7 +52,7 @@ export async function GET(request: Request) {
         destination: attempt.destination,
         message,
         status: attempt.result.ok ? "SENT" : "FAILED",
-        provider: attempt.channel === "WHATSAPP" ? "twilio" : "resend",
+        provider: attempt.channel === "WHATSAPP" ? "meta" : "resend",
         provider_message_id: attempt.result.ok ? ("sid" in attempt.result ? attempt.result.sid : attempt.result.id) ?? null : null,
         error_message: attempt.result.ok ? null : attempt.result.error,
         automatic: true

@@ -147,11 +147,57 @@ export type MessageTemplate = {
   id: string;
   key: string;
   label: string;
-  channel: "WHATSAPP" | "EMAIL" | "INTERNAL";
+  channel: "WHATSAPP" | "INSTAGRAM" | "EMAIL" | "INTERNAL";
   language: "en" | "es" | "sv";
   body: string;
   active: boolean;
   updated_at?: string | null;
+};
+
+export type MessagingChannel = "WHATSAPP" | "INSTAGRAM";
+
+export type Conversation = {
+  id: string;
+  client_id: string;
+  customer_identity_id: string;
+  channel: MessagingChannel;
+  external_account_id: string;
+  external_thread_id: string | null;
+  assigned_promoter_id: string | null;
+  assigned_manager_id: string | null;
+  status: "OPEN" | "PENDING" | "RESOLVED";
+  unread_count: number;
+  last_message_at: string | null;
+  last_message_preview: string | null;
+  clients?: Pick<Client, "id" | "name" | "phone" | "instagram" | "vip_level" | "status"> | null;
+  identity?: { external_user_id: string; username: string | null; display_name: string | null; phone: string | null } | null;
+  promoter?: Pick<Profile, "id" | "name" | "email"> | null;
+  manager?: Pick<Profile, "id" | "name" | "email"> | null;
+};
+
+export type ConversationMessage = {
+  id: string;
+  conversation_id: string;
+  direction: "INBOUND" | "OUTBOUND";
+  sender_profile_id: string | null;
+  external_message_id: string | null;
+  message_type: string;
+  body: string | null;
+  delivery_status: "RECEIVED" | "PENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED";
+  error_message: string | null;
+  sent_at: string | null;
+  created_at: string;
+  sender?: Pick<Profile, "name" | "email"> | null;
+  attachments?: Array<{ id: string; attachment_type: string; external_media_id: string | null; source_url: string | null; mime_type: string | null; filename: string | null }>;
+};
+
+export type ConversationNote = {
+  id: string;
+  conversation_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+  author?: Pick<Profile, "name" | "email"> | null;
 };
 
 export type ConciergeRequest = {

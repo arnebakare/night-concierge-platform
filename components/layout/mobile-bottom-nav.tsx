@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, CreditCard, HeartHandshake, Home, Link2, Search, Settings, Users, User, Inbox, Crown } from "lucide-react";
+import { Briefcase, CreditCard, HeartHandshake, Home, Link2, MessageCircle, Search, Settings, Users, User, Inbox, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useExperienceMode } from "@/components/layout/experience-mode";
 import type { Role } from "@/lib/types";
@@ -10,14 +10,14 @@ import type { Role } from "@/lib/types";
 const navByRole: Record<Role, { href: string; label: string; icon: typeof Home }[]> = {
   PROMOTER: [
     { href: "/dashboard", label: "Home", icon: Home },
-    { href: "/requests", label: "Requests", icon: Inbox },
+    { href: "/inbox", label: "Messages", icon: MessageCircle },
     { href: "/clients", label: "Clients", icon: Search },
     { href: "/links", label: "Links", icon: Link2 },
     { href: "/profile", label: "Profile", icon: User }
   ],
   PROMOTER_MANAGER: [
     { href: "/manager", label: "Home", icon: Home },
-    { href: "/manager/requests", label: "Inbox", icon: Inbox },
+    { href: "/inbox", label: "Messages", icon: MessageCircle },
     { href: "/manager/payments", label: "Pay", icon: CreditCard },
     { href: "/manager/clients", label: "Clients", icon: Search },
     { href: "/manager/retention", label: "Care", icon: HeartHandshake }
@@ -26,7 +26,7 @@ const navByRole: Record<Role, { href: string; label: string; icon: typeof Home }
     { href: "/admin", label: "Home", icon: Crown },
     { href: "/admin/clubs", label: "Clubs", icon: Briefcase },
     { href: "/admin/users", label: "Users", icon: Users },
-    { href: "/manager/requests", label: "Inbox", icon: Inbox },
+    { href: "/inbox", label: "Messages", icon: MessageCircle },
     { href: "/admin/settings", label: "More", icon: Settings }
   ],
   CLIENT: [

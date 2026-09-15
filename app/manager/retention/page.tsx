@@ -45,7 +45,7 @@ export default async function RetentionPage({
       </LuxuryCard>
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
-        <ConfigCard label="WhatsApp" ready={whatsAppConfig.accountSidConfigured && whatsAppConfig.authTokenConfigured && whatsAppConfig.fromConfigured} detail={whatsAppConfig.fromConfigured ? "Twilio sender configured" : "Add Twilio sender in Vercel"} />
+        <ConfigCard label="WhatsApp" ready={whatsAppConfig.accessTokenConfigured && whatsAppConfig.phoneNumberIdConfigured} detail={whatsAppConfig.fromConfigured ? "Meta Cloud API configured" : "Add Meta credentials in Vercel"} />
         <ConfigCard label="Email" ready={emailConfig.ready} detail={emailConfig.ready ? `Sending from ${emailConfig.from}` : "Add RESEND_API_KEY and EMAIL_FROM in Vercel"} />
       </div>
 

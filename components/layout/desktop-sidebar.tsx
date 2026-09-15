@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, ArchiveRestore, Bell, BrainCircuit, Briefcase, CalendarDays, CreditCard, Crown, HeartHandshake, Home, Inbox, Link2, Package, Percent, Settings, User, Users } from "lucide-react";
+import { Activity, ArchiveRestore, Bell, BrainCircuit, Briefcase, CalendarDays, CreditCard, Crown, HeartHandshake, Home, Inbox, Link2, MessageCircle, Package, Percent, Settings, User, Users } from "lucide-react";
 import { useExperienceMode } from "@/components/layout/experience-mode";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/lib/types";
@@ -12,6 +12,7 @@ type NavItem = [string, string, typeof Home, advancedOnly?: boolean];
 const items = {
   PROMOTER: [
     ["/dashboard", "Home", Home],
+    ["/inbox", "Messages", MessageCircle],
     ["/requests/lead", "Paste lead", Inbox],
     ["/requests", "Requests", Inbox],
     ["/clients", "Clients", Users],
@@ -22,6 +23,7 @@ const items = {
   ],
   PROMOTER_MANAGER: [
     ["/manager", "Overview", Home],
+    ["/inbox", "Messages", MessageCircle],
     ["/requests/lead", "Paste lead", Inbox],
     ["/manager/requests", "Inbox", Inbox],
     ["/manager/availability", "Availability", CalendarDays],
@@ -42,6 +44,7 @@ const items = {
   ],
   SUPER_ADMIN: [
     ["/admin", "Overview", Home],
+    ["/inbox", "Messages", MessageCircle],
     ["/admin/clubs", "Clubs", Briefcase],
     ["/admin/packages", "Packages", Package],
     ["/admin/planner", "Planner rules", BrainCircuit],

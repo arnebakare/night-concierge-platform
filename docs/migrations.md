@@ -23,6 +23,11 @@ npx supabase link --project-ref YOUR_PROJECT_REF
 npx supabase db push
 ```
 
+For the unified Meta inbox, confirm the latest applied file is
+`supabase/migrations/032_unified_meta_messaging.sql`. It is additive: existing
+CRM and request data is preserved, and promoter ownership is backfilled from
+the customer creator when that creator is a promoter.
+
 The project reference is the first portion of the project URL: `https://PROJECT_REF.supabase.co`.
 
 ## Verification query
@@ -38,6 +43,11 @@ select routine_name
 from information_schema.routines
 where routine_schema = 'public'
   and routine_name in ('claim_client_profile', 'cancel_own_request', 'consume_public_request_slot');
+
+select table_name
+from information_schema.tables
+where table_schema = 'public'
+  and table_name in ('customer_identities', 'conversations', 'messages', 'message_attachments', 'conversation_assignments', 'conversation_notes');
 ```
 
 The first query should return `profile_id`. The second should return all three functions.

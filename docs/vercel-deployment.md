@@ -30,17 +30,21 @@ NEXT_PUBLIC_DEMO_MODE=false
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
-TWILIO_ACCOUNT_SID=your-twilio-account-sid
-TWILIO_AUTH_TOKEN=your-twilio-auth-token
-TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
-WHATSAPP_DESTINATION_NUMBER=whatsapp:+34...
+META_GRAPH_API_VERSION=v26.0
+META_APP_SECRET=your-meta-app-secret
+META_WEBHOOK_VERIFY_TOKEN=a-long-random-value-you-create
+META_ACCESS_TOKEN=your-system-user-access-token
+META_WHATSAPP_PHONE_NUMBER_ID=your-phone-number-id
+META_WHATSAPP_BUSINESS_ACCOUNT_ID=your-waba-id
+META_INSTAGRAM_ACCOUNT_ID=your-instagram-professional-account-id
+WHATSAPP_DESTINATION_NUMBER=+34...
 ```
 
 Important:
 
 - Never expose `SUPABASE_SERVICE_ROLE_KEY` in a `NEXT_PUBLIC_` variable.
 - Use the real Vercel URL for `NEXT_PUBLIC_APP_URL`.
-- If Twilio is not ready yet, leave the Twilio values empty only for preview testing. Production request notifications require them.
+- Meta credentials may be empty for UI-only preview testing. Production messaging requires them.
 
 ## 3. Configure Supabase Auth URLs
 
@@ -63,15 +67,15 @@ If you later add a custom domain, add the same callback and login URLs for that 
 
 ## 4. Confirm database migrations
 
-The Supabase project must have migrations `001` through `006` applied.
+The Supabase project must have migrations `001` through `032` applied.
 
-Required final migration:
+Required messaging migration:
 
 ```text
-supabase/migrations/006_rls_recursion_fix.sql
+supabase/migrations/032_unified_meta_messaging.sql
 ```
 
-Without migration `006`, logged-in dashboards can hit RLS recursion errors.
+Migration `032` adds the unified identities, conversations, messages, attachments, assignments, internal notes, RLS policies, and request links.
 
 ## 5. Deploy and verify
 
@@ -84,7 +88,15 @@ After the first deployment finishes:
 5. Confirm `/dashboard`, `/links`, and `/clients` work for a promoter.
 6. Confirm WhatsApp attempts appear in `/notifications`.
 
-## 6. Production cleanup
+## 6. Configure Meta
+
+1. In the Meta developer app, add WhatsApp and Instagram products and connect the shared WhatsApp Business number plus the Instagram professional account.
+2. Set the callback URL to `https://your-domain.com/api/webhooks/meta` and use the exact value of `META_WEBHOOK_VERIFY_TOKEN` as the verify token.
+3. Subscribe WhatsApp to `messages`; subscribe the connected Instagram account/Page to messaging webhook events required by your app.
+4. Create a System User token with the permissions granted during Meta app review. Put it in `META_ACCESS_TOKEN` (or use the channel-specific token variables).
+5. Keep the app secret and access tokens server-side. Test one inbound and one staff-approved outbound message on each channel.
+
+## 7. Production cleanup
 
 Before using the app with real clients:
 

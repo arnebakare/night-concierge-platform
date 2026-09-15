@@ -9,7 +9,7 @@ Premium mobile-first nightlife concierge MVP for promoters, promoter managers, c
 - Tailwind CSS with shadcn-style primitives
 - React Hook Form and Zod
 - Server Actions / route handlers
-- Twilio WhatsApp notifications
+- Meta WhatsApp Cloud API and Instagram Messaging API
 - QR promoter links
 
 ## Setup
@@ -33,10 +33,13 @@ NEXT_PUBLIC_APP_URL=http://127.0.0.1:3001
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
-TWILIO_ACCOUNT_SID=...
-TWILIO_AUTH_TOKEN=...
-TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
-WHATSAPP_DESTINATION_NUMBER=whatsapp:+34...
+META_APP_SECRET=...
+META_WEBHOOK_VERIFY_TOKEN=...
+META_ACCESS_TOKEN=...
+META_WHATSAPP_PHONE_NUMBER_ID=...
+META_WHATSAPP_BUSINESS_ACCOUNT_ID=...
+META_INSTAGRAM_ACCOUNT_ID=...
+WHATSAPP_DESTINATION_NUMBER=+34...
 ```
 
 4. Apply Supabase migration and seed:
@@ -71,6 +74,7 @@ Seeded accounts use password `password123`.
 - Magic link: `/m/magic-demo-token`
 - Promoter dashboard: `/dashboard`
 - Manager dashboard: `/manager`
+- Unified messaging inbox: `/inbox`
 - Admin dashboard: `/admin`
 - Health check: `/api/health`
 - WhatsApp delivery: `/notifications`
@@ -100,9 +104,8 @@ Detailed Vercel instructions are in `docs/vercel-deployment.md`.
 ### Launch checklist
 
 - Set `NEXT_PUBLIC_DEMO_MODE=false` in production.
-- Configure all Supabase and Twilio secrets in Vercel, never in client-side variables.
-- Apply migrations `001` through `022` to the production Supabase project.
-- Make sure migrations `021` and `022` are applied before enabling WhatsApp monitor alerts or client follow-up tasks.
+- Configure all Supabase and Meta secrets in Vercel, never in client-side variables.
+- Apply migrations `001` through `032` to the production Supabase project.
 - Set the production URL in `NEXT_PUBLIC_APP_URL` and Supabase Auth redirect URLs.
 - Configure the WhatsApp destination from the manager settings screen.
 - Verify `/api/health`, public request submission, WhatsApp delivery, and each role dashboard.

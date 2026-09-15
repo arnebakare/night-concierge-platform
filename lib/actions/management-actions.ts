@@ -752,7 +752,7 @@ export async function sendClientRetentionMessage(formData: FormData) {
     destination: parsed.data.destination,
     message: parsed.data.message,
     status: result.ok ? "SENT" : "FAILED",
-    provider: parsed.data.channel === "WHATSAPP" ? "twilio" : "resend",
+    provider: parsed.data.channel === "WHATSAPP" ? "meta" : "resend",
     provider_message_id: result.ok ? ("sid" in result ? result.sid : result.id) ?? null : null,
     error_message: result.ok ? null : result.error,
     automatic: false

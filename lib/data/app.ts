@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergePackage, ConciergeRequest, InboundWhatsAppMessage, MessageTemplate, Profile, PromoterServiceEligibility, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule, ServicePathDefault, ServiceRoutingRule, VipLevel } from "@/lib/types";
+import type { AvailabilitySlot, Client, ClientAlias, ClientBookingHistoryItem, ClientCareSignal, ClientFollowUpTask, ClientOutreachItem, Club, CommissionRule, ConciergeEvent, ConciergePackage, ConciergeRequest, MessageTemplate, Profile, PromoterServiceEligibility, RequestOffer, RequestPayment, RequestStatus, RequestType, SchedulePlan, ScheduleVenueRule, ServicePathDefault, ServiceRoutingRule, VipLevel } from "@/lib/types";
 import { demoClients, demoProfile, demoRequests } from "@/lib/data/demo";
 import { isDemoAuthEnabled } from "@/lib/env";
 
@@ -1180,51 +1180,8 @@ export async function getNotificationHistory() {
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
     return [
-      { id: "notice-1", request_id: "r1", destination_number: "+34600000000", provider: "twilio", provider_message_id: "SM_demo", status: "SENT", error_message: null, created_at: new Date().toISOString(), requests: { clients: { name: "Daniel" }, clubs: { name: "La Plage Casanis" } } },
-      { id: "notice-2", request_id: "r2", destination_number: "+34600000000", provider: "twilio", provider_message_id: null, status: "FAILED", error_message: "Demo credentials are not configured.", created_at: new Date().toISOString(), requests: { clients: { name: "Olivia" }, clubs: { name: "Le Jade" } } }
-    ];
-  }
-}
-
-export async function getInboundWhatsAppHistory(): Promise<InboundWhatsAppMessage[]> {
-  try {
-    const supabase = await createClient();
-    let { data, error } = await supabase
-      .from("inbound_whatsapp_messages")
-      .select("id, provider, provider_message_id, from_number, to_number, profile_name, body, source_profile_id, matched_client_id, created_request_id, created_schedule_plan_id, status, parse_result, error_message, alert_sent_at, created_at")
-      .order("created_at", { ascending: false })
-      .limit(80);
-    if (error && error.message.toLowerCase().includes("alert_sent_at")) {
-      const fallback = await supabase
-        .from("inbound_whatsapp_messages")
-        .select("id, provider, provider_message_id, from_number, to_number, profile_name, body, source_profile_id, matched_client_id, created_request_id, created_schedule_plan_id, status, parse_result, error_message, created_at")
-        .order("created_at", { ascending: false })
-        .limit(80);
-      data = fallback.data?.map((item) => ({ ...item, alert_sent_at: null })) ?? null;
-      error = fallback.error;
-    }
-    if (error) throw error;
-    return (data ?? []) as InboundWhatsAppMessage[];
-  } catch (error) {
-    if (!isDemoAuthEnabled()) throw error;
-    return [
-      {
-        id: "inbound-demo-1",
-        provider: "twilio",
-        provider_message_id: "SM_inbound_demo",
-        from_number: "whatsapp:+46700000000",
-        to_number: "whatsapp:+14155238886",
-        profile_name: "Julia",
-        body: "schedule 6-9 aug high spend",
-        source_profile_id: demoProfile.id,
-        matched_client_id: null,
-        created_request_id: null,
-        created_schedule_plan_id: "demo-plan",
-        status: "CREATED",
-        parse_result: { command: "schedule" },
-        error_message: null,
-        created_at: new Date().toISOString()
-      }
+      { id: "notice-1", request_id: "r1", destination_number: "+34600000000", provider: "meta", provider_message_id: "wamid.demo", status: "SENT", error_message: null, created_at: new Date().toISOString(), requests: { clients: { name: "Daniel" }, clubs: { name: "La Plage Casanis" } } },
+      { id: "notice-2", request_id: "r2", destination_number: "+34600000000", provider: "meta", provider_message_id: null, status: "FAILED", error_message: "Demo credentials are not configured.", created_at: new Date().toISOString(), requests: { clients: { name: "Olivia" }, clubs: { name: "Le Jade" } } }
     ];
   }
 }
