@@ -642,15 +642,30 @@ export async function getClubAssignmentsForAdmin() {
 
 export async function getTeamPromoters(managerId: string, filters?: PromoterFilters) {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const supabase = createAdminClient();
+    const { data: promoters, error } = await supabase
       .from("profiles")
-      .select("id, name, email, phone, role, manager_id, active, requests!requests_promoter_id_fkey(count)")
+      .select("id, name, email, phone, role, manager_id, active")
       .eq("manager_id", managerId)
       .eq("role", "PROMOTER")
       .order("name");
     if (error) throw error;
-    return applyPromoterFilters((data ?? []).map((item) => ({ ...item, request_count: Array.isArray(item.requests) ? item.requests[0]?.count ?? 0 : 0 })) as (Profile & { request_count: number })[], filters);
+    const promoterIds = (promoters ?? []).map((item) => item.id);
+    let countByPromoter: Record<string, number> = {};
+    if (promoterIds.length) {
+      const { data: requests, error: requestError } = await supabase
+        .from("requests")
+        .select("promoter_id")
+        .in("promoter_id", promoterIds)
+        .is("removed_at", null)
+        .limit(2000);
+      if (requestError) throw requestError;
+      countByPromoter = (requests ?? []).reduce<Record<string, number>>((counts, request) => {
+        if (request.promoter_id) counts[request.promoter_id] = (counts[request.promoter_id] ?? 0) + 1;
+        return counts;
+      }, {});
+    }
+    return applyPromoterFilters((promoters ?? []).map((item) => ({ ...item, request_count: countByPromoter[item.id] ?? 0 })) as (Profile & { request_count: number })[], filters);
   } catch (error) {
     if (!isDemoAuthEnabled()) throw error;
     return applyPromoterFilters([
