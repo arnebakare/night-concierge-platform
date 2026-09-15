@@ -21,9 +21,9 @@ export function PublicRequestShell({
           <p className="mt-3 max-w-sm text-[15px] leading-6 text-champagne-50/88">{description}</p>
           {hostLine && <p className="mt-3 rounded-lg border border-champagne-700/30 bg-ink-950/42 px-3 py-2 text-[13px] leading-5 text-champagne-100/82 backdrop-blur">{hostLine}</p>}
           <div className="mt-4 grid grid-cols-3 overflow-hidden rounded-2xl border border-champagne-700/24 bg-ink-950/48 text-center backdrop-blur">
+            <TrustStat label="Step 1" value="Choose" />
+            <TrustStat label="Step 2" value="Details" />
             <TrustStat label="Reply" value="WhatsApp" />
-            <TrustStat label="Booking" value="Checked" />
-            <TrustStat label="Profile" value="By phone" />
           </div>
         </header>
         {children}

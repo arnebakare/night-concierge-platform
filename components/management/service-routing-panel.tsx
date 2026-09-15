@@ -1,9 +1,21 @@
 import { Route } from "lucide-react";
 import { saveServiceRoutingRule } from "@/lib/actions/management-actions";
 import type { Profile, RequestType, ServiceRoutingRule } from "@/lib/types";
-import { formatEnum } from "@/lib/utils";
 
 const serviceTypes: RequestType[] = ["TABLE", "GUESTLIST", "VIP_SERVICE", "BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE", "GENERAL"];
+
+const serviceMeta: Record<RequestType, { intent: string; path: string; placeholder: string }> = {
+  TABLE: { intent: "Nightclub table", path: "Nightlife", placeholder: "Example: Julia first for tables, Daniel as backup" },
+  GUESTLIST: { intent: "Guestlist", path: "Nightlife", placeholder: "Example: route guestlists to the active promoter" },
+  VIP_SERVICE: { intent: "Beach club / VIP service", path: "Nightlife", placeholder: "Example: Mamzel and beach requests go to Julia" },
+  BOAT: { intent: "Boat or yacht", path: "Concierge", placeholder: "Example: yachts go to the boat specialist" },
+  GOLF: { intent: "Golf", path: "Concierge", placeholder: "Example: Daniel handles golf first" },
+  VILLA: { intent: "Hotel or villa", path: "Concierge", placeholder: "Example: villas stay with manager until qualified" },
+  TRANSFER: { intent: "Transfers", path: "Concierge", placeholder: "Example: drivers go to operations first" },
+  SCHEDULE: { intent: "Full stay planning", path: "Concierge", placeholder: "Example: manager owns full schedules" },
+  PACKAGE: { intent: "Curated package", path: "Concierge", placeholder: "Example: package requests go to manager, then assigned" },
+  GENERAL: { intent: "Other request", path: "General", placeholder: "Example: manager reviews unclear requests" }
+};
 
 export function ServiceRoutingPanel({
   rules,
@@ -22,19 +34,20 @@ export function ServiceRoutingPanel({
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-950 shadow-sm">
       <div className="border-b border-slate-200 px-4 py-3">
         <p className="flex items-center gap-2 text-sm font-semibold text-slate-950"><Route className="size-4 text-amber-600" /> Service routing</p>
-        <p className="mt-1 text-xs text-slate-500">Choose who normally handles each service. Empty means the team can pick it up manually.</p>
+        <p className="mt-1 text-xs text-slate-500">Set the normal owner for each customer need. Empty means the manager can pick it up manually.</p>
       </div>
       <div className="divide-y divide-slate-200">
         {serviceTypes.map((type) => {
           const rule = rulesByType.get(type);
           const typeStats = stats[type];
+          const meta = serviceMeta[type];
           return (
             <form key={type} action={saveServiceRoutingRule} className="grid gap-3 px-4 py-3 md:grid-cols-[11rem_1fr_1fr_1fr_5.5rem] md:items-end">
               <input type="hidden" name="requestType" value={type} />
               <div>
-                <p className="text-sm font-semibold">{formatEnum(type)}</p>
+                <p className="text-sm font-semibold">{meta.intent}</p>
                 <p className="mt-0.5 text-[11px] text-slate-500">
-                  {rule?.active === false ? "Paused" : "Active routing"}
+                  {meta.path} · {rule?.active === false ? "Paused" : "Active routing"}
                   {typeStats ? ` · ${typeStats.open} open · ${typeStats.recent} recent` : ""}
                 </p>
               </div>
@@ -50,12 +63,12 @@ export function ServiceRoutingPanel({
               <div className="grid gap-2 md:col-span-5 md:grid-cols-[1fr_5.5rem]">
                 <label className="grid gap-1">
                   <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Notes</span>
-                  <input
-                    name="notes"
-                    defaultValue={rule?.notes ?? ""}
-                    placeholder="Examples: golf goes to Daniel first, transfers to Julia..."
-                    className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-amber-500"
-                  />
+	                  <input
+	                    name="notes"
+	                    defaultValue={rule?.notes ?? ""}
+	                    placeholder={meta.placeholder}
+	                    className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-amber-500"
+	                  />
                 </label>
                 <button type="submit" className="h-9 rounded-md bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800">
                   Save

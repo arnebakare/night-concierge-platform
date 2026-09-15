@@ -18,14 +18,14 @@ const featuredVenueSlugs = ["le-jade", "la-plage-casanis", "mamzel"];
 const conciergeRequestTypes = ["BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE"] as const;
 export type RequestCategory = "nightlife" | "boat" | "golf" | "villa" | "transfer" | "schedule" | "package";
 
-const categoryCards: { id: RequestCategory; title: string; description: string; requestType?: typeof conciergeRequestTypes[number]; icon: typeof Moon }[] = [
-  { id: "schedule", title: "Full stay", description: "Let us shape the whole trip: beach, dinner, clubs, drivers, and timing.", requestType: "SCHEDULE", icon: CalendarRange },
-  { id: "nightlife", title: "Nightlife", description: "Tables, guestlists, beach parties, restaurants, and DJ-led nights.", icon: Moon },
-  { id: "package", title: "Curated packages", description: "Choose a ready-made starting point and tailor it with your host.", requestType: "PACKAGE", icon: Package },
-  { id: "boat", title: "Boats & yachts", description: "Private boats, yachts, routes, skipper, and onboard requests.", requestType: "BOAT", icon: ShipWheel },
-  { id: "golf", title: "Golf", description: "Tee times, course ideas, buggies, club rental, and lunch after.", requestType: "GOLF", icon: Flag },
-  { id: "villa", title: "Hotels & villas", description: "Suites, private villas, hosted stays, chefs, and special needs.", requestType: "VILLA", icon: Hotel },
-  { id: "transfer", title: "Transfers", description: "Airport pickup, chauffeurs, drivers by the hour, and night movement.", requestType: "TRANSFER", icon: Car }
+const categoryCards: { id: RequestCategory; title: string; description: string; badge: string; requestType?: typeof conciergeRequestTypes[number]; icon: typeof Moon }[] = [
+  { id: "schedule", title: "Full stay", description: "Let us shape the whole trip: beach, dinner, clubs, drivers, and timing.", badge: "Best for trips", requestType: "SCHEDULE", icon: CalendarRange },
+  { id: "nightlife", title: "Nightlife", description: "Tables, guestlists, beach parties, restaurants, and DJ-led nights.", badge: "Most used", icon: Moon },
+  { id: "package", title: "Curated packages", description: "Choose a ready-made starting point and tailor it with your host.", badge: "Easy start", requestType: "PACKAGE", icon: Package },
+  { id: "boat", title: "Boats & yachts", description: "Private boats, yachts, routes, skipper, and onboard requests.", badge: "Day plan", requestType: "BOAT", icon: ShipWheel },
+  { id: "golf", title: "Golf", description: "Tee times, course ideas, buggies, club rental, and lunch after.", badge: "Sport", requestType: "GOLF", icon: Flag },
+  { id: "villa", title: "Hotels & villas", description: "Suites, private villas, hosted stays, chefs, and special needs.", badge: "Stay", requestType: "VILLA", icon: Hotel },
+  { id: "transfer", title: "Transfers", description: "Airport pickup, chauffeurs, drivers by the hour, and night movement.", badge: "Driver", requestType: "TRANSFER", icon: Car }
 ];
 
 export function RequestFormSteps({
@@ -133,6 +133,10 @@ export function RequestFormSteps({
   const isNightlife = category === "nightlife";
   const stepTitles = ["Service", "Venue", "Plan", "Contact", "Dates", "Review"];
   const nextLabel = step === 1 ? "Continue" : step === 2 ? "Choose experience" : step === 3 ? "Add contact" : step === 4 ? "Add dates" : "Review";
+  const recommendedPackages = useMemo(
+    () => rankPackages(packages, values.requestType, values.guestCount, values.requestedDate, values.requestedDateEnd, values.budget),
+    [packages, values.budget, values.guestCount, values.requestType, values.requestedDate, values.requestedDateEnd]
+  );
 
   useEffect(() => {
     const serviceExists = selectedExperience.services.some((service) => service.label === values.serviceLabel && service.requestType === values.requestType);
@@ -278,10 +282,13 @@ export function RequestFormSteps({
                   <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.055] text-champagne-300", active && "bg-champagne-300 text-ink-950")}>
                     <Icon className="size-5" />
                   </span>
-                  <span className="min-w-0">
-                    <span className="block font-semibold text-champagne-50">{item.title}</span>
-                    <span className="mt-1 block text-[13px] leading-snug text-champagne-100/72">{item.description}</span>
-                  </span>
+	                  <span className="min-w-0">
+	                    <span className="flex flex-wrap items-center gap-2">
+                        <span className="block font-semibold text-champagne-50">{item.title}</span>
+                        <span className="rounded-full border border-champagne-700/28 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-champagne-300/90">{item.badge}</span>
+                      </span>
+	                    <span className="mt-1 block text-[13px] leading-snug text-champagne-100/72">{item.description}</span>
+	                  </span>
                   {active && <Check className="ml-auto size-4 shrink-0 text-champagne-300" />}
                 </button>
               );
@@ -404,14 +411,14 @@ export function RequestFormSteps({
               <ConciergeServiceSummary title={selectedCategoryCard?.title ?? "Concierge request"} serviceLabel={values.serviceLabel || formatEnum(values.requestType)} icon={SelectedCategoryIcon} />
             </>
           )}
-          {values.requestType === "PACKAGE" && packages.length > 0 && (
+          {values.requestType === "PACKAGE" && recommendedPackages.length > 0 && (
             <div className="rounded-2xl border border-champagne-700/28 bg-white/[0.045] p-3.5">
               <div className="mb-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-champagne-300">Curated packages</p>
-                <p className="mt-1 text-sm text-muted-foreground">Choose one starting point, then adjust it with your host.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Ranked by your group, dates, and spend notes. Choose one starting point, then adjust it with your host.</p>
               </div>
               <div className="grid gap-2">
-                {packages.slice(0, 6).map((item) => {
+                {recommendedPackages.slice(0, 6).map(({ item, score }, index) => {
                   const active = values.packageId === item.id;
                   return (
                     <button
@@ -432,14 +439,17 @@ export function RequestFormSteps({
                         <span className="min-w-0">
                           <span className="block text-base font-semibold text-champagne-50">{item.title}</span>
                           {item.description && <span className="mt-1 block text-xs leading-5 text-champagne-100/72">{item.description}</span>}
+                          {item.recommendation_note && <span className="mt-1 block text-xs leading-5 text-champagne-200/86">{item.recommendation_note}</span>}
                         </span>
                         <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]", active ? "border-champagne-300 bg-champagne-300 text-ink-950" : "border-champagne-700/28 text-champagne-200")}>
                           {active ? "Selected" : "Choose"}
                         </span>
                       </span>
                       <span className="mt-2 flex flex-wrap gap-1.5">
+                        {index === 0 && score > 1 && <span className="rounded-full bg-champagne-300 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-950">Best match</span>}
                         {item.price_hint && <span className="rounded-full border border-champagne-700/25 px-2 py-0.5 text-[10px] text-champagne-200">{item.price_hint}</span>}
                         <span className="rounded-full bg-white/[0.055] px-2 py-0.5 text-[10px] text-muted-foreground">{item.package_items.length} inclusions</span>
+                        <span className="rounded-full bg-white/[0.055] px-2 py-0.5 text-[10px] text-muted-foreground">{customerPackageFit(item)}</span>
                         {item.package_items.slice(0, 3).map((detail) => <span key={detail} className="rounded-full bg-white/[0.055] px-2 py-0.5 text-[10px] text-muted-foreground">{detail}</span>)}
                       </span>
                     </button>
@@ -918,6 +928,64 @@ function addonSummary(values: PublicRequestInput) {
 
 function addonSummaryPart(label: string, count?: number) {
   return count && count > 0 ? `${label} x${count}` : null;
+}
+
+function rankPackages(
+  packages: ConciergePackage[],
+  requestType: PublicRequestInput["requestType"],
+  guestCount?: number,
+  startDate?: string,
+  endDate?: string,
+  budget?: string
+) {
+  return packages
+    .map((item) => ({ item, score: packageScore(item, requestType, guestCount, startDate, endDate, budget) }))
+    .sort((a, b) => b.score - a.score || (b.item.recommendation_weight ?? 1) - (a.item.recommendation_weight ?? 1) || a.item.title.localeCompare(b.item.title));
+}
+
+function packageScore(
+  item: ConciergePackage,
+  requestType: PublicRequestInput["requestType"],
+  guestCount?: number,
+  startDate?: string,
+  endDate?: string,
+  budget?: string
+) {
+  let score = item.recommendation_weight ?? 1;
+  if (item.request_type === requestType) score += 6;
+  if (item.request_type === "PACKAGE") score += 2;
+  const spend = spendLevelFromBudget(budget);
+  if (item.spend_level === spend) score += 4;
+  if (item.spend_level === "ANY" || !item.spend_level) score += 1;
+  if (guestCount && item.ideal_group_min && guestCount >= item.ideal_group_min) score += 2;
+  if (guestCount && item.ideal_group_max && guestCount <= item.ideal_group_max) score += 2;
+  const days = tripLength(startDate, endDate);
+  if (days && item.ideal_days_min && days >= item.ideal_days_min) score += 2;
+  if (days && item.ideal_days_max && days <= item.ideal_days_max) score += 2;
+  if (days && item.ideal_days_max && days > item.ideal_days_max) score -= 3;
+  return score;
+}
+
+function spendLevelFromBudget(budget?: string) {
+  const value = budget?.toLowerCase() ?? "";
+  if (/\b(high|vip|premium|2k|3k|4k|5k|luxury|best)\b/.test(value)) return "HIGH";
+  if (/\b(normal|flexible|standard|1k|budget)\b/.test(value)) return "NORMAL";
+  return "ANY";
+}
+
+function tripLength(startDate?: string, endDate?: string) {
+  if (!startDate || !endDate) return 1;
+  const start = new Date(`${startDate}T12:00:00`);
+  const end = new Date(`${endDate}T12:00:00`);
+  const diff = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+  return Number.isFinite(diff) && diff > 0 ? diff : 1;
+}
+
+function customerPackageFit(item: ConciergePackage) {
+  const spend = item.spend_level && item.spend_level !== "ANY" ? item.spend_level.toLowerCase().replace("_", " ") : "flexible";
+  const days = item.ideal_days_min || item.ideal_days_max ? `${item.ideal_days_min ?? 1}-${item.ideal_days_max ?? "any"} days` : "any length";
+  const group = item.ideal_group_min || item.ideal_group_max ? `${item.ideal_group_min ?? 1}-${item.ideal_group_max ?? "any"} guests` : "any group";
+  return `${spend} · ${group} · ${days}`;
 }
 
 function dateString(offset: number) {

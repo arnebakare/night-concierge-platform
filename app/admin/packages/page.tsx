@@ -132,6 +132,13 @@ function QuickStartPackage({ template }: Readonly<{ template: (typeof quickStart
       <input type="hidden" name="priceHint" value={template.priceHint} />
       <input type="hidden" name="tailoredClientId" value="" />
       <input type="hidden" name="packageItems" value={template.items.join("\n")} />
+      <input type="hidden" name="spendLevel" value={template.slug === "beach-club-day" ? "NORMAL" : template.slug === "golf-dinner" ? "ANY" : "HIGH"} />
+      <input type="hidden" name="idealGroupMin" value={template.slug === "golf-dinner" ? "2" : "4"} />
+      <input type="hidden" name="idealGroupMax" value="" />
+      <input type="hidden" name="idealDaysMin" value={template.requestType === "SCHEDULE" ? "2" : "1"} />
+      <input type="hidden" name="idealDaysMax" value={template.slug === "beach-club-day" ? "2" : ""} />
+      <input type="hidden" name="recommendationWeight" value={template.requestType === "SCHEDULE" ? "8" : "5"} />
+      <input type="hidden" name="recommendationNote" value="Good default package for this service path." />
       <div className="flex items-start gap-2">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-white text-amber-700 shadow-sm">
           <Icon className="size-4" />
@@ -157,8 +164,9 @@ function PackageRow({ item, clients }: Readonly<{ item: ConciergePackage; client
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate font-semibold">{item.title}</p>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{formatEnum(item.request_type)}</span>
+            {(item.recommendation_weight ?? 1) > 1 && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">Weight {item.recommendation_weight}</span>}
           </div>
-          <p className="mt-0.5 truncate text-xs text-slate-500">/{item.slug}{item.clients ? ` · tailored for ${item.clients.name}` : " · available to all clients"}</p>
+          <p className="mt-0.5 truncate text-xs text-slate-500">/{item.slug}{item.clients ? ` · tailored for ${item.clients.name}` : " · available to all clients"} · {packageFitText(item)}</p>
         </div>
         <Link href={`/request?option=package&package=${item.slug}`} className="w-fit rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
           Test form
@@ -171,6 +179,7 @@ function PackageRow({ item, clients }: Readonly<{ item: ConciergePackage; client
         </span>
       </div>
       {item.description && <p className="mt-2 text-sm text-slate-600">{item.description}</p>}
+      {item.recommendation_note && <p className="mt-1 text-xs text-slate-500">{item.recommendation_note}</p>}
       <div className="mt-2 flex flex-wrap gap-1.5">
         {item.price_hint && <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">{item.price_hint}</span>}
         {item.package_items.slice(0, 4).map((detail) => <span key={detail} className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">{detail}</span>)}
@@ -220,6 +229,33 @@ function PackageForm({ item, clients }: Readonly<{ item?: ConciergePackage; clie
       <Field label="Included items">
         <Textarea name="packageItems" defaultValue={item?.package_items.join("\n") ?? ""} placeholder={"Beach club day\nDinner reservation\nNightclub table\nTransfers"} className="min-h-28 bg-white text-slate-950 md:col-span-2" />
       </Field>
+      <div className="grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 md:col-span-2 md:grid-cols-6">
+        <Field label="Spend">
+          <select name="spendLevel" defaultValue={item?.spend_level ?? "ANY"} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950">
+            <option value="ANY">Any</option>
+            <option value="NORMAL">Normal</option>
+            <option value="HIGH">High spend</option>
+          </select>
+        </Field>
+        <Field label="Group min">
+          <Input name="idealGroupMin" defaultValue={item?.ideal_group_min ?? ""} placeholder="2" type="number" min={1} className="bg-white text-slate-950" />
+        </Field>
+        <Field label="Group max">
+          <Input name="idealGroupMax" defaultValue={item?.ideal_group_max ?? ""} placeholder="12" type="number" min={1} className="bg-white text-slate-950" />
+        </Field>
+        <Field label="Days min">
+          <Input name="idealDaysMin" defaultValue={item?.ideal_days_min ?? ""} placeholder="1" type="number" min={1} className="bg-white text-slate-950" />
+        </Field>
+        <Field label="Days max">
+          <Input name="idealDaysMax" defaultValue={item?.ideal_days_max ?? ""} placeholder="4" type="number" min={1} className="bg-white text-slate-950" />
+        </Field>
+        <Field label="Weight">
+          <Input name="recommendationWeight" defaultValue={item?.recommendation_weight ?? 1} type="number" min={0} max={20} className="bg-white text-slate-950" />
+        </Field>
+        <Field label="Recommendation note">
+          <Input name="recommendationNote" defaultValue={item?.recommendation_note ?? ""} placeholder="Why this should be suggested" className="bg-white text-slate-950 md:col-span-6" />
+        </Field>
+      </div>
       <StatusSubmitButton label={item ? "Save package" : "Create package"} pendingLabel="Saving" className="md:col-span-2" />
     </form>
   );
@@ -244,4 +280,11 @@ function FilterLink({ label, href, active }: Readonly<{ label: string; href: str
       {label}
     </Link>
   );
+}
+
+function packageFitText(item: ConciergePackage) {
+  const spend = item.spend_level && item.spend_level !== "ANY" ? `${item.spend_level.toLowerCase().replace("_", " ")} spend` : "any spend";
+  const group = item.ideal_group_min || item.ideal_group_max ? `${item.ideal_group_min ?? 1}-${item.ideal_group_max ?? "any"} guests` : "any group";
+  const days = item.ideal_days_min || item.ideal_days_max ? `${item.ideal_days_min ?? 1}-${item.ideal_days_max ?? "any"} days` : "any length";
+  return `${spend} · ${group} · ${days}`;
 }

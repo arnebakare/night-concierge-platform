@@ -62,7 +62,7 @@ export async function getPublicConciergePackages(): Promise<ConciergePackage[]> 
     const supabase = createAdminClient();
     const { data, error } = await supabase
       .from("concierge_packages")
-      .select("id, title, slug, description, request_type, price_hint, tailored_client_id, active, package_items, created_by, created_at, updated_at")
+      .select("id, title, slug, description, request_type, price_hint, tailored_client_id, active, package_items, spend_level, ideal_group_min, ideal_group_max, ideal_days_min, ideal_days_max, recommendation_weight, recommendation_note, created_by, created_at, updated_at")
       .eq("active", true)
       .is("tailored_client_id", null)
       .order("created_at", { ascending: false })
@@ -86,6 +86,13 @@ export async function getPublicConciergePackages(): Promise<ConciergePackage[]> 
         tailored_client_id: null,
         active: true,
         package_items: ["Beach club day", "Dinner reservation", "Nightclub table", "Transfers"],
+        spend_level: "ANY",
+        ideal_group_min: 2,
+        ideal_group_max: null,
+        ideal_days_min: 2,
+        ideal_days_max: null,
+        recommendation_weight: 5,
+        recommendation_note: "Flexible starter for most Marbella groups.",
         created_by: null,
         created_at: new Date().toISOString(),
         clients: null

@@ -842,7 +842,14 @@ const packageSchema = z.object({
   requestType: z.enum(["BOAT", "GOLF", "VILLA", "TRANSFER", "SCHEDULE", "PACKAGE", "VIP_SERVICE", "GENERAL"]),
   priceHint: z.string().trim().max(160).optional().or(z.literal("")),
   tailoredClientId: z.string().uuid().optional().or(z.literal("")),
-  packageItems: z.string().trim().max(1200).optional().or(z.literal(""))
+  packageItems: z.string().trim().max(1200).optional().or(z.literal("")),
+  spendLevel: z.enum(["ANY", "NORMAL", "HIGH"]),
+  idealGroupMin: z.coerce.number().int().min(1).max(200).optional().or(z.literal("")),
+  idealGroupMax: z.coerce.number().int().min(1).max(200).optional().or(z.literal("")),
+  idealDaysMin: z.coerce.number().int().min(1).max(90).optional().or(z.literal("")),
+  idealDaysMax: z.coerce.number().int().min(1).max(90).optional().or(z.literal("")),
+  recommendationWeight: z.coerce.number().int().min(0).max(20),
+  recommendationNote: z.string().trim().max(400).optional().or(z.literal(""))
 });
 
 export async function saveConciergePackage(formData: FormData) {
@@ -855,7 +862,14 @@ export async function saveConciergePackage(formData: FormData) {
     requestType: formData.get("requestType") || "PACKAGE",
     priceHint: formData.get("priceHint") || "",
     tailoredClientId: formData.get("tailoredClientId") || "",
-    packageItems: formData.get("packageItems") || ""
+    packageItems: formData.get("packageItems") || "",
+    spendLevel: formData.get("spendLevel") || "ANY",
+    idealGroupMin: formData.get("idealGroupMin") || "",
+    idealGroupMax: formData.get("idealGroupMax") || "",
+    idealDaysMin: formData.get("idealDaysMin") || "",
+    idealDaysMax: formData.get("idealDaysMax") || "",
+    recommendationWeight: formData.get("recommendationWeight") || "1",
+    recommendationNote: formData.get("recommendationNote") || ""
   });
   if (!parsed.success) return;
 
@@ -873,6 +887,13 @@ export async function saveConciergePackage(formData: FormData) {
     price_hint: parsed.data.priceHint || null,
     tailored_client_id: parsed.data.tailoredClientId || null,
     package_items: (parsed.data.packageItems ?? "").split("\n").map((item) => item.trim()).filter(Boolean),
+    spend_level: parsed.data.spendLevel,
+    ideal_group_min: parsed.data.idealGroupMin || null,
+    ideal_group_max: parsed.data.idealGroupMax || null,
+    ideal_days_min: parsed.data.idealDaysMin || null,
+    ideal_days_max: parsed.data.idealDaysMax || null,
+    recommendation_weight: parsed.data.recommendationWeight,
+    recommendation_note: parsed.data.recommendationNote || null,
     created_by: profile.id
   };
   const { data, error } = parsed.data.packageId

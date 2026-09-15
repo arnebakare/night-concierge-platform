@@ -45,6 +45,13 @@ export type ConciergePackage = {
   tailored_client_id: string | null;
   active: boolean;
   package_items: string[];
+  spend_level?: "ANY" | "NORMAL" | "HIGH";
+  ideal_group_min?: number | null;
+  ideal_group_max?: number | null;
+  ideal_days_min?: number | null;
+  ideal_days_max?: number | null;
+  recommendation_weight?: number | null;
+  recommendation_note?: string | null;
   created_by: string | null;
   created_at: string;
   updated_at?: string;
