@@ -26,11 +26,11 @@ export default async function AdminClubsPage() {
             <span className="text-xs font-normal text-muted-foreground">Name, city, logo</span>
           </summary>
           <form action={createClub} className="mt-3 grid gap-2 md:grid-cols-4">
-            <div className="space-y-1.5"><Label>Name</Label><Input name="name" placeholder="La Plage Casanis" /></div>
-            <div className="space-y-1.5"><Label>Slug</Label><Input name="slug" placeholder="la-plage-casanis" /></div>
-            <div className="space-y-1.5"><Label>City</Label><Input name="city" placeholder="Marbella" /></div>
-            <div className="space-y-1.5"><Label>Address</Label><Input name="address" placeholder="Optional" /></div>
-            <div className="space-y-1.5 md:col-span-4"><Label>Logo URL</Label><Input name="imageUrl" placeholder="/venues/la-plage-casanis-logo.png" /></div>
+            <div className="space-y-1.5"><Label className="text-slate-700">Name</Label><Input name="name" placeholder="La Plage Casanis" className="bg-white text-slate-950" /></div>
+            <div className="space-y-1.5"><Label className="text-slate-700">Slug</Label><Input name="slug" placeholder="la-plage-casanis" className="bg-white text-slate-950" /></div>
+            <div className="space-y-1.5"><Label className="text-slate-700">City</Label><Input name="city" placeholder="Marbella" className="bg-white text-slate-950" /></div>
+            <div className="space-y-1.5"><Label className="text-slate-700">Address</Label><Input name="address" placeholder="Optional" className="bg-white text-slate-950" /></div>
+            <div className="space-y-1.5 md:col-span-4"><Label className="text-slate-700">Logo URL</Label><Input name="imageUrl" placeholder="/venues/la-plage-casanis-logo.png" className="bg-white text-slate-950" /></div>
             <StatusSubmitButton className="md:col-span-4" label="Create venue" pendingLabel="Creating" />
           </form>
         </details>

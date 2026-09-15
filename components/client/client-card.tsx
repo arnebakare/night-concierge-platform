@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Barcode, BellRing, Crown, Globe2, Languages, Phone, ShieldAlert } from "lucide-react";
-import { LuxuryCard } from "@/components/ui/luxury-card";
 import type { Client, ClientCareSignal } from "@/lib/types";
 import { formatCustomerCode } from "@/lib/concierge/phone";
 import { formatEnum } from "@/lib/utils";
@@ -11,8 +10,8 @@ export function ClientCard({ client, href, careSignal }: Readonly<{ client: Clie
 
   return (
     <Link href={href} className="client-card block">
-      <LuxuryCard className={`client-row bg-white text-ink-950 transition hover:border-slate-300 hover:shadow-sm ${needsCare ? "border-amber-200" : ""}`}>
-        <div className="grid gap-2 sm:grid-cols-[minmax(220px,1.25fr)_minmax(180px,0.85fr)_auto] sm:items-center">
+      <div className={`client-row rounded-lg border bg-white px-3 py-2.5 text-ink-950 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 ${needsCare ? "border-amber-200" : "border-slate-200"}`}>
+        <div className="grid gap-2 sm:grid-cols-[minmax(220px,1.35fr)_minmax(180px,0.85fr)_auto] sm:items-center">
           <div className="flex min-w-0 items-center gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700">
               {initials || "VIP"}
@@ -50,7 +49,7 @@ export function ClientCard({ client, href, careSignal }: Readonly<{ client: Clie
             <Crown className="mr-1 inline size-3" />{client.vip_level}
           </span>
         </div>
-      </LuxuryCard>
+      </div>
     </Link>
   );
 }

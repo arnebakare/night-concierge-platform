@@ -1,4 +1,4 @@
-import { CalendarRange, Car, Flag, PackagePlus, Sparkles, Waves } from "lucide-react";
+import { CalendarRange, Car, Eye, Flag, MonitorSmartphone, PackagePlus, Sparkles, Waves } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/layout/app-shell";
@@ -10,8 +10,8 @@ import { LuxuryCard } from "@/components/ui/luxury-card";
 import { Textarea } from "@/components/ui/textarea";
 import { saveConciergePackage, setConciergePackageActive } from "@/lib/actions/management-actions";
 import { requireProfile } from "@/lib/auth";
-import { getClientsForProfile, getConciergePackagesForProfile } from "@/lib/data/app";
-import type { ConciergePackage, RequestType } from "@/lib/types";
+import { getClientsForProfile, getConciergePackagesForProfile, getRequestsForProfile } from "@/lib/data/app";
+import type { ConciergePackage, ConciergeRequest, RequestType } from "@/lib/types";
 import { formatEnum } from "@/lib/utils";
 
 const packageTypes: RequestType[] = ["PACKAGE", "SCHEDULE", "BOAT", "GOLF", "VILLA", "TRANSFER", "VIP_SERVICE", "GENERAL"];
@@ -58,10 +58,12 @@ const quickStarts = [
 export default async function AdminPackagesPage({ searchParams }: Readonly<{ searchParams?: Promise<{ q?: string; type?: string; active?: string }> }>) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const filters = await searchParams;
-  const [packages, clients] = await Promise.all([
+  const [packages, clients, recentRequests] = await Promise.all([
     getConciergePackagesForProfile(profile),
-    getClientsForProfile(profile)
+    getClientsForProfile(profile),
+    getRequestsForProfile(profile, { includeArchived: true, limit: 500 })
   ]);
+  const packageUsage = packageUsageMap(packages, recentRequests);
   const visiblePackages = packages.filter((item) => {
     const query = filters?.q?.trim().toLowerCase();
     const matchesQuery = !query || `${item.title} ${item.slug} ${item.description ?? ""} ${item.price_hint ?? ""} ${item.package_items.join(" ")}`.toLowerCase().includes(query);
@@ -114,7 +116,7 @@ export default async function AdminPackagesPage({ searchParams }: Readonly<{ sea
       </div>
 
       <div className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
-        {visiblePackages.map((item) => <PackageRow key={item.id} item={item} clients={clients} />)}
+        {visiblePackages.map((item) => <PackageRow key={item.id} item={item} clients={clients} usageCount={packageUsage[item.id] ?? 0} />)}
         {!visiblePackages.length && <div className="p-6 text-center text-sm text-slate-500">No packages match this view.</div>}
       </div>
     </AppShell>
@@ -156,10 +158,10 @@ function QuickStartPackage({ template }: Readonly<{ template: (typeof quickStart
   );
 }
 
-function PackageRow({ item, clients }: Readonly<{ item: ConciergePackage; clients: Awaited<ReturnType<typeof getClientsForProfile>> }>) {
+function PackageRow({ item, clients, usageCount }: Readonly<{ item: ConciergePackage; clients: Awaited<ReturnType<typeof getClientsForProfile>>; usageCount: number }>) {
   return (
     <div className={`px-3 py-3 text-slate-950 ${!item.active ? "opacity-65" : ""}`}>
-      <div className="grid gap-2 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
+      <div className="grid gap-2 md:grid-cols-[1fr_auto_auto_auto_auto] md:items-center">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate font-semibold">{item.title}</p>
@@ -174,6 +176,9 @@ function PackageRow({ item, clients }: Readonly<{ item: ConciergePackage; client
         <span className="w-fit rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
           {item.package_items.length} inclusions
         </span>
+        <span className="w-fit rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+          {usageCount} recent
+        </span>
         <span className={item.active ? "w-fit rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700" : "w-fit rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500"}>
           {item.active ? "Active" : "Archived"}
         </span>
@@ -184,16 +189,51 @@ function PackageRow({ item, clients }: Readonly<{ item: ConciergePackage; client
         {item.price_hint && <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">{item.price_hint}</span>}
         {item.package_items.slice(0, 4).map((detail) => <span key={detail} className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">{detail}</span>)}
       </div>
-      <div className="mt-2 grid gap-2 md:grid-cols-[1fr_auto]">
+      <div className="mt-2 grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)_auto]">
         <details className="rounded-md border border-slate-200 bg-slate-50 p-2">
           <summary className="cursor-pointer text-sm font-semibold text-slate-700">Edit package</summary>
           <PackageForm item={item} clients={clients} />
+        </details>
+        <details className="rounded-md border border-slate-200 bg-slate-50 p-2">
+          <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-slate-700">
+            <MonitorSmartphone className="size-4 text-amber-700" /> Preview
+          </summary>
+          <PackagePreview item={item} usageCount={usageCount} />
         </details>
         <form action={setConciergePackageActive}>
           <input type="hidden" name="packageId" value={item.id} />
           <input type="hidden" name="active" value={String(!item.active)} />
           <StatusSubmitButton label={item.active ? "Archive" : "Reactivate"} pendingLabel="Saving" variant="outline" size="sm" className="w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50 md:w-auto" />
         </form>
+      </div>
+    </div>
+  );
+}
+
+function PackagePreview({ item, usageCount }: Readonly<{ item: ConciergePackage; usageCount: number }>) {
+  return (
+    <div className="mt-3 grid gap-3 lg:grid-cols-[18rem_1fr]">
+      <div className="rounded-xl border border-slate-200 bg-slate-950 p-3 text-white">
+        <p className="text-[11px] uppercase tracking-[0.16em] text-amber-300">{formatEnum(item.request_type)}</p>
+        <h3 className="mt-2 text-lg font-semibold">{item.title}</h3>
+        {item.description && <p className="mt-1 text-xs leading-5 text-slate-300">{item.description}</p>}
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {item.price_hint && <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] text-slate-200">{item.price_hint}</span>}
+          <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] text-slate-200">{packageFitText(item)}</span>
+          {usageCount >= 3 && <span className="rounded-full bg-amber-300 px-2 py-1 text-[11px] font-semibold text-slate-950">Often requested</span>}
+        </div>
+      </div>
+      <div className="rounded-xl border border-slate-200 bg-white p-3">
+        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <Eye className="size-3.5 text-amber-700" /> Client-facing inclusions
+        </p>
+        <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+          {item.package_items.map((detail) => <span key={detail} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700">{detail}</span>)}
+          {!item.package_items.length && <span className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-500">No inclusions yet.</span>}
+        </div>
+        <Link href={`/request?option=package&package=${item.slug}`} target="_blank" className="mt-3 inline-flex h-9 items-center justify-center rounded-md bg-slate-950 px-3 text-xs font-semibold text-white transition hover:bg-slate-800">
+          Open full form
+        </Link>
       </div>
     </div>
   );
@@ -287,4 +327,16 @@ function packageFitText(item: ConciergePackage) {
   const group = item.ideal_group_min || item.ideal_group_max ? `${item.ideal_group_min ?? 1}-${item.ideal_group_max ?? "any"} guests` : "any group";
   const days = item.ideal_days_min || item.ideal_days_max ? `${item.ideal_days_min ?? 1}-${item.ideal_days_max ?? "any"} days` : "any length";
   return `${spend} · ${group} · ${days}`;
+}
+
+function packageUsageMap(packages: ConciergePackage[], requests: ConciergeRequest[]) {
+  const map: Record<string, number> = {};
+  packages.forEach((item) => {
+    const needles = [item.title, item.slug, ...item.package_items].map((value) => value.toLowerCase()).filter((value) => value.length > 3);
+    map[item.id] = requests.filter((request) => {
+      const text = `${request.message ?? ""} ${request.internal_summary ?? ""}`.toLowerCase();
+      return needles.some((needle) => text.includes(needle));
+    }).length;
+  });
+  return map;
 }

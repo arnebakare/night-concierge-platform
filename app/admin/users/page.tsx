@@ -16,26 +16,26 @@ export default async function AdminUsersPage({ searchParams }: Readonly<{ search
   const managers = allUsers.filter((user) => user.role === "PROMOTER_MANAGER" && user.active);
   return (
     <AppShell profile={profile} title="Users" eyebrow="Admin">
-      <LuxuryCard className="mb-4">
+      <LuxuryCard className="mb-4 bg-white text-slate-950">
         <details>
-          <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm font-semibold">
+          <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm font-semibold text-slate-950">
             Create user
-            <span className="text-xs font-normal text-muted-foreground">Manager, promoter, client</span>
+            <span className="text-xs font-normal text-slate-500">Manager, promoter, client</span>
           </summary>
         <form action={createUserProfile} className="mt-3 grid gap-2 md:grid-cols-2">
-          <div className="space-y-1.5"><Label>Name</Label><Input name="name" placeholder="Julia Casanis" /></div>
-          <div className="space-y-1.5"><Label>Email</Label><Input name="email" type="email" placeholder="sofia@club.com" /></div>
-          <div className="space-y-1.5"><Label>Password</Label><Input name="password" type="password" placeholder="Minimum 8 characters" /></div>
+          <div className="space-y-1.5"><Label className="text-slate-700">Name</Label><Input name="name" placeholder="Julia Casanis" className="bg-white text-slate-950" /></div>
+          <div className="space-y-1.5"><Label className="text-slate-700">Email</Label><Input name="email" type="email" placeholder="sofia@club.com" className="bg-white text-slate-950" /></div>
+          <div className="space-y-1.5"><Label className="text-slate-700">Password</Label><Input name="password" type="password" placeholder="Minimum 8 characters" className="bg-white text-slate-950" /></div>
           <div className="space-y-2">
-            <Label>Role</Label>
-            <select name="role" className="h-10 w-full rounded-md border bg-input px-3 text-sm">
+            <Label className="text-slate-700">Role</Label>
+            <select name="role" className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950">
               {["PROMOTER", "PROMOTER_MANAGER", "CLIENT", "SUPER_ADMIN"].map((role) => <option key={role} value={role}>{formatEnum(role)}</option>)}
             </select>
           </div>
-          <div className="space-y-1.5"><Label>Phone</Label><Input name="phone" placeholder="+34..." /></div>
+          <div className="space-y-1.5"><Label className="text-slate-700">Phone</Label><Input name="phone" placeholder="+34..." className="bg-white text-slate-950" /></div>
           <div className="space-y-1.5">
-            <Label>Promoter manager</Label>
-            <select name="managerId" className="h-10 w-full rounded-md border bg-input px-3 text-sm">
+            <Label className="text-slate-700">Promoter manager</Label>
+            <select name="managerId" className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950">
               <option value="">No manager</option>
               {managers.map((manager) => <option key={manager.id} value={manager.id}>{manager.name ?? manager.email}</option>)}
             </select>

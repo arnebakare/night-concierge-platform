@@ -32,6 +32,7 @@ export function RequestFormSteps({
   clubs,
   events = [],
   packages = [],
+  packageUsage = {},
   serviceDefaults = [],
   promoterSlug,
   magicToken,
@@ -42,6 +43,7 @@ export function RequestFormSteps({
   clubs: Club[];
   events?: ConciergeEvent[];
   packages?: ConciergePackage[];
+  packageUsage?: Record<string, number>;
   serviceDefaults?: ServicePathDefault[];
   promoterSlug?: string;
   magicToken?: string;
@@ -142,9 +144,10 @@ export function RequestFormSteps({
   const stepTitles = ["Service", "Venue", "Plan", "Contact", "Dates", "Review"];
   const nextLabel = step === 1 ? "Continue" : step === 2 ? "Choose experience" : step === 3 ? "Add contact" : step === 4 ? "Add dates" : "Review";
   const recommendedPackages = useMemo(
-    () => rankPackages(packages, values),
+    () => rankPackages(packages, values, packageUsage),
     [
       packages,
+      packageUsage,
       values.addonBeachClub,
       values.addonDinner,
       values.addonGolf,
@@ -1099,15 +1102,19 @@ function recommendationContextText(startDate?: string, endDate?: string, guestCo
   return `Adjusted for ${parts.join(" · ")}.`;
 }
 
-function rankPackages(packages: ConciergePackage[], values: PublicRequestInput) {
+function rankPackages(packages: ConciergePackage[], values: PublicRequestInput, packageUsage: Record<string, number>) {
   return packages
-    .map((item) => packageScore(item, values))
+    .map((item) => packageScore(item, values, packageUsage[item.id] ?? 0))
     .sort((a, b) => b.score - a.score || (b.item.recommendation_weight ?? 1) - (a.item.recommendation_weight ?? 1) || a.item.title.localeCompare(b.item.title));
 }
 
-function packageScore(item: ConciergePackage, values: PublicRequestInput) {
+function packageScore(item: ConciergePackage, values: PublicRequestInput, usageCount: number) {
   let score = item.recommendation_weight ?? 1;
   const reasons: string[] = [];
+  if (usageCount >= 3) {
+    score += Math.min(5, Math.floor(usageCount / 2));
+    reasons.push("Often requested");
+  }
   if (item.request_type === values.requestType) {
     score += 6;
     reasons.push("Matches this path");

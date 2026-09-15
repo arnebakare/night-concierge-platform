@@ -101,6 +101,35 @@ export async function getPublicConciergePackages(): Promise<ConciergePackage[]> 
   }
 }
 
+export async function getPublicPackageUsageSignals(packages: ConciergePackage[]): Promise<Record<string, number>> {
+  if (!packages.length) return {};
+  try {
+    const supabase = createAdminClient();
+    const since = new Date(Date.now() - 180 * 86400000).toISOString();
+    const { data, error } = await supabase
+      .from("requests")
+      .select("message, internal_summary, created_at")
+      .is("removed_at", null)
+      .in("request_type", ["PACKAGE", "SCHEDULE", "BOAT", "GOLF", "VILLA", "TRANSFER", "VIP_SERVICE"])
+      .gte("created_at", since)
+      .limit(500);
+    if (error) throw error;
+
+    const usage: Record<string, number> = {};
+    packages.forEach((item) => {
+      const needles = [item.title, item.slug, ...item.package_items].map((value) => value.toLowerCase()).filter((value) => value.length > 3);
+      usage[item.id] = (data ?? []).filter((request) => {
+        const text = `${request.message ?? ""} ${request.internal_summary ?? ""}`.toLowerCase();
+        return needles.some((needle) => text.includes(needle));
+      }).length;
+    });
+    return usage;
+  } catch (error) {
+    if (!isDemoAuthEnabled()) return {};
+    return Object.fromEntries(packages.map((item, index) => [item.id, Math.max(0, 3 - index)]));
+  }
+}
+
 export async function getPublicServicePathDefaults(): Promise<ServicePathDefault[]> {
   try {
     const supabase = createAdminClient();
