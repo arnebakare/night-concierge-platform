@@ -36,10 +36,15 @@ export function ManualRequestForm({ clubs, clients }: Readonly<{ clubs: Club[]; 
       preferredArea: "",
       occasion: "",
       boatStyle: "",
+      boatSize: "",
       teeTimePreference: "",
+      golfHandicap: "",
       bedrooms: "",
+      stayStyle: "",
       pickupLocation: "",
       dropoffLocation: "",
+      flightNumber: "",
+      vehiclePreference: "",
       packageStyle: "",
       internalNote: ""
     }
@@ -156,6 +161,9 @@ function ServiceDetailsFields({
         <Field label="Boat style">
           <Input {...form.register("boatStyle")} placeholder="Yacht, sunset, day boat..." />
         </Field>
+        <Field label="Boat size">
+          <Input {...form.register("boatSize")} placeholder="8 people, 12m, flexible..." />
+        </Field>
         <Field label="Route / marina">
           <Input {...form.register("preferredArea")} placeholder="Puerto Banus, swim stops..." />
         </Field>
@@ -169,6 +177,9 @@ function ServiceDetailsFields({
         <Field label="Tee time">
           <Input {...form.register("teeTimePreference")} placeholder="Morning, afternoon..." />
         </Field>
+        <Field label="Golf level">
+          <Input {...form.register("golfHandicap")} placeholder="Handicap, beginner, mixed..." />
+        </Field>
         <Field label="Course / area">
           <Input {...form.register("preferredArea")} placeholder="Los Naranjos, Marbella Club..." />
         </Field>
@@ -181,6 +192,9 @@ function ServiceDetailsFields({
       <div className="grid grid-cols-2 gap-3 rounded-md border border-champagne-700/25 bg-secondary/50 p-3">
         <Field label="Bedrooms">
           <Input {...form.register("bedrooms")} placeholder="4, 6, flexible..." />
+        </Field>
+        <Field label="Stay style">
+          <Input {...form.register("stayStyle")} placeholder="Hotel suite, villa, staffed..." />
         </Field>
         <Field label="Area">
           <Input {...form.register("preferredArea")} placeholder="Golden Mile, Puente Romano..." />
@@ -197,6 +211,12 @@ function ServiceDetailsFields({
         </Field>
         <Field label="Drop-off">
           <Input {...form.register("dropoffLocation")} placeholder="Hotel, club, restaurant..." />
+        </Field>
+        <Field label="Flight number">
+          <Input {...form.register("flightNumber")} placeholder="FR1234, private flight..." />
+        </Field>
+        <Field label="Vehicle">
+          <Input {...form.register("vehiclePreference")} placeholder="V-Class, S-Class, van..." />
         </Field>
       </div>
     );

@@ -28,7 +28,9 @@ const optionMap: Record<string, { category: RequestCategory; requestType?: Reque
   itinerary: { category: "schedule", requestType: "SCHEDULE" },
   planning: { category: "schedule", requestType: "SCHEDULE" },
   package: { category: "package", requestType: "PACKAGE" },
-  packages: { category: "package", requestType: "PACKAGE" }
+  packages: { category: "package", requestType: "PACKAGE" },
+  general: { category: "nightlife", requestType: "GENERAL" },
+  other: { category: "nightlife", requestType: "GENERAL" }
 };
 
 export function resolveRequestDeepLink(clubs: Club[], params?: DeepLinkParams) {

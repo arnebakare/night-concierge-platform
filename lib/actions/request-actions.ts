@@ -42,10 +42,15 @@ export async function submitPublicRequest(input: PublicRequestInput): Promise<Re
     preferredArea: data.preferredArea,
     occasion: data.occasion,
     boatStyle: data.boatStyle,
+    boatSize: data.boatSize,
     teeTimePreference: data.teeTimePreference,
+    golfHandicap: data.golfHandicap,
     bedrooms: data.bedrooms,
+    stayStyle: data.stayStyle,
     pickupLocation: data.pickupLocation,
     dropoffLocation: data.dropoffLocation,
+    flightNumber: data.flightNumber,
+    vehiclePreference: data.vehiclePreference,
     packageStyle: data.packageStyle,
     packageTitle: data.packageTitle,
     addons: buildAddonSummary(data)
@@ -150,10 +155,15 @@ export async function createManualRequest(input: unknown): Promise<RequestAction
     preferredArea: data.preferredArea,
     occasion: data.occasion,
     boatStyle: data.boatStyle,
+    boatSize: data.boatSize,
     teeTimePreference: data.teeTimePreference,
+    golfHandicap: data.golfHandicap,
     bedrooms: data.bedrooms,
+    stayStyle: data.stayStyle,
     pickupLocation: data.pickupLocation,
     dropoffLocation: data.dropoffLocation,
+    flightNumber: data.flightNumber,
+    vehiclePreference: data.vehiclePreference,
     packageStyle: data.packageStyle,
     packageTitle: data.packageTitle,
     addons: buildAddonSummary(data)
@@ -279,10 +289,15 @@ function withRequestContext(
     preferredArea?: string;
     occasion?: string;
     boatStyle?: string;
+    boatSize?: string;
     teeTimePreference?: string;
+    golfHandicap?: string;
     bedrooms?: string;
+    stayStyle?: string;
     pickupLocation?: string;
     dropoffLocation?: string;
+    flightNumber?: string;
+    vehiclePreference?: string;
     packageStyle?: string;
     packageTitle?: string;
     addons?: string;
@@ -295,10 +310,15 @@ function withRequestContext(
     context.preferredArea?.trim() ? `Preferred area: ${context.preferredArea.trim()}` : null,
     context.occasion?.trim() ? `Occasion: ${context.occasion.trim()}` : null,
     context.boatStyle?.trim() ? `Boat style: ${context.boatStyle.trim()}` : null,
+    context.boatSize?.trim() ? `Boat size: ${context.boatSize.trim()}` : null,
     context.teeTimePreference?.trim() ? `Tee time preference: ${context.teeTimePreference.trim()}` : null,
+    context.golfHandicap?.trim() ? `Golf handicap / level: ${context.golfHandicap.trim()}` : null,
     context.bedrooms?.trim() ? `Bedrooms: ${context.bedrooms.trim()}` : null,
+    context.stayStyle?.trim() ? `Stay style: ${context.stayStyle.trim()}` : null,
     context.pickupLocation?.trim() ? `Pickup: ${context.pickupLocation.trim()}` : null,
     context.dropoffLocation?.trim() ? `Drop-off: ${context.dropoffLocation.trim()}` : null,
+    context.flightNumber?.trim() ? `Flight number: ${context.flightNumber.trim()}` : null,
+    context.vehiclePreference?.trim() ? `Vehicle preference: ${context.vehiclePreference.trim()}` : null,
     context.packageStyle?.trim() ? `Package style: ${context.packageStyle.trim()}` : null,
     context.packageTitle?.trim() ? `Selected package: ${context.packageTitle.trim()}` : null,
     context.addons?.trim() ? `Requested add-ons: ${context.addons.trim()}` : null

@@ -96,10 +96,15 @@ export function RequestFormSteps({
       preferredArea: defaults?.preferredArea ?? "",
       occasion: defaults?.occasion ?? "",
       boatStyle: defaults?.boatStyle ?? "",
+      boatSize: defaults?.boatSize ?? "",
       teeTimePreference: defaults?.teeTimePreference ?? "",
+      golfHandicap: defaults?.golfHandicap ?? "",
       bedrooms: defaults?.bedrooms ?? "",
+      stayStyle: defaults?.stayStyle ?? "",
       pickupLocation: defaults?.pickupLocation ?? "",
       dropoffLocation: defaults?.dropoffLocation ?? "",
+      flightNumber: defaults?.flightNumber ?? "",
+      vehiclePreference: defaults?.vehiclePreference ?? "",
       packageStyle: defaults?.packageStyle ?? "",
       packageId: defaults?.packageId ?? "",
       packageTitle: defaults?.packageTitle ?? "",
@@ -223,7 +228,7 @@ export function RequestFormSteps({
 
   async function next() {
     const fieldsByStep: Record<number, (keyof PublicRequestInput)[]> = {
-      2: ["clubId"], 3: ["requestType"], 4: ["name", "phone", "email", "instagram"], 5: ["requestedDate", "requestedDateEnd", "guestCount", "arrivalTime", "budget", "message", "preferredArea", "occasion", "boatStyle", "teeTimePreference", "bedrooms", "pickupLocation", "dropoffLocation", "packageStyle", "packageId", "packageTitle", "addonBeachClub", "addonDinner", "addonNightclub", "addonGolf", "addonYacht", "addonTransfer", "addonVilla"]
+      2: ["clubId"], 3: ["requestType"], 4: ["name", "phone", "email", "instagram"], 5: ["requestedDate", "requestedDateEnd", "guestCount", "arrivalTime", "budget", "message", "preferredArea", "occasion", "boatStyle", "boatSize", "teeTimePreference", "golfHandicap", "bedrooms", "stayStyle", "pickupLocation", "dropoffLocation", "flightNumber", "vehiclePreference", "packageStyle", "packageId", "packageTitle", "addonBeachClub", "addonDinner", "addonNightclub", "addonGolf", "addonYacht", "addonTransfer", "addonVilla"]
     };
     if (step === 1 && !category) {
       setError("Choose what you need first.");
@@ -277,7 +282,7 @@ export function RequestFormSteps({
               </span>
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold text-champagne-50">{selectedCategoryCard.title}</span>
-                <span className="block truncate text-xs text-muted-foreground">Handled by your Marbella concierge team</span>
+                <span className="block truncate text-xs text-muted-foreground">Personal concierge</span>
               </span>
               <span className="ml-auto text-xs font-semibold text-champagne-300">Change</span>
             </button>
@@ -823,6 +828,9 @@ function ServiceDetailsFields({
         <Field label="Boat style optional">
           <Input {...form.register("boatStyle")} placeholder="Day boat, yacht, sunset, with skipper..." />
         </Field>
+        <Field label="Boat size optional">
+          <Input {...form.register("boatSize")} placeholder="8 people, 12m, large yacht, flexible..." />
+        </Field>
         <Field label="Preferred route or marina optional">
           <Input {...form.register("preferredArea")} placeholder="Puerto Banus, Marbella, swim stops..." />
         </Field>
@@ -836,6 +844,9 @@ function ServiceDetailsFields({
         <Field label="Preferred tee time optional">
           <Input {...form.register("teeTimePreference")} placeholder="Morning, afternoon, exact time..." />
         </Field>
+        <Field label="Golf level optional">
+          <Input {...form.register("golfHandicap")} placeholder="Handicap, beginner, mixed levels..." />
+        </Field>
         <Field label="Preferred course or area optional">
           <Input {...form.register("preferredArea")} placeholder="Marbella Club, Los Naranjos, any premium course..." />
         </Field>
@@ -848,6 +859,9 @@ function ServiceDetailsFields({
       <div className="grid gap-3 rounded-2xl border border-champagne-700/24 bg-white/[0.04] p-3">
         <Field label="Bedrooms optional">
           <Input {...form.register("bedrooms")} placeholder="4 bedrooms, 6 bedrooms, flexible..." inputMode="numeric" />
+        </Field>
+        <Field label="Stay style optional">
+          <Input {...form.register("stayStyle")} placeholder="Hotel suite, private villa, staffed villa..." />
         </Field>
         <Field label="Preferred area optional">
           <Input {...form.register("preferredArea")} placeholder="Golden Mile, Puente Romano, Nueva Andalucia..." />
@@ -864,6 +878,12 @@ function ServiceDetailsFields({
         </Field>
         <Field label="Drop-off optional">
           <Input {...form.register("dropoffLocation")} placeholder="Hotel, villa, club, restaurant..." />
+        </Field>
+        <Field label="Flight number optional">
+          <Input {...form.register("flightNumber")} placeholder="FR1234, D842, private flight..." />
+        </Field>
+        <Field label="Vehicle optional">
+          <Input {...form.register("vehiclePreference")} placeholder="Van, S-Class, V-Class, driver by hour..." />
         </Field>
       </div>
     );

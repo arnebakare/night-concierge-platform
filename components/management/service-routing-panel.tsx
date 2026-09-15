@@ -1,4 +1,5 @@
-import { Route } from "lucide-react";
+import Link from "next/link";
+import { ExternalLink, Route } from "lucide-react";
 import { saveServicePathDefault, saveServiceRoutingRule } from "@/lib/actions/management-actions";
 import type { Profile, RequestType, ServicePathDefault, ServiceRoutingRule } from "@/lib/types";
 
@@ -55,6 +56,9 @@ export function ServiceRoutingPanel({
                     {meta.path} · {rule?.active === false ? "Paused" : "Active routing"}
                     {typeStats ? ` · ${typeStats.open} open · ${typeStats.recent} recent` : ""}
                   </p>
+                  <Link href={previewHref(type)} target="_blank" className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 hover:text-amber-900">
+                    Preview path <ExternalLink className="size-3" />
+                  </Link>
                 </div>
                 <SelectField name="defaultPromoterId" label="Default promoter" value={rule?.default_promoter_id ?? ""} options={promoters} emptyLabel="No default" />
                 <SelectField name="fallbackPromoterId" label="Fallback" value={rule?.fallback_promoter_id ?? ""} options={promoters} emptyLabel="No fallback" />
@@ -146,6 +150,22 @@ const addonFields = [
   { name: "addonTransfer", label: "Driver" },
   { name: "addonVilla", label: "Stay" }
 ] as const;
+
+function previewHref(type: RequestType) {
+  const optionByType: Partial<Record<RequestType, string>> = {
+    TABLE: "table",
+    GUESTLIST: "guestlist",
+    VIP_SERVICE: "vip",
+    BOAT: "boat",
+    GOLF: "golf",
+    VILLA: "villa",
+    TRANSFER: "transfer",
+    SCHEDULE: "schedule",
+    PACKAGE: "package",
+    GENERAL: "general"
+  };
+  return `/request?option=${optionByType[type] ?? "general"}`;
+}
 
 function SelectField({
   name,
