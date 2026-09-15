@@ -14,14 +14,22 @@ const serviceTypes: RequestType[] = ["TABLE", "GUESTLIST", "VIP_SERVICE", "BOAT"
 export default async function ManagerPromotersPage({ searchParams }: Readonly<{ searchParams: Promise<{ q?: string }> }>) {
   const profile = await requireProfile(["PROMOTER_MANAGER", "SUPER_ADMIN"]);
   const filters = await searchParams;
-  const [promoters, eligibility] = await Promise.all([
+  const [promoterResult, eligibilityResult] = await Promise.allSettled([
     getTeamPromoters(profile.id, { q: filters.q }),
     getPromoterServiceEligibilityForProfile(profile)
   ]);
+  const promoters = promoterResult.status === "fulfilled" ? promoterResult.value : [];
+  const eligibility = eligibilityResult.status === "fulfilled" ? eligibilityResult.value : [];
+  const hasLoadWarning = promoterResult.status === "rejected" || eligibilityResult.status === "rejected";
   const eligibilityByPromoter = new Map(eligibility.map((item) => [`${item.promoter_id}:${item.request_type}`, item.eligible]));
 
   return (
     <AppShell profile={profile} title="Promoters" eyebrow="Team">
+      {hasLoadWarning && (
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-900">
+          Some team data could not be loaded. The page is still available, but service eligibility may need a refresh.
+        </div>
+      )}
       <div className="mb-4"><ClientSearchForm action="/manager/promoters" value={filters.q} placeholder="Search team by name, email or phone" /></div>
       <div className="mb-3 grid grid-cols-3 overflow-hidden rounded-lg border border-slate-200 bg-white text-center text-slate-950">
         <Metric label="Team" value={String(promoters.length)} />
