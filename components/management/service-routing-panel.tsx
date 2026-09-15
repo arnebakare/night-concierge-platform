@@ -169,7 +169,15 @@ function ServiceDefaultsForm({
               ))}
             </div>
           </div>
-          <iframe title={`${meta.intent} preview`} src={previewUrl} className="mt-3 h-[28rem] w-full rounded-xl border border-slate-200 bg-slate-950" />
+          <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Fields clients will see</p>
+            <div className="mt-2 grid gap-1.5">
+              {serviceFields(type).map((field) => (
+                <span key={field} className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700">{field}</span>
+              ))}
+            </div>
+            <p className="mt-3 text-[11px] leading-5 text-slate-500">Use “Open live” for the full mobile path. The preview above updates from the saved admin defaults.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -190,6 +198,23 @@ function addonSummary(serviceDefault?: ServicePathDefault) {
   const entries = Object.entries(serviceDefault?.default_addons ?? {}).filter(([, value]) => Number(value) > 0);
   if (!entries.length) return "no default add-ons";
   return entries.map(([key, value]) => `${addonFields.find((field) => field.name === key)?.label ?? key} x${value}`).join(" · ");
+}
+
+function serviceFields(type: RequestType) {
+  const common = ["Name", "WhatsApp number", "Dates", "Guests", "Spend notes"];
+  const specific: Partial<Record<RequestType, string[]>> = {
+    BOAT: ["Boat style", "Boat size", "Route or marina"],
+    GOLF: ["Tee time", "Golf level / handicap", "Preferred course"],
+    VILLA: ["Bedrooms", "Stay style", "Preferred area"],
+    TRANSFER: ["Pickup", "Drop-off", "Flight number", "Vehicle preference"],
+    SCHEDULE: ["Trip style", "Occasion", "Add-on builder"],
+    PACKAGE: ["Package choice", "Add-on builder", "Occasion"],
+    TABLE: ["Arrival time", "Table area notes", "Occasion"],
+    GUESTLIST: ["Arrival time", "Guest count", "Occasion"],
+    VIP_SERVICE: ["Arrival time", "Beach/table notes", "Occasion"],
+    GENERAL: ["Occasion", "Preferred area", "Message"]
+  };
+  return [...common, ...(specific[type] ?? [])];
 }
 
 function previewHref(type: RequestType) {
